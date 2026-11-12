@@ -1,0 +1,44 @@
+{
+  "name": "dm48-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.10.0",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "pnpm": ">=11 <12"
+  },
+  "scripts": {
+    "start": "ng serve --port 3000 --proxy-config proxy.conf.json",
+    "build": "ng build",
+    "test": "ng test --watch=false",
+    "test:core": "node --test tests/unit/*.test.ts",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "check:dist": "node scripts/check-distribution.mjs",
+    "check:tracked": "node scripts/check-tracked.mjs",
+    "test:e2e": "playwright test",
+    "format": "prettier --write src public tests e2e scripts package.json angular.json tsconfig*.json proxy.conf.json playwright.config.ts README.md .github/workflows/ci.yml pnpm-workspace.yaml",
+    "format:check": "prettier --check src public tests e2e scripts package.json angular.json tsconfig*.json proxy.conf.json playwright.config.ts README.md .github/workflows/ci.yml pnpm-workspace.yaml"
+  },
+  "dependencies": {
+    "@angular/common": "^21.0.0",
+    "@angular/compiler": "^21.0.0",
+    "@angular/core": "^21.0.0",
+    "@angular/forms": "^21.0.0",
+    "@angular/platform-browser": "^21.0.0",
+    "@angular/router": "^21.0.0",
+    "keycloak-js": "^26.2.1",
+    "rxjs": "~7.8.2",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.0.0",
+    "@angular/cli": "^21.0.0",
+    "@angular/compiler-cli": "^21.0.0",
+    "@playwright/test": "^1.56.1",
+    "jsdom": "^27.0.1",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.0"
+  }
+}

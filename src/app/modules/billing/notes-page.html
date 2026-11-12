@@ -1,0 +1,537 @@
+<div class="page-header">
+  <div>
+    <h1>Notas de salida</h1>
+    <p>Liquidaciones, saldos y pagos de la operación.</p>
+  </div>
+  <button class="button primary" (click)="openCreate()"><app-icon name="plus" />Nueva nota</button>
+</div>
+<form class="customer-strip search-bar" [formGroup]="filters" (ngSubmit)="reload()">
+  <label class="field"
+    >Estado<select formControlName="status">
+      <option value="">Todos los estados</option>
+      <option value="draft">Borrador</option>
+      <option value="pending_payment">Pendiente de pago</option>
+      <option value="paid">Pagado</option>
+      <option value="cancelled">Anulado</option>
+    </select></label
+  ><button class="button" [disabled]="loading()">Actualizar</button>
+</form>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p class="muted" role="status">Cargando notas de salida…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nota</th>
+            <th>Estado</th>
+            <th>Total</th>
+            <th>Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (note of notes(); track note.id) {
+            <tr [class.selected]="selected()?.id === note.id">
+              <td>
+                <button class="row-button" [disabled]="busy()" (click)="select(note)">
+                  {{ note.number }}<small>{{ date(note.created_at) }}</small>
+                </button>
+              </td>
+              <td><app-status [value]="note.status" /></td>
+              <td class="numeric">{{ money(note.total_cents) }}</td>
+              <td class="numeric">{{ money(note.balance_cents) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!notes().length && !loading()) {
+      <div class="empty-state">
+        <app-icon name="billing" />
+        <h2>Sin notas para esta consulta</h2>
+        <p>Crea una nota con paquetes liberados y listos para despacho.</p>
+      </div>
+    }
+    <div class="table-footer">Hasta 50 notas recientes de la consulta actual.</div>
+  </section>
+  @if (selected(); as note) {
+    <aside class="inspector">
+      <h2>{{ note.number }}</h2>
+      <app-status [value]="note.status" />
+      <dl class="detail-grid detail-section">
+        <div>
+          <dt>Total</dt>
+          <dd class="numeric">{{ money(note.total_cents) }}</dd>
+        </div>
+        <div>
+          <dt>Pagado</dt>
+          <dd class="numeric">{{ money(note.paid_cents) }}</dd>
+        </div>
+        <div>
+          <dt>Saldo pendiente</dt>
+          <dd class="numeric">
+            <strong>{{ money(note.balance_cents) }}</strong>
+          </dd>
+        </div>
+        <div>
+          <dt>Liquidación</dt>
+          <dd>{{ note.liquidation_number || 'Sin liquidar' }}</dd>
+        </div>
+      </dl>
+      <div class="actions">
+        <button class="button compact" (click)="download()" [disabled]="busy()">Ver PDF</button>
+        @if (auth.manager() && note.status === 'draft') {
+          <button class="button primary compact" (click)="liquidate()" [disabled]="busy()">
+            Liquidar nota
+          </button>
+        }
+        @if (auth.manager() && note.status === 'pending_payment') {
+          <button class="button primary compact" (click)="preparePayment()" [disabled]="busy()">
+            Registrar pago
+          </button>
+        }
+      </div>
+      <section class="detail-section">
+        <h3>Guías incluidas</h3>
+        <ul class="line-list">
+          @for (guide of note.guides; track guide.package_id) {
+            <li>
+              <span
+                ><strong>{{ guide.guide_number }}</strong
+                ><br /><small>{{ guide.wr }} · {{ weight(guide.billable_grams) }}</small></span
+              >
+              @if (editable(note.status)) {
+                <button
+                  class="text-button"
+                  (click)="removePackage(guide.package_id)"
+                  [disabled]="busy()"
+                >
+                  Retirar
+                </button>
+              }
+            </li>
+          }
+        </ul>
+        @if (editable(note.status)) {
+          <button class="button compact" (click)="preparePackages()" [disabled]="busy()">
+            Añadir paquetes
+          </button>
+        }
+      </section>
+      <section class="detail-section">
+        <h3>Cargos</h3>
+        <ul class="line-list">
+          @for (line of note.lines; track line.id) {
+            <li>
+              <div>
+                {{ line.charge_name }}
+                @if (!line.applies) {
+                  <small> · No aplica</small>
+                }
+                @if (editable(note.status)) {
+                  <div class="actions">
+                    <button
+                      class="text-button"
+                      (click)="toggleCharge(line.id, !line.applies)"
+                      [disabled]="busy()"
+                    >
+                      {{ line.applies ? 'Marcar no aplica' : 'Aplicar' }}</button
+                    ><button
+                      class="text-button"
+                      (click)="prepareRate(line.id, line.rate_cents)"
+                      [disabled]="busy()"
+                    >
+                      Tarifa
+                    </button>
+                    @if (line.manual) {
+                      <button
+                        class="text-button"
+                        (click)="removeCharge(line.id)"
+                        [disabled]="busy()"
+                      >
+                        Retirar
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+              <strong class="numeric">{{ money(line.amount_cents) }}</strong>
+            </li>
+          }
+        </ul>
+        @if (editable(note.status)) {
+          <div class="actions">
+            <button class="button compact" (click)="openCharge()" [disabled]="busy()">
+              Añadir cargo</button
+            ><button class="button compact" (click)="prepareDestination()" [disabled]="busy()">
+              Cambiar destino
+            </button>
+          </div>
+        }
+      </section>
+      <section class="detail-section">
+        <h3>Pagos</h3>
+        <ul class="line-list">
+          @for (payment of note.payments; track payment.id) {
+            <li>
+              <div>
+                <strong>{{ money(payment.amount_cents) }}</strong
+                ><small>{{ payment.method }} · {{ date(payment.paid_at) }}</small
+                ><app-status [value]="payment.status" />
+                @if (payment.reject_reason) {
+                  <p>{{ payment.reject_reason }}</p>
+                }
+                @if (
+                  payment.status === 'pending' &&
+                  auth.manager() &&
+                  note.status === 'pending_payment'
+                ) {
+                  <div class="actions">
+                    <button
+                      class="button compact"
+                      (click)="review(payment, true)"
+                      [disabled]="busy()"
+                    >
+                      Aceptar</button
+                    ><button
+                      class="button compact"
+                      (click)="review(payment, false)"
+                      [disabled]="busy()"
+                    >
+                      Rechazar
+                    </button>
+                  </div>
+                }
+              </div>
+            </li>
+          } @empty {
+            <li>No hay pagos registrados.</li>
+          }
+        </ul>
+      </section>
+      @if (note.cancel_reason) {
+        <p>Motivo de anulación: {{ note.cancel_reason }}</p>
+      }
+      @if (auth.manager() && cancellable(note.status, note.paid_cents)) {
+        <div class="detail-section">
+          <button class="text-button" (click)="cancel()" [disabled]="busy()">
+            Anular nota de salida
+          </button>
+        </div>
+      }
+    </aside>
+  }
+</div>
+
+<dialog #createDialog>
+  <div class="dialog-header">
+    <h2>Nueva nota de salida</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar"
+      (click)="createDialog.close()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <form [formGroup]="creation" (ngSubmit)="create()">
+    <div class="search-bar">
+      <label class="field"
+        >Casillero del cliente<input formControlName="locker" placeholder="PE00042" /></label
+      ><button type="button" class="button" (click)="findCustomer()" [disabled]="busy()">
+        Buscar
+      </button>
+    </div>
+    @if (customer(); as client) {
+      <h3 class="actions">{{ client.name }}</h3>
+      <p class="muted">Selecciona los paquetes liberados para despacho.</p>
+      <div class="package-options">
+        @for (item of packages(); track item.id) {
+          <label class="checkbox-row"
+            ><input
+              type="checkbox"
+              [checked]="picked().includes(item.id)"
+              (change)="togglePackage(item.id, $any($event.target).checked)"
+            />{{ item.description }} · {{ item.carrier_tracking }}</label
+          >
+        } @empty {
+          <p class="muted">El cliente no tiene paquetes disponibles para una nota.</p>
+        }
+      </div>
+      <div class="form-grid actions">
+        <label class="field full"
+          >Modalidad de entrega<select formControlName="method">
+            <option value="pickup">Recojo en almacén</option>
+            <option value="home">Domicilio</option>
+            <option value="agency_pickup">Recojo en agencia</option>
+            <option value="agency_home">Agencia a domicilio</option>
+          </select></label
+        >
+        @if (['home', 'agency_home'].includes(creation.controls.method.value)) {
+          <label class="field full"
+            >Dirección<select formControlName="address_id">
+              <option value="">Selecciona una dirección</option>
+              @for (address of client.addresses; track address.id) {
+                <option [value]="address.id">{{ address.line }}</option>
+              }
+            </select></label
+          >
+        }
+        @if (creation.controls.method.value.startsWith('agency')) {
+          <label class="field full"
+            >Agencia<select
+              formControlName="agency_id"
+              (change)="creation.controls.branch_id.setValue('')"
+            >
+              <option value="">Selecciona una agencia</option>
+              @for (agency of agencies(); track agency.id) {
+                <option [value]="agency.id">{{ agency.name }}</option>
+              }
+            </select></label
+          >
+        }
+        @if (creation.controls.method.value === 'agency_pickup') {
+          <label class="field full"
+            >Sucursal<select formControlName="branch_id">
+              <option value="">Selecciona una sucursal</option>
+              @for (agency of agencies(); track agency.id) {
+                @if (agency.id === creation.controls.agency_id.value) {
+                  @for (branch of agency.branches; track branch.id) {
+                    @if (branch.active) {
+                      <option [value]="branch.id">{{ branch.name }}</option>
+                    }
+                  }
+                }
+              }
+            </select></label
+          >
+        }
+      </div>
+    }
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="createDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="!customer() || !picked().length || busy()">
+        {{ busy() ? 'Procesando…' : 'Crear borrador' }}
+      </button>
+    </div>
+  </form>
+</dialog>
+<dialog #paymentDialog>
+  <div class="dialog-header">
+    <h2>Registrar pago</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar"
+      (click)="paymentDialog.close()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p class="muted">Saldo actual: {{ money(selected()?.balance_cents || 0) }}</p>
+  <form [formGroup]="payment" (ngSubmit)="recordPayment()">
+    <div class="form-grid">
+      <label class="field"
+        >Importe en USD<input
+          formControlName="amount"
+          inputmode="decimal"
+          placeholder="0.00"
+          required /></label
+      ><label class="field"
+        >Método<select formControlName="method">
+          <option value="cash">Efectivo</option>
+          <option value="transfer">Transferencia</option>
+          <option value="yape">Yape</option>
+          <option value="plin">Plin</option>
+          <option value="card">Tarjeta</option>
+          <option value="other">Otro</option>
+        </select></label
+      ><label class="field"
+        >Origen<select formControlName="origin">
+          <option value="PERU">Perú</option>
+          <option value="USA">USA</option>
+        </select></label
+      ><label class="field">Referencia<input formControlName="reference" /></label
+      ><label class="field full"
+        >Evidencia del pago (opcional)<input
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          (change)="attachEvidence($event)"
+      /></label>
+    </div>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="paymentDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="payment.invalid || busy()">
+        {{ busy() ? 'Registrando…' : 'Registrar pago' }}
+      </button>
+    </div>
+  </form>
+</dialog>
+<dialog #confirmDialog>
+  <h2>{{ confirmTitle() }}</h2>
+  <p class="muted">{{ selected()?.number }}. Revisa los datos antes de confirmar.</p>
+  @if (needsReason()) {
+    <label class="field">Motivo<textarea [formControl]="reason" required></textarea></label>
+  }
+  @if (formError()) {
+    <p class="alert error" role="alert">{{ formError() }}</p>
+  }
+  <div class="actions">
+    <button class="button" (click)="confirmDialog.close()" [disabled]="busy()">Volver</button
+    ><button
+      class="button primary"
+      (click)="confirm()"
+      [disabled]="busy() || (needsReason() && !reason.value.trim())"
+    >
+      {{ busy() ? 'Procesando…' : 'Confirmar' }}
+    </button>
+  </div>
+</dialog>
+<dialog #chargeDialog>
+  <h2>Añadir cargo</h2>
+  <form [formGroup]="charge" (ngSubmit)="addCharge()">
+    <div class="form-grid">
+      <label class="field full"
+        >Cargo<select formControlName="code">
+          <option value="">Selecciona un cargo del catálogo</option>
+          @for (item of charges(); track item.code) {
+            <option [value]="item.code">{{ item.name }}</option>
+          }
+        </select></label
+      ><label class="field full"
+        >Guía<select formControlName="package_id">
+          <option value="">Cargo de la nota</option>
+          @for (guide of selected()?.guides; track guide.package_id) {
+            <option [value]="guide.package_id">{{ guide.guide_number }}</option>
+          }
+        </select></label
+      ><label class="field"
+        >Cantidad<input type="number" formControlName="quantity" min="1" step="1" /></label
+      ><label class="field"
+        >Tarifa en USD (opcional)<input
+          formControlName="rate"
+          inputmode="decimal"
+          placeholder="Usar tarifa vigente"
+      /></label>
+    </div>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="chargeDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="charge.invalid || busy()">Añadir cargo</button>
+    </div>
+  </form>
+</dialog>
+<dialog #packageDialog>
+  <h2>Añadir paquetes a la nota</h2>
+  <div class="package-options">
+    @for (item of packages(); track item.id) {
+      <div class="line-list">
+        <span>{{ item.description }} · {{ item.carrier_tracking }}</span
+        ><button class="button compact" (click)="addPackage(item.id)" [disabled]="busy()">
+          Añadir
+        </button>
+      </div>
+    } @empty {
+      <p class="muted">No hay más paquetes disponibles para esta nota.</p>
+    }
+  </div>
+  @if (formError()) {
+    <p class="alert error" role="alert">{{ formError() }}</p>
+  }
+  <div class="actions">
+    <button class="button" (click)="packageDialog.close()" [disabled]="busy()">Cerrar</button>
+  </div>
+</dialog>
+<dialog #rateDialog>
+  <h2>Cambiar tarifa del cargo</h2>
+  <label class="field">Tarifa en USD<input [formControl]="rate" inputmode="decimal" /></label>
+  @if (formError()) {
+    <p class="alert error" role="alert">{{ formError() }}</p>
+  }
+  <div class="actions">
+    <button class="button" (click)="rateDialog.close()" [disabled]="busy()">Cancelar</button
+    ><button class="button primary" (click)="saveRate()" [disabled]="busy()">Guardar tarifa</button>
+  </div>
+</dialog>
+<dialog #destinationDialog>
+  <h2>Cambiar destino</h2>
+  <form [formGroup]="creation" (ngSubmit)="saveDestination()">
+    <div class="form-grid">
+      <label class="field full"
+        >Modalidad<select formControlName="method">
+          <option value="pickup">Recojo en almacén</option>
+          <option value="home">Domicilio</option>
+          <option value="agency_pickup">Recojo en agencia</option>
+          <option value="agency_home">Agencia a domicilio</option>
+        </select></label
+      >
+      @if (['home', 'agency_home'].includes(creation.controls.method.value)) {
+        <label class="field full"
+          >Dirección<select formControlName="address_id">
+            <option value="">Selecciona una dirección</option>
+            @for (address of customer()?.addresses; track address.id) {
+              <option [value]="address.id">{{ address.line }}</option>
+            }
+          </select></label
+        >
+      }
+      @if (creation.controls.method.value.startsWith('agency')) {
+        <label class="field full"
+          >Agencia<select
+            formControlName="agency_id"
+            (change)="creation.controls.branch_id.setValue('')"
+          >
+            <option value="">Selecciona una agencia</option>
+            @for (agency of agencies(); track agency.id) {
+              <option [value]="agency.id">{{ agency.name }}</option>
+            }
+          </select></label
+        >
+      }
+      @if (creation.controls.method.value === 'agency_pickup') {
+        <label class="field full"
+          >Sucursal<select formControlName="branch_id">
+            <option value="">Selecciona una sucursal</option>
+            @for (agency of agencies(); track agency.id) {
+              @if (agency.id === creation.controls.agency_id.value) {
+                @for (branch of agency.branches; track branch.id) {
+                  @if (branch.active) {
+                    <option [value]="branch.id">{{ branch.name }}</option>
+                  }
+                }
+              }
+            }
+          </select></label
+        >
+      }
+    </div>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="destinationDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="busy()">Guardar destino</button>
+    </div>
+  </form>
+</dialog>

@@ -1,0 +1,112 @@
+@use './styles/tokens';
+@use './styles/controls';
+@use './styles/layout';
+
+* {
+  box-sizing: border-box;
+}
+html {
+  color-scheme: dark;
+  font:
+    100%/1.5 -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-optical-sizing: auto;
+}
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+::selection {
+  background: var(--jade);
+  color: var(--ink);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+}
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+:focus-visible {
+  outline: 2px solid var(--jade);
+  outline-offset: 4px;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h1 {
+  font-size: clamp(1.75rem, 3vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+h2 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+h3 {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+p {
+  max-width: 70ch;
+}
+small {
+  font-size: 0.8rem;
+}
+.muted {
+  color: var(--muted);
+}
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+.boot-message,
+.standalone-page {
+  padding: 3rem;
+}
+.fine-print {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media (prefers-contrast: more) {
+  :root {
+    --border: #777084;
+    --muted: #e1dce9;
+  }
+}

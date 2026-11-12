@@ -1,0 +1,156 @@
+<div class="page-header">
+  <div>
+    <h1>Clientes</h1>
+    <p>Encuentra un cliente y continúa con su operación.</p>
+  </div>
+  <button class="button primary" (click)="createDialog.showModal()">
+    <app-icon name="plus" />Nuevo cliente
+  </button>
+</div>
+<form class="customer-strip search-bar" [formGroup]="search" (ngSubmit)="find()">
+  <label class="field narrow"
+    >Buscar por<select formControlName="kind">
+      <option value="locker">Casillero</option>
+      <option value="dni">DNI</option>
+      <option value="ruc">RUC</option>
+    </select></label
+  >
+  <label class="field"
+    >Casillero o documento<input
+      formControlName="value"
+      placeholder="Ej. PE00042"
+      autocomplete="off"
+      required
+  /></label>
+  <button class="button" [disabled]="search.invalid || saving()">
+    <app-icon name="search" />Buscar cliente
+  </button>
+</form>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status" class="muted">Buscando cliente…</p>
+}
+@if (customer(); as item) {
+  <div class="split-view">
+    <section class="surface surface-body">
+      <h2>{{ item.name }}</h2>
+      <p class="muted">Casillero {{ item.locker_code }}</p>
+      <dl class="detail-grid">
+        <div>
+          <dt class="muted">Documento</dt>
+          <dd>{{ item.document.type.toUpperCase() }} {{ item.document.number }}</dd>
+        </div>
+        <div>
+          <dt class="muted">Verificación</dt>
+          <dd>
+            {{ item.document.verified ? 'Documento verificado' : 'Pendiente de verificación' }}
+          </dd>
+        </div>
+      </dl>
+      <form [formGroup]="contact" (ngSubmit)="saveContact()">
+        <div class="form-grid">
+          <label class="field"
+            >Correo electrónico<input type="email" formControlName="email" required /></label
+          ><label class="field"
+            >Teléfono<input type="tel" formControlName="phone" required
+          /></label>
+        </div>
+        <button class="button actions" [disabled]="contact.invalid || saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar contacto' }}
+        </button>
+      </form>
+      <div class="actions">
+        <a
+          class="button primary"
+          routerLink="/internal/packages"
+          [queryParams]="{ customer_id: item.id }"
+          ><app-icon name="packages" />Ver paquetes</a
+        ><a
+          class="button"
+          routerLink="/internal/dispatch-notes"
+          [queryParams]="{ customer_id: item.id }"
+          >Ver notas de salida</a
+        >
+      </div>
+    </section>
+    <aside class="inspector">
+      <h2>Direcciones del cliente</h2>
+      @for (address of item.addresses; track address.id) {
+        <div class="detail-section">
+          <h3>{{ address.primary ? 'Dirección principal' : 'Dirección de entrega' }}</h3>
+          <p>{{ address.line }}</p>
+          <small>{{ address.reference }}</small>
+        </div>
+      } @empty {
+        <p class="muted">El cliente todavía no tiene direcciones registradas.</p>
+      }
+      @for (locker of item.locker_addresses; track locker.warehouse_code) {
+        <div class="detail-section">
+          <h3>Casillero en {{ locker.warehouse_code }}</h3>
+          <p>
+            {{ locker.recipient }}<br />{{ locker.line1 }}<br />{{ locker.line2 }}<br />{{
+              locker.city
+            }}, {{ locker.state }} {{ locker.postal_code }}<br />{{ locker.country }}
+          </p>
+        </div>
+      }
+    </aside>
+  </div>
+} @else if (!loading() && !error()) {
+  <section class="empty-state surface">
+    <app-icon name="customers" />
+    <h2>Busca por casillero o documento</h2>
+    <p>La ficha del cliente reúne su contacto, direcciones y acceso a sus paquetes.</p>
+  </section>
+}
+<dialog #createDialog>
+  <div class="dialog-header">
+    <div>
+      <h2>Nuevo cliente</h2>
+      <p class="muted">El casillero se asigna al registrar el cliente.</p>
+    </div>
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Cerrar"
+      (click)="createDialog.close()"
+      [disabled]="saving()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <form [formGroup]="form" (ngSubmit)="create()">
+    <div class="form-grid">
+      <label class="field"
+        >Tipo de documento<select formControlName="doc_type">
+          <option value="dni">DNI</option>
+          <option value="ruc">RUC</option>
+        </select></label
+      ><label class="field"
+        >Número de documento<input
+          formControlName="doc_number"
+          inputmode="numeric"
+          required /></label
+      ><label class="field full"
+        >Nombre o razón social<input formControlName="name" required /></label
+      ><label class="field"
+        >Correo electrónico<input formControlName="email" type="email" required /></label
+      ><label class="field">Teléfono<input formControlName="phone" type="tel" required /></label>
+    </div>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="createDialog.close()" [disabled]="saving()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="form.invalid || saving()">
+        {{ saving() ? 'Registrando…' : 'Registrar cliente' }}
+      </button>
+    </div>
+  </form>
+</dialog>

@@ -1,0 +1,231 @@
+<div class="page-header">
+  <div>
+    <h1>Paquetes</h1>
+    <p>Consulta los envíos y su seguimiento por cliente.</p>
+  </div>
+  <button
+    class="button primary"
+    [disabled]="!customer() || busy()"
+    (click)="prealertDialog.showModal()"
+  >
+    <app-icon name="plus" />Nueva prealerta
+  </button>
+</div>
+<form class="customer-strip search-bar" [formGroup]="search" (ngSubmit)="find()">
+  @if (customer(); as client) {
+    <div class="identity">
+      <app-icon name="customers" /><strong>{{ client.name }}</strong
+      ><small>Casillero: {{ client.locker_code }}</small>
+    </div>
+  }
+  <label class="field narrow"
+    ><span class="sr-only">Buscar por</span
+    ><select formControlName="kind">
+      <option value="locker">Casillero</option>
+      <option value="dni">DNI</option>
+      <option value="ruc">RUC</option>
+    </select></label
+  >
+  <label class="field"
+    ><span class="sr-only">Casillero o documento del cliente</span
+    ><input formControlName="value" placeholder="Buscar por casillero o documento" required
+  /></label>
+  <button class="button" [disabled]="search.invalid || busy()" aria-label="Buscar cliente">
+    <app-icon name="search" />
+  </button>
+</form>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status" class="muted">Cargando paquetes…</p>
+}
+@if (customer()) {
+  <div class="split-view">
+    <section class="surface">
+      <div class="surface-body">
+        <label class="field"
+          >Filtrar paquetes del cliente<input
+            class="search-input"
+            placeholder="Tienda, contenido o tracking"
+            (input)="filter.set($any($event.target).value)"
+        /></label>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tienda y contenido</th>
+              <th>Tracking</th>
+              <th>Estado</th>
+              <th>Valor declarado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filtered(); track item.id) {
+              <tr [class.selected]="selected()?.id === item.id">
+                <td>
+                  <button
+                    class="row-button"
+                    [disabled]="busy()"
+                    (click)="select(item)"
+                    [attr.aria-pressed]="selected()?.id === item.id"
+                  >
+                    {{ item.store || 'Sin tienda' }}<small>{{ item.description }}</small>
+                  </button>
+                </td>
+                <td class="numeric">{{ item.carrier_tracking }}</td>
+                <td><app-status [value]="item.status" /></td>
+                <td class="numeric">{{ money(item.declared_value_cents) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (!filtered().length) {
+        <div class="empty-state">
+          <app-icon name="packages" />
+          <h2>{{ packages().length ? 'Sin coincidencias' : 'Todavía no hay paquetes' }}</h2>
+          <p>
+            {{
+              packages().length
+                ? 'Prueba otro filtro.'
+                : 'Registra una prealerta para este cliente.'
+            }}
+          </p>
+        </div>
+      }
+      <div class="table-footer">
+        {{ filtered().length }} de {{ packages().length }} paquetes del cliente seleccionado
+      </div>
+    </section>
+    @if (selected(); as item) {
+      <aside class="inspector">
+        <h2>Detalle del paquete</h2>
+        <div class="detail-heading">
+          <span class="detail-icon"><app-icon name="packages" /></span>
+          <div>
+            <h3>{{ item.store }}</h3>
+            <p>{{ item.description }}</p>
+            <app-status [value]="item.status" />
+          </div>
+        </div>
+        <dl class="detail-grid">
+          <div>
+            <dt>Tracking</dt>
+            <dd>{{ item.carrier_tracking }}</dd>
+          </div>
+          <div>
+            <dt>Modalidad</dt>
+            <dd>{{ item.mode === 'traveler' ? 'Viajero' : 'Courier' }}</dd>
+          </div>
+          <div>
+            <dt>Valor declarado</dt>
+            <dd class="numeric">{{ money(item.declared_value_cents) }}</dd>
+          </div>
+          <div>
+            <dt>Peso recibido</dt>
+            <dd>{{ item.receipt ? weight(item.receipt.weight_g) : 'Pendiente de recepción' }}</dd>
+          </div>
+        </dl>
+        @if (detailError()) {
+          <p class="alert" role="alert">{{ detailError() }}</p>
+        }
+        <div class="actions">
+          @if (item.invoice_document_id) {
+            <button class="text-button" (click)="download()" [disabled]="busy()">
+              Ver factura adjunta
+            </button>
+          }
+          <button class="button compact" (click)="invoiceInput.click()" [disabled]="busy()">
+            {{
+              busy() ? 'Procesando…' : item.has_invoice ? 'Cambiar factura' : 'Adjuntar factura'
+            }}</button
+          ><input
+            #invoiceInput
+            class="sr-only"
+            type="file"
+            tabindex="-1"
+            accept="application/pdf,image/jpeg,image/png,image/webp"
+            (change)="attach($event)"
+          />
+        </div>
+        <section class="detail-section">
+          <h3>Seguimiento del paquete</h3>
+          @if (trackingLoading()) {
+            <p role="status">Cargando seguimiento…</p>
+          }
+          <ol class="timeline">
+            @for (event of timeline()?.events; track $index) {
+              <li>
+                <strong>{{ event.title }}</strong
+                ><small>{{ date(event.at) }}</small>
+                @if (event.location) {
+                  <small>{{ event.location }}</small>
+                }
+              </li>
+            }
+          </ol>
+          @if (timeline() && !timeline()?.events?.length) {
+            <p class="muted">No hay movimientos registrados.</p>
+          }
+        </section>
+      </aside>
+    }
+  </div>
+} @else if (!loading() && !error()) {
+  <section class="surface empty-state">
+    <app-icon name="packages" />
+    <h2>Selecciona un cliente</h2>
+    <p>Busca su casillero, DNI o RUC para consultar los paquetes y registrar prealertas.</p>
+  </section>
+}
+<dialog #prealertDialog>
+  <div class="dialog-header">
+    <div>
+      <h2>Nueva prealerta</h2>
+      <p class="muted">{{ customer()?.name }}</p>
+    </div>
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Cerrar"
+      (click)="prealertDialog.close()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <form [formGroup]="form" (ngSubmit)="create()">
+    <div class="form-grid">
+      <label class="field"
+        >Modalidad<select formControlName="mode">
+          <option value="courier">Courier</option>
+          <option value="traveler">Viajero</option>
+        </select></label
+      ><label class="field">Tienda<input formControlName="store" required /></label
+      ><label class="field full"
+        >Tracking del transportista<input formControlName="carrier_tracking" required /></label
+      ><label class="field full"
+        >Contenido del paquete<input formControlName="description" required /></label
+      ><label class="field"
+        >Valor declarado en USD<input
+          formControlName="amount"
+          inputmode="decimal"
+          placeholder="0.00"
+          required
+        /><span class="field-hint">Máximo dos decimales.</span></label
+      >
+    </div>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="prealertDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="form.invalid || busy()">
+        {{ busy() ? 'Registrando…' : 'Registrar prealerta' }}
+      </button>
+    </div>
+  </form>
+</dialog>

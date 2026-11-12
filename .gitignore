@@ -1,0 +1,41 @@
+# Dependencias, compilaciones y resultados de pruebas
+node_modules/
+.pnpm-store/
+.angular/
+dist/
+out-tsc/
+coverage/
+playwright-report/
+test-results/
+*.log
+
+# Configuración privada y archivos del sistema
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
+*.tsbuildinfo
+
+# Herramientas y contexto de agentes: exclusivamente locales
+AGENTS.md
+AGENTS.local.md
+SKILL.md
+skills/
+.agents/
+.claude/
+.codex/
+.impeccable/
+.superpowers/
+PRODUCT.md
+DESIGN.md
+CLAUDE.md
+GEMINI.md
+/docs/superpowers/
+/docs/design/
+
+# Programa Go anterior: no forma parte del frontend Angular
+/main.go
+/go.mod
+/go.sum

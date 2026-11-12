@@ -1,0 +1,57 @@
+<a class="skip-link" href="#main-content">Saltar al contenido</a>
+<div class="app-shell">
+  <aside class="sidebar" [class.mobile-open]="mobileOpen()" aria-label="Navegación principal">
+    <a class="wordmark" routerLink="/internal/overview" (click)="mobileOpen.set(false)"
+      >DM48<span class="brand-dot"></span
+    ></a>
+    <p class="sidebar-subtitle">Panel interno</p>
+    <nav>
+      @for (item of navigation; track item.path) {
+        <a
+          [routerLink]="['/internal', item.path]"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="mobileOpen.set(false)"
+          ><app-icon [name]="item.icon" /><span>{{ item.label }}</span></a
+        >
+      }
+    </nav>
+    <div class="sidebar-profile">
+      <span class="avatar">{{
+        (auth.user()?.name || auth.user()?.username || 'D').slice(0, 1)
+      }}</span>
+      <div>
+        <strong>{{ auth.user()?.name || auth.user()?.username }}</strong
+        ><span>{{ role() }}</span>
+      </div>
+      <button class="icon-button" aria-label="Cerrar sesión" (click)="auth.logout()">
+        <app-icon name="logout" />
+      </button>
+    </div>
+  </aside>
+  @if (mobileOpen()) {
+    <button
+      class="menu-scrim"
+      aria-label="Cerrar navegación"
+      (click)="mobileOpen.set(false)"
+    ></button>
+  }
+  <div class="workspace">
+    <header class="topbar">
+      <div class="breadcrumb">
+        <button
+          class="icon-button mobile-toggle"
+          aria-label="Abrir navegación"
+          [attr.aria-expanded]="mobileOpen()"
+          (click)="mobileOpen.set(!mobileOpen())"
+        >
+          <app-icon name="menu" /></button
+        ><span>Operaciones</span><span aria-hidden="true">/</span><strong>{{ title() }}</strong>
+      </div>
+      <span class="route-context"
+        ><app-icon name="plane" />USA <span aria-hidden="true">→</span> Perú</span
+      >
+    </header>
+    <main id="main-content" class="main-content" tabindex="-1"><router-outlet /></main>
+  </div>
+</div>

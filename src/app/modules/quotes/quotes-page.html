@@ -1,0 +1,197 @@
+<div class="page-header">
+  <div>
+    <h1>Cotizaciones</h1>
+    <p>Compra asistida, con el costo estimado puesto en Lima.</p>
+  </div>
+  <button class="button primary" (click)="createDialog.showModal()">
+    <app-icon name="plus" />Nueva cotización
+  </button>
+</div>
+<form class="customer-strip search-bar" [formGroup]="filters" (ngSubmit)="reload()">
+  <label class="field"
+    >Estado<select formControlName="status">
+      <option value="">Todos los estados</option>
+      <option value="pending">Pendiente</option>
+      <option value="accepted">Aceptada</option>
+      <option value="rejected">Rechazada</option>
+      <option value="expired">Vencida</option>
+    </select></label
+  ><button class="button" [disabled]="loading()">Actualizar</button>
+</form>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status" class="muted">Cargando cotizaciones…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Cotización y producto</th>
+            <th>Estado</th>
+            <th>Total estimado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (quote of quotes(); track quote.id) {
+            <tr [class.selected]="selected()?.id === quote.id">
+              <td>
+                <button class="row-button" [disabled]="busy()" (click)="select(quote)">
+                  {{ quote.number }}<small>{{ quote.product_name }}</small>
+                </button>
+              </td>
+              <td><app-status [value]="quote.status" /></td>
+              <td class="numeric">{{ money(quote.total_cents) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!quotes().length && !loading()) {
+      <div class="empty-state">
+        <app-icon name="quotes" />
+        <h2>Sin cotizaciones para esta consulta</h2>
+        <p>Registra un producto para obtener su costo estimado.</p>
+      </div>
+    }
+    <div class="table-footer">
+      Hasta 50 cotizaciones recientes. Los permisos de tu cuenta determinan los registros
+      disponibles.
+    </div>
+  </section>
+  @if (selected(); as quote) {
+    <aside class="inspector">
+      <h2>{{ quote.number }}</h2>
+      <div class="detail-heading">
+        <span class="detail-icon"><app-icon name="quotes" /></span>
+        <div>
+          <h3>{{ quote.product_name }}</h3>
+          <p>{{ quote.store }}</p>
+          <app-status [value]="quote.status" />
+        </div>
+      </div>
+      <dl class="detail-grid">
+        <div>
+          <dt>Cliente o prospecto</dt>
+          <dd>{{ quote.prospect_name || 'Cliente registrado' }}</dd>
+        </div>
+        <div>
+          <dt>Cantidad</dt>
+          <dd>{{ quote.quantity }}</dd>
+        </div>
+        <div>
+          <dt>Peso estimado</dt>
+          <dd>{{ weight(quote.grams) }}</dd>
+        </div>
+        <div>
+          <dt>Vigencia</dt>
+          <dd>{{ date(quote.expires_at) }}</dd>
+        </div>
+      </dl>
+      <section class="detail-section">
+        <h3>Desglose estimado</h3>
+        <ul class="line-list">
+          @for (line of quote.breakdown; track line.concept) {
+            <li>
+              <span>{{ concept(line.concept) }}</span
+              ><strong class="numeric">{{ money(line.cents) }}</strong>
+            </li>
+          }
+        </ul>
+        <div class="total-row">
+          <span>Total estimado</span><span class="numeric">{{ money(quote.total_cents) }}</span>
+        </div>
+        <p class="fine-print">Calculado con los parámetros vigentes al emitir esta cotización.</p>
+      </section>
+      @if (quote.notes) {
+        <p>{{ quote.notes }}</p>
+      }
+      <button class="button primary" (click)="download()" [disabled]="busy()">
+        {{ busy() ? 'Preparando…' : 'Descargar PDF' }}
+      </button>
+    </aside>
+  }
+</div>
+<dialog #createDialog>
+  <div class="dialog-header">
+    <h2>Nueva cotización</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar"
+      (click)="createDialog.close()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <div class="search-bar actions">
+    <label class="field"
+      >Casillero de cliente (opcional)<input
+        [formControl]="locker"
+        placeholder="PE00042"
+        (input)="customer.set(null)"
+    /></label>
+    <button
+      type="button"
+      class="button"
+      (click)="findCustomer()"
+      [disabled]="busy() || !locker.value.trim()"
+    >
+      Buscar cliente
+    </button>
+  </div>
+  @if (customer(); as client) {
+    <p class="alert success">
+      Cliente seleccionado: {{ client.name }} · {{ client.locker_code }}
+      <button type="button" class="text-button" (click)="customer.set(null); locker.reset()">
+        Usar prospecto
+      </button>
+    </p>
+  }
+  <form [formGroup]="form" (ngSubmit)="create()">
+    <div class="form-grid">
+      <label class="field full"
+        >Nombre del cliente o prospecto<input formControlName="prospect_name" required /></label
+      ><label class="field"
+        >Correo electrónico<input type="email" formControlName="prospect_email" /></label
+      ><label class="field">Teléfono<input type="tel" formControlName="prospect_phone" /></label
+      ><label class="field full">Producto<input formControlName="product_name" required /></label
+      ><label class="field">Tienda<input formControlName="store" required /></label
+      ><label class="field"
+        >Enlace del producto<input type="url" formControlName="product_url" /></label
+      ><label class="field"
+        >Precio unitario en USD<input formControlName="price" inputmode="decimal" required /></label
+      ><label class="field"
+        >Cantidad<input type="number" formControlName="quantity" min="1" step="1" /></label
+      ><label class="field"
+        >Peso estimado en gramos<input
+          type="number"
+          formControlName="grams"
+          min="1"
+          step="1" /></label
+      ><label class="field"
+        >Envío en USA en USD<input formControlName="delivery" inputmode="decimal" /></label
+      ><label class="field"
+        >Descuento en USD<input formControlName="discount" inputmode="decimal" /></label
+      ><label class="checkbox-row"
+        ><input type="checkbox" formControlName="traveler" />Modalidad viajero</label
+      ><label class="field full">Observaciones<textarea formControlName="notes"></textarea></label>
+    </div>
+    <p class="fine-print">
+      Las tasas, el flete y los impuestos se calculan al registrar la cotización.
+    </p>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="createDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="form.invalid || busy()">
+        {{ busy() ? 'Calculando…' : 'Crear cotización' }}
+      </button>
+    </div>
+  </form>
+</dialog>

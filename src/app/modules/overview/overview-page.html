@@ -1,0 +1,110 @@
+<div class="page-header">
+  <div>
+    <h1>Resumen de la operación</h1>
+    <p>{{ auth.user()?.name || auth.user()?.username }}, continúa con las tareas de tu equipo.</p>
+  </div>
+</div>
+<section class="surface surface-body">
+  <h2>¿Con qué cliente vas a trabajar?</h2>
+  <p class="muted">
+    Busca su casillero o documento para consultar paquetes, registrar una prealerta o revisar sus
+    datos.
+  </p>
+  <div class="quick-actions">
+    <a class="button primary" routerLink="/internal/customers"
+      ><app-icon name="search" />Buscar cliente</a
+    ><a class="button" routerLink="/internal/packages"
+      ><app-icon name="packages" />Consultar paquetes</a
+    >
+  </div>
+</section>
+<div class="content-stack actions">
+  <section class="surface">
+    <div class="section-heading">
+      <h2>Notas de salida recientes</h2>
+      <a class="text-button" routerLink="/internal/dispatch-notes">Ver notas</a>
+    </div>
+    @if (notesLoading()) {
+      <p class="surface-body" role="status">Cargando notas…</p>
+    }
+    @if (notesError()) {
+      <div class="surface-body">
+        <p class="alert error" role="alert">{{ notesError() }}</p>
+        <button class="button" (click)="loadNotes()">Volver a intentar</button>
+      </div>
+    } @else if (!notesLoading()) {
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nota</th>
+              <th>Estado</th>
+              <th>Saldo</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (note of notes(); track note.id) {
+              <tr>
+                <td>{{ note.number }}</td>
+                <td><app-status [value]="note.status" /></td>
+                <td class="numeric">{{ money(note.balance_cents) }}</td>
+                <td>{{ date(note.created_at) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (!notes().length) {
+        <p class="surface-body muted">No hay notas disponibles para tu cuenta.</p>
+      }
+    }
+    <div class="table-footer">
+      Hasta 5 notas recientes. Este conjunto no representa el total de la empresa.
+    </div>
+  </section>
+  <section class="surface">
+    <div class="section-heading">
+      <h2>Cotizaciones recientes</h2>
+      <a class="text-button" routerLink="/internal/quotes">Ver cotizaciones</a>
+    </div>
+    @if (quotesLoading()) {
+      <p class="surface-body" role="status">Cargando cotizaciones…</p>
+    }
+    @if (quotesError()) {
+      <div class="surface-body">
+        <p class="alert error" role="alert">{{ quotesError() }}</p>
+        <button class="button" (click)="loadQuotes()">Volver a intentar</button>
+      </div>
+    } @else if (!quotesLoading()) {
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Cotización</th>
+              <th>Producto</th>
+              <th>Estado</th>
+              <th>Total estimado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (quote of quotes(); track quote.id) {
+              <tr>
+                <td>{{ quote.number }}</td>
+                <td>{{ quote.product_name }}</td>
+                <td><app-status [value]="quote.status" /></td>
+                <td class="numeric">{{ money(quote.total_cents) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (!quotes().length) {
+        <p class="surface-body muted">No hay cotizaciones disponibles para tu cuenta.</p>
+      }
+    }
+    <div class="table-footer">
+      Hasta 5 cotizaciones recientes, limitadas a los permisos de tu cuenta.
+    </div>
+  </section>
+</div>

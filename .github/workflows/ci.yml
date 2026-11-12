@@ -1,0 +1,32 @@
+name: Validación del frontend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.10.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:tracked
+      - run: pnpm check:boundaries
+      - run: pnpm format:check
+      - run: pnpm test:core
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm check:dist
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
