@@ -71,6 +71,7 @@ export class NotesPage {
     inject(ActivatedRoute).snapshot.queryParamMap.get('customer_id') ?? '';
   private listRequest?: Subscription;
   private detailRequest?: Subscription;
+  private customerRequest?: Subscription;
   private evidence: File | null = null;
   private confirmation: (() => Observable<DispatchNote>) | null = null;
   readonly confirmTitle = signal('');
@@ -99,9 +100,17 @@ export class NotesPage {
 
   constructor() {
     this.reload();
+    const lookupChanges = this.creation.controls.locker.valueChanges.subscribe(() => {
+      this.customer.set(null);
+      this.packages.set([]);
+      this.picked.set([]);
+      this.creation.patchValue({ address_id: '', agency_id: '', branch_id: '' });
+    });
     inject(DestroyRef).onDestroy(() => {
       this.listRequest?.unsubscribe();
       this.detailRequest?.unsubscribe();
+      this.customerRequest?.unsubscribe();
+      lookupChanges.unsubscribe();
     });
   }
 
@@ -140,6 +149,13 @@ export class NotesPage {
 
   openCreate() {
     this.formError.set('');
+    this.creation.reset({
+      locker: '',
+      method: 'pickup',
+      address_id: '',
+      agency_id: '',
+      branch_id: '',
+    });
     this.customer.set(null);
     this.packages.set([]);
     this.picked.set([]);
@@ -158,7 +174,7 @@ export class NotesPage {
     this.customer.set(null);
     this.packages.set([]);
     this.picked.set([]);
-    this.customers
+    this.customerRequest = this.customers
       .findByLocker(locker)
       .pipe(
         switchMap((customer) =>
@@ -167,6 +183,10 @@ export class NotesPage {
       )
       .subscribe({
         next: (data) => {
+          if (locker.toUpperCase() !== this.creation.controls.locker.value.trim().toUpperCase()) {
+            this.busy.set(false);
+            return;
+          }
           this.customer.set(data.customer);
           this.packages.set(
             data.packages.filter(
@@ -227,18 +247,17 @@ export class NotesPage {
   preparePayment() {
     this.formError.set('');
     this.evidence = null;
+    const input =
+      this.paymentDialog().nativeElement.querySelector<HTMLInputElement>('input[type="file"]');
+    if (input) input.value = '';
     this.payment.reset({ method: 'transfer', origin: 'PERU', amount: '', reference: '' });
     this.paymentDialog().nativeElement.showModal();
   }
   attachEvidence(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    this.evidence = null;
-    if (file) {
-      const error = fileError(file);
-      this.formError.set(error);
-      if (!error) this.evidence = file;
-    }
+    this.evidence = file ?? null;
+    this.formError.set(file ? fileError(file) : '');
   }
 
   recordPayment() {
@@ -249,6 +268,11 @@ export class NotesPage {
     const error = paymentIssue(note.balance_cents, amount);
     if (error || this.payment.invalid || amount === null) {
       this.formError.set(error ?? 'Completa los datos del pago.');
+      return;
+    }
+    const evidenceError = this.evidence ? fileError(this.evidence) : '';
+    if (evidenceError) {
+      this.formError.set(evidenceError);
       return;
     }
     this.busy.set(true);

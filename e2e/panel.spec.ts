@@ -107,7 +107,7 @@ for (const status of [401, 403]) {
     await login(page);
     await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
     await page.route('**/api/v1/quotes?**', (route) => route.fulfill({ status, json: {} }));
-    await navigate(page, 'Cotizaciones', 'quotes');
+    await navigate(page, 'Cotizaciones', status === 401 ? /\/login/ : 'quotes');
     if (status === 401) {
       await expect(page).toHaveURL(/\/login/);
       await expect(page.getByRole('button', { name: 'Iniciar sesión', exact: true })).toBeVisible();

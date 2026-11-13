@@ -5,7 +5,11 @@ import type { Quote } from '../../src/app/modules/quotes/quote.model';
 import type { DispatchNote } from '../../src/app/modules/billing/dispatch-note.model';
 
 // Dobles exclusivos del navegador de pruebas. La aplicación conserva su cliente OIDC real.
-export async function mockPanel(page: Page, role = 'supervisor') {
+export async function mockPanel(
+  page: Page,
+  role = 'supervisor',
+  options: { note?: Partial<DispatchNote> } = {},
+) {
   const issuer = 'http://localhost:3000/test-idp/realms/dm48';
   let nonce = '';
   const requests: { path: string; method: string; body: Record<string, unknown> | null }[] = [];
@@ -48,6 +52,7 @@ export async function mockPanel(page: Page, role = 'supervisor') {
     lines: [],
     payments: [],
     created_at: customer.created_at,
+    ...options.note,
   };
   const quote: Quote = {
     id: 'quote-test',
@@ -114,7 +119,9 @@ export async function mockPanel(page: Page, role = 'supervisor') {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace('/api/v1', '');
     const method = request.method();
-    const body = request.postDataJSON() as Record<string, unknown> | null;
+    const body = request.headers()['content-type']?.includes('application/json')
+      ? (request.postDataJSON() as Record<string, unknown>)
+      : null;
     requests.push({ path, method, body });
     if (!request.headers()['authorization']?.startsWith('Bearer ')) {
       await route.fulfill({ status: 401, json: { detail: 'Sesión requerida.' } });
@@ -152,7 +159,22 @@ export async function mockPanel(page: Page, role = 'supervisor') {
         ],
       };
     else if (path === '/dispatch-notes' && method === 'GET') data = { dispatch_notes: [note] };
-    else if (path === `/dispatch-notes/${note.id}`) data = note;
+    else if (path === '/dispatch-notes' && method === 'POST') {
+      note = {
+        ...note,
+        id: 'created-note-test',
+        number: 'NS-TEST-43',
+        guides: [
+          {
+            package_id: 'package-test',
+            guide_number: 'HAWB-TEST-42',
+            wr: 'WR-TEST-42',
+            billable_grams: 500,
+          },
+        ],
+      };
+      data = note;
+    } else if (path === `/dispatch-notes/${note.id}`) data = note;
     else if (path === `/dispatch-notes/${note.id}/liquidate` && method === 'POST') {
       note = { ...note, status: 'pending_payment', liquidation_number: 'LIQ-TEST-42' };
       data = note;
@@ -175,8 +197,35 @@ export async function mockPanel(page: Page, role = 'supervisor') {
         ],
       };
       data = note;
-    } else if (path === '/quotes') data = { quotes: [quote] };
-    else if (path === '/quotes/quote-test') data = quote;
+    } else if (path === '/quotes' && method === 'POST')
+      data = { ...quote, ...body, id: 'created-quote-test', number: 'CA-TEST-43' };
+    else if (path === '/quotes' && method === 'GET') data = { quotes: [quote] };
+    else if (path === '/agencies' && method === 'GET') data = { agencies: [] };
+    else if (path === '/documents' && method === 'POST')
+      data = {
+        id: 'document-test',
+        original_name: 'voucher.pdf',
+        mime_type: 'application/pdf',
+        size: 9,
+      };
+    else if (
+      path === `/dispatch-notes/${note.id}/payments/pending-payment-test/review` &&
+      method === 'POST'
+    ) {
+      const accept = body?.['accept'] === true;
+      note = {
+        ...note,
+        status: accept ? 'paid' : 'pending_payment',
+        paid_cents: accept ? 10000 : 0,
+        balance_cents: accept ? 0 : 10000,
+        payments: note.payments.map((payment) => ({
+          ...payment,
+          status: accept ? 'accepted' : 'rejected',
+          reject_reason: accept ? undefined : (body?.['reason'] as string),
+        })),
+      };
+      data = note;
+    } else if (path === '/quotes/quote-test') data = quote;
     else {
       await route.fulfill({
         status: 404,
@@ -194,9 +243,9 @@ export async function login(page: Page) {
   await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
 }
 
-export async function navigate(page: Page, name: string, path: string) {
+export async function navigate(page: Page, name: string, path: string | RegExp) {
   const toggle = page.getByRole('button', { name: 'Abrir navegación' });
   if (await toggle.isVisible()) await toggle.click();
   await page.getByRole('link', { name, exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/internal/${path}`));
+  await expect(page).toHaveURL(typeof path === 'string' ? new RegExp(`/internal/${path}`) : path);
 }
