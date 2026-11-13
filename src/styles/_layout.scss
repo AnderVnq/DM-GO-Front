@@ -30,7 +30,7 @@
   display: inline-block;
   width: 0.38rem;
   height: 0.38rem;
-  background: var(--jade);
+  background: var(--accent);
   border-radius: 50%;
   align-self: flex-end;
   margin-bottom: 0.25rem;
@@ -60,8 +60,8 @@
   }
 }
 .sidebar nav a.active {
-  color: var(--jade);
-  background: var(--jade-dark);
+  color: var(--accent);
+  background: var(--accent-surface);
   font-weight: 600;
 }
 .sidebar-profile {
@@ -144,6 +144,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  background: var(--surface);
 }
 .surface-body {
   padding: 1.3rem;
@@ -240,62 +241,17 @@
   border-top: 1px solid var(--border);
 }
 .inspector {
-  background: var(--ivory);
-  color: var(--ink);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.35rem;
   min-width: 0;
-  color-scheme: light;
 }
 .inspector > h2 {
   padding-bottom: 1rem;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid #d0c9bc;
-}
-.inspector .muted,
-.inspector .fine-print,
-.inspector small,
-.inspector .field {
-  color: var(--ink-muted);
-}
-.inspector .status-dot {
-  background: #7b728a;
-}
-.inspector .status[data-tone='success'] .status-dot {
-  background: #41845e;
-}
-.inspector .status[data-tone='warning'] .status-dot {
-  background: #946c1b;
-}
-.inspector .status[data-tone='danger'] .status-dot {
-  background: #a44554;
-}
-.inspector .button {
-  color: var(--ink);
-  border-color: #a59aab;
-}
-@media (hover: hover) and (pointer: fine) {
-  .inspector .button:hover {
-    background: #e2ddcf;
-  }
-}
-.inspector .button.primary {
-  background: var(--jade);
-  border-color: transparent;
-}
-.inspector .text-button {
-  color: #3a3151;
-}
-.inspector .alert {
-  color: var(--ink);
-  border-color: #9c8ba6;
-}
-.inspector .field input,
-.inspector .field select,
-.inspector .field textarea {
-  background: #f9f6ed;
-  color: var(--ink);
-  border-color: #a99faf;
+  border-bottom: 1px solid var(--border);
 }
 .inspector .status {
   white-space: normal;
@@ -312,7 +268,7 @@
 }
 .detail-heading p {
   font-size: 0.88rem;
-  color: var(--ink-muted);
+  color: var(--muted);
 }
 .detail-icon {
   display: grid;
@@ -320,7 +276,7 @@
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 0.65rem;
-  background: #dfdacd;
+  background: var(--accent-surface);
   flex-shrink: 0;
 }
 .detail-icon app-icon {
@@ -335,7 +291,7 @@
 }
 .detail-grid dt {
   font-size: 0.78rem;
-  color: var(--ink-muted);
+  color: var(--muted);
   margin-bottom: 0.15rem;
 }
 .detail-grid dd {
@@ -344,7 +300,7 @@
   overflow-wrap: anywhere;
 }
 .detail-section {
-  border-top: 1px solid #d0c9bc;
+  border-top: 1px solid var(--border);
   padding-top: 1.2rem;
   margin-top: 1.2rem;
 }
@@ -356,7 +312,7 @@
 .timeline li {
   position: relative;
   padding: 0 0 1.5rem 1.7rem;
-  border-left: 1px solid #a9b6a3;
+  border-left: 1px solid var(--border);
   margin-left: 0.4rem;
 }
 .timeline li:last-child {
@@ -371,8 +327,8 @@
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
-  background: #397d5f;
-  box-shadow: 0 0 0 4px var(--ivory);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--surface);
 }
 .timeline strong {
   display: block;
@@ -390,7 +346,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.65rem 0;
-  border-bottom: 1px solid #d0c9bc;
+  border-bottom: 1px solid var(--border);
   font-size: 0.86rem;
 }
 .payment-amount {
@@ -410,6 +366,7 @@
   gap: 1.25rem;
 }
 .login-page {
+  position: relative;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 1fr 26rem;
@@ -452,7 +409,7 @@
 }
 .login-form > p {
   font-size: 0.9rem;
-  color: var(--ink-muted);
+  color: var(--muted);
 }
 .login-form .button {
   width: 100%;
@@ -480,8 +437,8 @@
   left: 1rem;
   z-index: 100;
   padding: 0.5rem 1rem;
-  background: var(--jade);
-  color: var(--ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 .skip-link:focus {
   top: 1rem;
@@ -536,7 +493,7 @@
     position: fixed;
     inset: 0;
     z-index: 20;
-    background: rgb(10 8 19 / 70%);
+    background: var(--scrim);
     border: 0;
   }
   .mobile-toggle {
@@ -595,5 +552,28 @@
   .login-form {
     margin-top: 2rem;
     padding: 1.75rem;
+  }
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.theme-toggle {
+  min-width: 2.75rem;
+  padding: 0.55rem 0.7rem;
+}
+.login-theme {
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+}
+@media (max-width: 700px) {
+  .theme-label {
+    display: none;
+  }
+  .topbar-actions {
+    gap: 0.4rem;
   }
 }

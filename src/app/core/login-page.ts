@@ -1,13 +1,15 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from './auth.service';
+import { ThemeToggle } from '../shared/theme-toggle';
 import { Icon } from '../shared/icon';
 
 @Component({
   selector: 'app-login-page',
-  imports: [Icon, RouterLink],
+  imports: [Icon, RouterLink, ThemeToggle],
   template: `
     <main class="login-page">
+      <app-theme-toggle class="login-theme" />
       <section class="login-brand">
         <a class="wordmark" routerLink="/">DM48<span class="brand-dot"></span></a>
         <div>

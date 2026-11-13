@@ -47,9 +47,12 @@
           <app-icon name="menu" /></button
         ><span>Operaciones</span><span aria-hidden="true">/</span><strong>{{ title() }}</strong>
       </div>
-      <span class="route-context"
-        ><app-icon name="plane" />USA <span aria-hidden="true">→</span> Perú</span
-      >
+      <div class="topbar-actions">
+        <app-theme-toggle />
+        <span class="route-context"
+          ><app-icon name="plane" />USA <span aria-hidden="true">→</span> Perú</span
+        >
+      </div>
     </header>
     <main id="main-content" class="main-content" tabindex="-1"><router-outlet /></main>
   </div>

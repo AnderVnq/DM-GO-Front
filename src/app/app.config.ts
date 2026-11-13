@@ -4,6 +4,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
 import { RuntimeConfig } from './core/runtime-config';
 import { AuthService } from './core/auth.service';
+import { ThemeService } from './core/theme.service';
 import { authInterceptor } from './core/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -11,6 +12,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes, withComponentInputBinding()),
     provideAppInitializer(() => {
+      inject(ThemeService);
       const config = inject(RuntimeConfig);
       const auth = inject(AuthService);
       return config.load().then(() => auth.initialize());

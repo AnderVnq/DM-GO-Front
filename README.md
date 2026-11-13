@@ -20,6 +20,14 @@ Abre `http://localhost:3000`. El servidor de desarrollo envía `/api/**` al back
 
 Las dependencias están fijadas en `pnpm-lock.yaml`. Usa `pnpm install --frozen-lockfile` para reproducir la instalación; requiere acceso al registro npm. No es necesario instalar Angular globalmente.
 
+## Apariencia
+
+El botón de sol o luna permite alternar entre los temas azul claro y oscuro desde
+el acceso y la cabecera del panel. La elección se guarda en este navegador. Sin
+una elección guardada se utiliza la apariencia del sistema, incluyendo sus cambios.
+El selector funciona con teclado y sigue disponible si el navegador bloquea el
+almacenamiento local; en ese caso la elección dura durante la sesión de la página.
+
 ## Configuración pública
 
 Edita `public/app-config.json` antes de servir o desplegar:

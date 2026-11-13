@@ -17,9 +17,9 @@
     transform 100ms ease-out;
 }
 .button.primary {
-  background: var(--jade);
+  background: var(--accent);
   border-color: transparent;
-  color: var(--ink);
+  color: var(--on-accent);
 }
 @media (hover: hover) and (pointer: fine) {
   .button:hover {
@@ -28,7 +28,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .button.primary:hover {
-    background: #91d6c4;
+    background: var(--accent-hover);
   }
 }
 .button:active {
@@ -67,7 +67,7 @@ button:disabled {
   border: 0;
   padding: 0;
   background: none;
-  color: var(--jade);
+  color: var(--accent);
   font-weight: 600;
   text-align: left;
   text-decoration: underline;
@@ -96,15 +96,15 @@ button:disabled {
   width: 100%;
   min-height: 2.75rem;
   padding: 0.65rem 0.8rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 0.5rem;
-  background: var(--canvas);
+  background: var(--field-background);
   color: var(--text);
-  caret-color: var(--jade);
+  caret-color: var(--accent);
 }
 input::placeholder,
 textarea::placeholder {
-  color: #aaa1ba;
+  color: var(--placeholder);
   opacity: 1;
 }
 .field textarea {
@@ -128,7 +128,7 @@ textarea::placeholder {
 .checkbox-row input {
   width: 1.1rem;
   height: 1.1rem;
-  accent-color: var(--jade);
+  accent-color: var(--accent);
 }
 .package-options {
   max-height: 16rem;
@@ -151,14 +151,14 @@ textarea::placeholder {
   overflow-wrap: anywhere;
 }
 .alert.error {
-  border-color: #7e525e;
-  background: #35212e;
-  color: #f4d4db;
+  border-color: var(--error-border);
+  background: var(--error-background);
+  color: var(--error-text);
 }
 .alert.success {
-  border-color: #3f6b60;
-  background: #203e36;
-  color: #caeee1;
+  border-color: var(--success-border);
+  background: var(--success-background);
+  color: var(--success-text);
 }
 .empty-state {
   display: grid;
@@ -215,7 +215,7 @@ dialog {
   border-radius: var(--radius);
 }
 dialog::backdrop {
-  background: rgb(10 8 19 / 75%);
+  background: var(--scrim);
 }
 .dialog-header {
   display: flex;

@@ -6,7 +6,6 @@
   box-sizing: border-box;
 }
 html {
-  color-scheme: dark;
   font:
     100%/1.5 -apple-system,
     BlinkMacSystemFont,
@@ -21,8 +20,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 ::selection {
-  background: var(--jade);
-  color: var(--ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 button,
 input,
@@ -42,7 +41,7 @@ a {
   text-underline-offset: 0.2em;
 }
 :focus-visible {
-  outline: 2px solid var(--jade);
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
 h1,
@@ -106,7 +105,11 @@ small {
 }
 @media (prefers-contrast: more) {
   :root {
-    --border: #777084;
-    --muted: #e1dce9;
+    --border: #475569;
+    --muted: #334155;
+  }
+  :root[data-theme='dark'] {
+    --border: #94a3b8;
+    --muted: #e2e8f0;
   }
 }

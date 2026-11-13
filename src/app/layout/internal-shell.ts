@@ -3,11 +3,12 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../core/auth.service';
+import { ThemeToggle } from '../shared/theme-toggle';
 import { Icon, type IconName } from '../shared/icon';
 
 @Component({
   selector: 'app-internal-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, ThemeToggle],
   templateUrl: './internal-shell.html',
 })
 export class InternalShell {
