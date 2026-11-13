@@ -93,7 +93,15 @@ export class NotesPage {
   readonly charge = this.fb.nonNullable.group({
     code: ['', Validators.required],
     package_id: [''],
-    quantity: [1, [Validators.required, Validators.min(1)]],
+    quantity: [
+      1,
+      [
+        Validators.required,
+        Validators.min(1),
+        Validators.max(Number.MAX_SAFE_INTEGER),
+        Validators.pattern(/^\d+$/),
+      ],
+    ],
     rate: [''],
   });
   readonly reason = this.fb.nonNullable.control('');
@@ -476,7 +484,12 @@ export class NotesPage {
     if (!note || !canEditNote(note.status)) return;
     this.customer.set(null);
     this.formError.set('');
-    this.creation.patchValue({ method: note.method, address_id: '', agency_id: '', branch_id: '' });
+    this.creation.patchValue({
+      method: note.method,
+      address_id: note.address_id ?? '',
+      agency_id: note.agency_id ?? '',
+      branch_id: note.branch_id ?? '',
+    });
     this.destinationDialog().nativeElement.showModal();
     forkJoin({
       customer: this.customers.get(note.customer_id),

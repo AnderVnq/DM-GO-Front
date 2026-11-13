@@ -32,6 +32,9 @@ export interface DispatchNote {
   customer_id: string;
   status: string;
   method: string;
+  address_id?: string;
+  agency_id?: string;
+  branch_id?: string;
   total_cents: number;
   paid_cents: number;
   balance_cents: number;

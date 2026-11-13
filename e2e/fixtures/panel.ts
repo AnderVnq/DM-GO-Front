@@ -2,13 +2,13 @@ import { expect, type Page } from '@playwright/test';
 import type { Customer } from '../../src/app/modules/customers/customer.model';
 import type { Package } from '../../src/app/modules/shipments/package.model';
 import type { Quote } from '../../src/app/modules/quotes/quote.model';
-import type { DispatchNote } from '../../src/app/modules/billing/dispatch-note.model';
+import type { Agency, DispatchNote } from '../../src/app/modules/billing/dispatch-note.model';
 
 // Dobles exclusivos del navegador de pruebas. La aplicación conserva su cliente OIDC real.
 export async function mockPanel(
   page: Page,
   role = 'supervisor',
-  options: { note?: Partial<DispatchNote> } = {},
+  options: { note?: Partial<DispatchNote>; customer?: Partial<Customer>; agencies?: Agency[] } = {},
 ) {
   const issuer = 'http://localhost:3000/test-idp/realms/dm48';
   let nonce = '';
@@ -23,6 +23,7 @@ export async function mockPanel(
     addresses: [],
     locker_addresses: [],
     created_at: '2026-11-12T12:00:00Z',
+    ...options.customer,
   };
   const packages: Package[] = [
     {
@@ -200,8 +201,70 @@ export async function mockPanel(
     } else if (path === '/quotes' && method === 'POST')
       data = { ...quote, ...body, id: 'created-quote-test', number: 'CA-TEST-43' };
     else if (path === '/quotes' && method === 'GET') data = { quotes: [quote] };
-    else if (path === '/agencies' && method === 'GET') data = { agencies: [] };
-    else if (path === '/documents' && method === 'POST')
+    else if (path === '/agencies' && method === 'GET') data = { agencies: options.agencies ?? [] };
+    else if (path === '/charge-types' && method === 'GET')
+      data = {
+        charge_types: [
+          {
+            code: 'HANDLING_TEST',
+            name: 'Manipulación de prueba',
+            calc: 'per_unit',
+            active: true,
+            default_cents: 125,
+          },
+        ],
+      };
+    else if (path === `/dispatch-notes/${note.id}/destination` && method === 'PUT') {
+      note = { ...note, ...body };
+      data = note;
+    } else if (path === `/dispatch-notes/${note.id}/charges` && method === 'POST') {
+      note = {
+        ...note,
+        total_cents: 10250,
+        balance_cents: 10250,
+        lines: [
+          ...note.lines,
+          {
+            id: 'line-test',
+            charge_code: 'HANDLING_TEST',
+            charge_name: 'Manipulación de prueba',
+            calc: 'per_unit',
+            rate_cents: 125,
+            quantity: 2,
+            amount_cents: 250,
+            applies: true,
+            manual: true,
+          },
+        ],
+      };
+      data = note;
+    } else if (path === `/dispatch-notes/${note.id}/charges/line-test` && method === 'PATCH') {
+      note = {
+        ...note,
+        total_cents: 10700,
+        balance_cents: 10700,
+        lines: note.lines.map((line) =>
+          line.id === 'line-test' ? { ...line, ...body, amount_cents: 700 } : line,
+        ),
+      };
+      data = note;
+    } else if (path === `/dispatch-notes/${note.id}/packages` && method === 'POST') {
+      note = {
+        ...note,
+        guides: [
+          {
+            package_id: 'package-test',
+            guide_number: 'HAWB-TEST-42',
+            wr: 'WR-TEST-42',
+            billable_grams: 500,
+          },
+        ],
+      };
+      data = note;
+    } else if (path === `/dispatch-notes/${note.id}/packages/package-test` && method === 'DELETE') {
+      note = { ...note, guides: [] };
+      data = note;
+    } else if (path === '/documents' && method === 'POST')
       data = {
         id: 'document-test',
         original_name: 'voucher.pdf',
