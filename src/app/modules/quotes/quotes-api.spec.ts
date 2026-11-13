@@ -24,3 +24,27 @@ describe('QuotesApi', () => {
     request.flush(new Blob(['%PDF'], { type: 'application/pdf' }));
   });
 });
+
+it('consulta las cotizaciones filtradas sin transformar el total del servidor', () => {
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
+    ],
+  });
+  let total = 0;
+  TestBed.inject(QuotesApi)
+    .list({ customer_id: 'customer-42', status: 'pending', limit: 5 })
+    .subscribe((quotes) => {
+      total = quotes[0]!.total_cents;
+    });
+  const http = TestBed.inject(HttpTestingController);
+  const request = http.expectOne((req) => req.url === '/api/v1/quotes');
+  expect(request.request.params.get('customer_id')).toBe('customer-42');
+  expect(request.request.params.get('status')).toBe('pending');
+  expect(request.request.params.get('limit')).toBe('5');
+  request.flush({ quotes: [{ id: 'quote-42', total_cents: 12345 }] });
+  expect(total).toBe(12345);
+  http.verify();
+});

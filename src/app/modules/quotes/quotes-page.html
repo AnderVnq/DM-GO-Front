@@ -116,9 +116,9 @@
     </aside>
   }
 </div>
-<dialog #createDialog>
+<dialog #createDialog aria-labelledby="quote-create-title">
   <div class="dialog-header">
-    <h2>Nueva cotización</h2>
+    <h2 id="quote-create-title">Nueva cotización</h2>
     <button
       class="icon-button"
       aria-label="Cerrar"
@@ -182,7 +182,8 @@
       ><label class="field full">Observaciones<textarea formControlName="notes"></textarea></label>
     </div>
     <p class="fine-print">
-      Las tasas, el flete y los impuestos se calculan al registrar la cotización.
+      Para un prospecto, indica al menos un correo electrónico o teléfono. Las tasas, el flete y los
+      impuestos se calculan al registrar la cotización.
     </p>
     @if (formError()) {
       <p class="alert error" role="alert">{{ formError() }}</p>

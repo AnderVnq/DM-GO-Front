@@ -106,6 +106,10 @@ export class QuotesPage {
   create() {
     if (this.form.invalid || this.busy()) return;
     const { price, delivery, discount, ...input } = this.form.getRawValue();
+    if (!this.customer() && !input.prospect_email.trim() && !input.prospect_phone.trim()) {
+      this.formError.set('Indica al menos un correo electrónico o teléfono para el prospecto.');
+      return;
+    }
     const unit = parseAmountToCents(price);
     const shipping = parseAmountToCents(delivery);
     const reduction = parseAmountToCents(discount);

@@ -218,7 +218,12 @@ export async function mockPanel(
       };
       data = note;
     } else if (path === `/dispatch-notes/${note.id}`) data = note;
-    else if (path === `/dispatch-notes/${note.id}/liquidate` && method === 'POST') {
+    else if (path === `/dispatch-notes/${note.id}/cancel` && method === 'POST') {
+      note = { ...note, status: 'cancelled', cancel_reason: body?.['reason'] as string };
+      data = note;
+    } else if (path === `/dispatch-notes/${note.id}/pdf` && method === 'GET') {
+      data = { url: 'https://files.example.test/note.pdf', expires_at: '2026-11-30T00:00:00Z' };
+    } else if (path === `/dispatch-notes/${note.id}/liquidate` && method === 'POST') {
       note = { ...note, status: 'pending_payment', liquidation_number: 'LIQ-TEST-42' };
       data = note;
     } else if (path === `/dispatch-notes/${note.id}/payments` && method === 'POST') {
@@ -240,9 +245,24 @@ export async function mockPanel(
         ],
       };
       data = note;
-    } else if (path === '/quotes' && method === 'POST')
+    } else if (path === '/quotes' && method === 'POST') {
+      if (
+        !body?.['customer_id'] &&
+        (!String(body?.['prospect_name'] ?? '').trim() ||
+          (!String(body?.['prospect_email'] ?? '').trim() &&
+            !String(body?.['prospect_phone'] ?? '').trim()))
+      ) {
+        await route.fulfill({
+          status: 422,
+          json: {
+            detail: 'Datos de la cotización inválidos',
+            errors: { prospect: 'cliente o interesado con nombre y correo o teléfono' },
+          },
+        });
+        return;
+      }
       data = { ...quote, ...body, id: 'created-quote-test', number: 'CA-TEST-43' };
-    else if (path === '/quotes' && method === 'GET') data = { quotes: [quote] };
+    } else if (path === '/quotes' && method === 'GET') data = { quotes: [quote] };
     else if (path === '/agencies' && method === 'GET') data = { agencies: options.agencies ?? [] };
     else if (path === '/charge-types' && method === 'GET')
       data = {
@@ -342,7 +362,7 @@ export async function mockPanel(
     }
     await route.fulfill({ json: data });
   });
-  return { requests, customer };
+  return { requests, customer, note };
 }
 
 export async function login(page: Page) {
@@ -351,6 +371,7 @@ export async function login(page: Page) {
 }
 
 export async function navigate(page: Page, name: string, path: string | RegExp) {
+  await expect(page.locator('app-internal-shell')).toBeVisible();
   const toggle = page.getByRole('button', { name: 'Abrir navegación' });
   if (await toggle.isVisible()) await toggle.click();
   await page.getByRole('link', { name, exact: true }).click();

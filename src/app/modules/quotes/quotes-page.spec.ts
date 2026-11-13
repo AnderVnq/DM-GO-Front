@@ -46,6 +46,7 @@ function setup(list: Subject<Quote[]>, detail = new Subject<Quote>()) {
   const page = fixture.componentInstance;
   page.form.patchValue({
     prospect_name: 'Nuevo cliente',
+    prospect_email: 'nuevo@example.test',
     product_name: 'Nuevo producto',
     price: '100',
     grams: 1000,
