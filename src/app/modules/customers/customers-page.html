@@ -54,11 +54,34 @@
       </dl>
       <form [formGroup]="contact" (ngSubmit)="saveContact()">
         <div class="form-grid">
-          <label class="field"
-            >Correo electrónico<input type="email" formControlName="email" required /></label
-          ><label class="field"
-            >Teléfono<input type="tel" formControlName="phone" required
-          /></label>
+          <div class="field">
+            <label for="contact-email">Correo electrónico</label>
+            <input
+              id="contact-email"
+              formControlName="email"
+              type="email"
+              required
+              [attr.aria-invalid]="contactFields()['email'] ? 'true' : null"
+              [attr.aria-describedby]="contactFields()['email'] ? 'contact-email-error' : null"
+            />
+            @if (contactFields()['email']; as message) {
+              <span id="contact-email-error" class="field-error">{{ message }}</span>
+            }
+          </div>
+          <div class="field">
+            <label for="contact-phone">Teléfono</label>
+            <input
+              id="contact-phone"
+              formControlName="phone"
+              type="tel"
+              required
+              [attr.aria-invalid]="contactFields()['phone'] ? 'true' : null"
+              [attr.aria-describedby]="contactFields()['phone'] ? 'contact-phone-error' : null"
+            />
+            @if (contactFields()['phone']; as message) {
+              <span id="contact-phone-error" class="field-error">{{ message }}</span>
+            }
+          </div>
         </div>
         <button class="button actions" [disabled]="contact.invalid || saving()">
           {{ saving() ? 'Guardando…' : 'Guardar contacto' }}
@@ -126,21 +149,76 @@
   </div>
   <form [formGroup]="form" (ngSubmit)="create()">
     <div class="form-grid">
-      <label class="field"
-        >Tipo de documento<select formControlName="doc_type">
+      <div class="field">
+        <label for="customer-doc-type">Tipo de documento</label>
+        <select
+          id="customer-doc-type"
+          formControlName="doc_type"
+          [attr.aria-invalid]="formFields()['doc_type'] ? 'true' : null"
+          [attr.aria-describedby]="formFields()['doc_type'] ? 'customer-doc-type-error' : null"
+        >
           <option value="dni">DNI</option>
           <option value="ruc">RUC</option>
-        </select></label
-      ><label class="field"
-        >Número de documento<input
+        </select>
+        @if (formFields()['doc_type']; as message) {
+          <span id="customer-doc-type-error" class="field-error">{{ message }}</span>
+        }
+      </div>
+      <div class="field">
+        <label for="customer-doc-number">Número de documento</label>
+        <input
+          id="customer-doc-number"
           formControlName="doc_number"
           inputmode="numeric"
-          required /></label
-      ><label class="field full"
-        >Nombre o razón social<input formControlName="name" required /></label
-      ><label class="field"
-        >Correo electrónico<input formControlName="email" type="email" required /></label
-      ><label class="field">Teléfono<input formControlName="phone" type="tel" required /></label>
+          required
+          [attr.aria-invalid]="formFields()['doc_number'] ? 'true' : null"
+          [attr.aria-describedby]="formFields()['doc_number'] ? 'customer-doc-number-error' : null"
+        />
+        @if (formFields()['doc_number']; as message) {
+          <span id="customer-doc-number-error" class="field-error">{{ message }}</span>
+        }
+      </div>
+      <div class="field full">
+        <label for="customer-name">Nombre o razón social</label>
+        <input
+          id="customer-name"
+          formControlName="name"
+          required
+          [attr.aria-invalid]="formFields()['name'] ? 'true' : null"
+          [attr.aria-describedby]="formFields()['name'] ? 'customer-name-error' : null"
+        />
+        @if (formFields()['name']; as message) {
+          <span id="customer-name-error" class="field-error">{{ message }}</span>
+        }
+      </div>
+      <div class="field">
+        <label for="customer-email">Correo electrónico</label>
+        <input
+          id="customer-email"
+          formControlName="email"
+          type="email"
+          required
+          [attr.aria-invalid]="formFields()['email'] ? 'true' : null"
+          [attr.aria-describedby]="formFields()['email'] ? 'customer-email-error' : null"
+        />
+        @if (formFields()['email']; as message) {
+          <span id="customer-email-error" class="field-error">{{ message }}</span>
+        }
+      </div>
+      <div class="field">
+        <label for="customer-phone">Teléfono</label>
+        <input
+          id="customer-phone"
+          formControlName="phone"
+          type="tel"
+          required
+          [attr.aria-invalid]="formFields()['phone'] ? 'true' : null"
+          [attr.aria-describedby]="formFields()['phone'] ? 'customer-phone-error' : null"
+        />
+        @if (formFields()['phone']; as message) {
+          <span id="customer-phone-error" class="field-error">{{ message }}</span>
+        }
+      </div>
     </div>
     @if (formError()) {
       <p class="alert error" role="alert">{{ formError() }}</p>

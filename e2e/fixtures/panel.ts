@@ -13,7 +13,7 @@ export async function mockPanel(
   const issuer = 'http://localhost:3000/test-idp/realms/dm48';
   let nonce = '';
   const requests: { path: string; method: string; body: Record<string, unknown> | null }[] = [];
-  const customer: Customer = {
+  let customer: Customer = {
     id: 'customer-test',
     locker_code: 'PE00042',
     name: 'Cliente de prueba',
@@ -136,8 +136,31 @@ export async function mockPanel(
         name: 'Personal de prueba',
         roles: [role],
       };
-    else if (path === '/customers' || path === `/customers/${customer.id}`) data = customer;
-    else if (path === '/packages' && method === 'GET') {
+    else if (path === '/customers' && method === 'POST') {
+      customer = {
+        ...customer,
+        id: 'created-customer-test',
+        locker_code: 'PE00043',
+        name: body?.['name'] as string,
+        email: body?.['email'] as string,
+        phone: body?.['phone'] as string,
+        document: {
+          type: body?.['doc_type'] as 'dni' | 'ruc',
+          number: body?.['doc_number'] as string,
+          verified: false,
+        },
+      };
+      data = customer;
+    } else if ((path === '/customers' || path === `/customers/${customer.id}`) && method === 'GET')
+      data = customer;
+    else if (path === `/customers/${customer.id}/contact` && method === 'PATCH') {
+      customer = {
+        ...customer,
+        email: body?.['email'] as string,
+        phone: body?.['phone'] as string,
+      };
+      data = customer;
+    } else if (path === '/packages' && method === 'GET') {
       if (new URL(request.url()).searchParams.get('customer_id') !== customer.id) {
         await route.fulfill({ status: 400, json: { detail: 'Falta el cliente.' } });
         return;

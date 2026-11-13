@@ -111,8 +111,13 @@ textarea::placeholder {
   min-height: 6rem;
   resize: vertical;
 }
-.field input[aria-invalid='true'] {
+.field input[aria-invalid='true'],
+.field select[aria-invalid='true'] {
   border-color: var(--danger);
+}
+.field-error {
+  font-size: 0.8rem;
+  color: var(--danger);
 }
 .field-hint {
   font-size: 0.78rem;
