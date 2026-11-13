@@ -393,6 +393,10 @@
   border-bottom: 1px solid #d0c9bc;
   font-size: 0.86rem;
 }
+.payment-amount {
+  display: block;
+  margin-bottom: 0.25rem;
+}
 .total-row {
   display: flex;
   justify-content: space-between;
@@ -571,7 +575,7 @@
     min-width: 9rem;
   }
   .search-bar .field.narrow {
-    flex-basis: 5.5rem;
+    flex-basis: 7rem;
     min-width: 0;
   }
   .login-page {

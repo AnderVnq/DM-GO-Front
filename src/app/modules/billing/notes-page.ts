@@ -45,6 +45,14 @@ export class NotesPage {
   readonly formError = signal('');
   readonly success = signal('');
   readonly money = formatUsd;
+  readonly paymentMethods: Record<string, string> = {
+    cash: 'Efectivo',
+    transfer: 'Transferencia',
+    yape: 'Yape',
+    plin: 'Plin',
+    card: 'Tarjeta',
+    other: 'Otro',
+  };
   readonly date = formatDate;
   readonly weight = formatWeight;
   readonly editable = canEditNote;
@@ -245,7 +253,7 @@ export class NotesPage {
     }
     this.busy.set(true);
     this.formError.set('');
-    const proof = this.evidence
+    const proof: Observable<string | undefined> = this.evidence
       ? this.documents.upload(this.evidence).pipe(switchMap((document) => of(document.id)))
       : of(undefined);
     proof

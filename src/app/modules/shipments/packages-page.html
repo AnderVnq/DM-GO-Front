@@ -140,8 +140,7 @@
           <button class="button compact" (click)="invoiceInput.click()" [disabled]="busy()">
             {{
               busy() ? 'Procesando…' : item.has_invoice ? 'Cambiar factura' : 'Adjuntar factura'
-            }}</button
-          ><input
+            }}</button><input
             #invoiceInput
             class="sr-only"
             type="file"
@@ -158,8 +157,9 @@
           <ol class="timeline">
             @for (event of timeline()?.events; track $index) {
               <li>
-                <strong>{{ event.title }}</strong
-                ><small>{{ date(event.at) }}</small>
+                <strong>{{
+                  event.action === 'label.printed' ? 'Etiqueta impresa' : event.title
+                }}</strong><small>{{ date(event.at) }}</small>
                 @if (event.location) {
                   <small>{{ event.location }}</small>
                 }

@@ -96,8 +96,9 @@
         <ul class="line-list">
           @for (line of quote.breakdown; track line.concept) {
             <li>
-              <span>{{ concept(line.concept) }}</span
-              ><strong class="numeric">{{ money(line.cents) }}</strong>
+              <span>{{ concept(line.concept) }}</span><strong class="numeric">{{
+                money(line.cents)
+              }}</strong>
             </li>
           }
         </ul>

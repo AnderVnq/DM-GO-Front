@@ -15,10 +15,10 @@ const concepts: Record<string, string> = {
   product: 'Producto',
   tax_usa: 'Impuesto en USA',
   delivery_usa: 'Envío en USA',
-  assisted: 'Compra asistida',
+  assisted_purchase: 'Compra asistida',
   freight: 'Flete internacional',
   customs: 'Aduana',
-  peru_tax: 'Tributos estimados en Perú',
+  peru_tax_estimate: 'Tributos estimados en Perú',
   extras: 'Servicios adicionales',
   discount: 'Descuento',
 };

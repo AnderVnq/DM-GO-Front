@@ -21,8 +21,7 @@
         (auth.user()?.name || auth.user()?.username || 'D').slice(0, 1)
       }}</span>
       <div>
-        <strong>{{ auth.user()?.name || auth.user()?.username }}</strong
-        ><span>{{ role() }}</span>
+        <strong>{{ auth.user()?.name || auth.user()?.username }}</strong><span>{{ role() }}</span>
       </div>
       <button class="icon-button" aria-label="Cerrar sesión" (click)="auth.logout()">
         <app-icon name="logout" />

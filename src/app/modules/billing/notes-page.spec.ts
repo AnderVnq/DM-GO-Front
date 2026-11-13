@@ -56,3 +56,64 @@ describe('NotesPage: lecturas anteriores a una escritura', () => {
     expect(page.notes()[0]?.total_cents).toBe(5000);
   });
 });
+
+describe('NotesPage: registro de pagos', () => {
+  it.each([false, true])('registra un pago con evidencia=%s', (withEvidence) => {
+    const note: DispatchNote = {
+      id: 'note-1',
+      number: 'NS-1',
+      customer_id: 'customer-1',
+      status: 'pending_payment',
+      method: 'pickup',
+      total_cents: 10000,
+      paid_cents: 0,
+      balance_cents: 10000,
+      currency: 'USD',
+      guides: [],
+      lines: [],
+      payments: [],
+      created_at: '2026-11-12T00:00:00Z',
+    };
+    const recordPayment = vi.fn(() =>
+      of({ ...note, status: 'paid', paid_cents: 10000, balance_cents: 0 }),
+    );
+    const upload = vi.fn(() => of({ id: 'document-1' }));
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: BillingApi, useValue: { list: () => of([note]), recordPayment } },
+        { provide: CustomersApi, useValue: {} },
+        { provide: ShipmentsApi, useValue: {} },
+        { provide: DocumentsApi, useValue: { upload } },
+        { provide: AuthService, useValue: { manager: () => true } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(NotesPage);
+    fixture.detectChanges();
+    for (const dialog of fixture.nativeElement.querySelectorAll('dialog')) dialog.close = vi.fn();
+    const page = fixture.componentInstance;
+    page.payment.setValue({
+      amount: '100.00',
+      method: 'transfer',
+      origin: 'PERU',
+      reference: 'TEST-1',
+    });
+    if (withEvidence)
+      page.attachEvidence({
+        target: { files: [new File(['%PDF'], 'proof.pdf', { type: 'application/pdf' })] },
+      } as unknown as Event);
+    page.recordPayment();
+    expect(recordPayment).toHaveBeenCalledExactlyOnceWith('note-1', {
+      amount_cents: 10000,
+      method: 'transfer',
+      origin: 'PERU',
+      reference: 'TEST-1',
+      evidence_document_id: withEvidence ? 'document-1' : undefined,
+    });
+    expect(upload).toHaveBeenCalledTimes(withEvidence ? 1 : 0);
+    expect(page.selected()?.status).toBe('paid');
+  });
+});

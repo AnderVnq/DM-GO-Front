@@ -143,8 +143,7 @@
                       (click)="toggleCharge(line.id, !line.applies)"
                       [disabled]="busy()"
                     >
-                      {{ line.applies ? 'Marcar no aplica' : 'Aplicar' }}</button
-                    ><button
+                      {{ line.applies ? 'Marcar no aplica' : 'Aplicar' }}</button><button
                       class="text-button"
                       (click)="prepareRate(line.id, line.rate_cents)"
                       [disabled]="busy()"
@@ -183,8 +182,9 @@
           @for (payment of note.payments; track payment.id) {
             <li>
               <div>
-                <strong>{{ money(payment.amount_cents) }}</strong
-                ><small>{{ payment.method }} · {{ date(payment.paid_at) }}</small
+                <strong class="payment-amount">{{ money(payment.amount_cents) }}</strong><small
+                  >{{ paymentMethods[payment.method] || payment.method }} ·
+                  {{ date(payment.paid_at) }}</small
                 ><app-status [value]="payment.status" />
                 @if (payment.reject_reason) {
                   <p>{{ payment.reject_reason }}</p>
