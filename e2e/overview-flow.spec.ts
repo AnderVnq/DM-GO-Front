@@ -42,6 +42,7 @@ for (const failed of ['notes', 'quotes'] as const) {
     await expect(broken.getByRole('button', { name: 'Volver a intentar' })).toHaveCount(0);
     await expect(healthy.getByRole('cell', { name: healthyNumber, exact: true })).toBeVisible();
     expect(attempts).toBe(2);
+    expect(requests.filter((r) => r.path === '/customers' || r.path === '/packages')).toEqual([]);
     const healthyPath = failed === 'notes' ? '/quotes' : '/dispatch-notes';
     expect(requests.filter((r) => r.path === healthyPath && r.method === 'GET')).toHaveLength(1);
   });

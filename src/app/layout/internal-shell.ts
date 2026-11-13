@@ -1,4 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  type ElementRef,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
@@ -10,11 +19,35 @@ import { Icon, type IconName } from '../shared/icon';
   selector: 'app-internal-shell',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, ThemeToggle],
   templateUrl: './internal-shell.html',
+  host: { '(document:keydown.escape)': 'closeNavigation()' },
 })
 export class InternalShell {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly mobileOpen = signal(false);
+  private readonly injector = inject(Injector);
+  private readonly menuToggle = viewChild.required<ElementRef<HTMLButtonElement>>('menuToggle');
+  private readonly sidebar = viewChild.required<ElementRef<HTMLElement>>('sidebar');
+
+  toggleNavigation() {
+    if (this.mobileOpen()) {
+      this.closeNavigation();
+      return;
+    }
+    this.mobileOpen.set(true);
+    afterNextRender(
+      () => {
+        if (this.mobileOpen()) this.sidebar().nativeElement.querySelector('a')?.focus();
+      },
+      { injector: this.injector },
+    );
+  }
+
+  closeNavigation() {
+    if (!this.mobileOpen()) return;
+    this.mobileOpen.set(false);
+    this.menuToggle().nativeElement.focus();
+  }
   readonly navigation: { path: string; label: string; icon: IconName }[] = [
     { path: 'overview', label: 'Resumen', icon: 'overview' },
     { path: 'customers', label: 'Clientes', icon: 'customers' },

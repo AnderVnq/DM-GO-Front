@@ -1,7 +1,13 @@
 <a class="skip-link" href="#main-content">Saltar al contenido</a>
 <div class="app-shell">
-  <aside class="sidebar" [class.mobile-open]="mobileOpen()" aria-label="Navegación principal">
-    <a class="wordmark" routerLink="/internal/overview" (click)="mobileOpen.set(false)"
+  <aside
+    #sidebar
+    id="internal-navigation"
+    class="sidebar"
+    [class.mobile-open]="mobileOpen()"
+    aria-label="Navegación principal"
+  >
+    <a class="wordmark" routerLink="/internal/overview" (click)="closeNavigation()"
       >DM48<span class="brand-dot"></span
     ></a>
     <p class="sidebar-subtitle">Panel interno</p>
@@ -11,7 +17,7 @@
           [routerLink]="['/internal', item.path]"
           routerLinkActive="active"
           ariaCurrentWhenActive="page"
-          (click)="mobileOpen.set(false)"
+          (click)="closeNavigation()"
           ><app-icon [name]="item.icon" /><span>{{ item.label }}</span></a
         >
       }
@@ -29,20 +35,18 @@
     </div>
   </aside>
   @if (mobileOpen()) {
-    <button
-      class="menu-scrim"
-      aria-label="Cerrar navegación"
-      (click)="mobileOpen.set(false)"
-    ></button>
+    <button class="menu-scrim" aria-label="Cerrar navegación" (click)="closeNavigation()"></button>
   }
   <div class="workspace">
     <header class="topbar">
       <div class="breadcrumb">
         <button
           class="icon-button mobile-toggle"
+          #menuToggle
+          aria-controls="internal-navigation"
           aria-label="Abrir navegación"
           [attr.aria-expanded]="mobileOpen()"
-          (click)="mobileOpen.set(!mobileOpen())"
+          (click)="toggleNavigation()"
         >
           <app-icon name="menu" /></button
         ><span>Operaciones</span><span aria-hidden="true">/</span><strong>{{ title() }}</strong>

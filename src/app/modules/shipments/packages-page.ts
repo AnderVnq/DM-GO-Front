@@ -120,6 +120,7 @@ export class PackagesPage {
   load(id: string) {
     this.request?.unsubscribe();
     this.trackingRequest?.unsubscribe();
+    this.filter.set('');
     this.loading.set(true);
     this.error.set('');
     this.packages.set([]);

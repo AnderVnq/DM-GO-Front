@@ -143,3 +143,141 @@ test('bloquea valores fuera del contrato y conserva el formulario de prealerta',
     ],
   ).toBe(10000000);
 });
+
+test('al cambiar de cliente no conserva el filtro invisible del cliente anterior', async ({
+  page,
+}) => {
+  const fixture = await mockPanel(page);
+  const second = {
+    ...fixture.customer,
+    id: 'customer-second',
+    locker_code: 'PE00043',
+    name: 'Segundo cliente',
+  };
+  await page.route('**/api/v1/customers?**', async (route) => {
+    if (new URL(route.request().url()).searchParams.get('locker_code') === 'PE00043')
+      await route.fulfill({ json: second });
+    else await route.fallback();
+  });
+  await page.route('**/api/v1/customers/customer-second', (route) =>
+    route.fulfill({ json: second }),
+  );
+  await page.route('**/api/v1/packages?**', async (route) => {
+    if (new URL(route.request().url()).searchParams.get('customer_id') === second.id)
+      await route.fulfill({
+        json: {
+          packages: [
+            {
+              id: 'package-second',
+              customer_id: second.id,
+              mode: 'courier',
+              status: 'PREALERTED',
+              store: 'Segunda tienda',
+              carrier_tracking: 'SECOND-TRACK',
+              description: 'Paquete segundo',
+              declared_value_cents: 2000,
+              has_invoice: false,
+              created_at: second.created_at,
+            },
+          ],
+        },
+      });
+    else await route.fallback();
+  });
+  await openPackages(page);
+  await page.getByLabel('Filtrar paquetes del cliente').fill('sin coincidencias');
+  await expect(page.getByRole('heading', { name: 'Sin coincidencias', exact: true })).toBeVisible();
+  await page.getByLabel('Casillero o documento del cliente').fill('PE00043');
+  await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
+  await expect(page.locator('.identity')).toContainText('Segundo cliente');
+  await expect(page.getByLabel('Filtrar paquetes del cliente')).toHaveValue('');
+  await expect(page.getByRole('cell', { name: 'SECOND-TRACK', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'TEST-TRACK-42', exact: true })).toHaveCount(0);
+});
+
+test('un rechazo 403 al adjuntar factura conserva el paquete y permite volver a intentar', async ({
+  page,
+}) => {
+  await mockPanel(page, 'supervisor', { package: { status: 'PREALERTED' } });
+  let attempts = 0;
+  await page.route('**/api/v1/packages/package-test/invoice', async (route) => {
+    if (++attempts === 1) await route.fulfill({ status: 403, json: {} });
+    else await route.fallback();
+  });
+  await openPackages(page);
+  const input = page.locator('.inspector input[type=file]');
+  await input.setInputFiles(invoice);
+  await expect(page.locator('.inspector').getByRole('alert')).toContainText('No tienes permiso');
+  await expect(page.locator('.inspector')).toContainText('TEST-TRACK-42');
+  await input.setInputFiles(invoice);
+  await expect(page.getByRole('button', { name: 'Cambiar factura', exact: true })).toBeEnabled();
+  await expect(page.locator('.inspector').getByRole('alert')).toHaveCount(0);
+  expect(attempts).toBe(2);
+});
+
+test('bloquea el doble envío de prealerta y restaura la selección desde la URL', async ({
+  page,
+}) => {
+  const fixture = await mockPanel(page);
+  let writes = 0;
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/v1/packages', async (route) => {
+    if (route.request().method() === 'POST') {
+      writes++;
+      await pending;
+    }
+    await route.fallback();
+  });
+  try {
+    await openPackages(page);
+    await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Tienda', { exact: true }).fill('Nueva tienda');
+    await dialog.getByLabel('Tracking del transportista').fill('TEST-NEW-43');
+    await dialog.getByLabel('Contenido del paquete').fill('Nuevo libro');
+    await dialog.getByLabel('Valor declarado en USD').fill('49.99');
+    await dialog.locator('form').evaluate((form: HTMLFormElement) => {
+      form.requestSubmit();
+      form.requestSubmit();
+    });
+    await expect.poll(() => writes).toBe(1);
+    await expect(dialog.getByRole('button', { name: 'Registrando…', exact: true })).toBeDisabled();
+    release();
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('.inspector')).toContainText('TEST-NEW-43');
+    expect(
+      fixture.requests.filter((r) => r.path === '/packages' && r.method === 'POST'),
+    ).toHaveLength(1);
+    await page.getByRole('button', { name: /Tienda de prueba.*Audífonos de prueba/ }).click();
+    await expect(page).toHaveURL(/package_id=package-test/);
+    await page.reload();
+    await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+    await expect(page.locator('.inspector')).toContainText('TEST-TRACK-42');
+    await expect(page).toHaveURL(/customer_id=customer-test.*package_id=package-test/);
+    expect(writes).toBe(1);
+  } finally {
+    release();
+  }
+});
+
+test('muestra paquetes vacíos sin inventar seguimiento ni consultas globales', async ({ page }) => {
+  const fixture = await mockPanel(page);
+  await page.route('**/api/v1/packages?**', (route) => route.fulfill({ json: { packages: [] } }));
+  await login(page);
+  await navigate(page, 'Paquetes', 'packages');
+  await expect(
+    page.getByRole('heading', { name: 'Selecciona un cliente', exact: true }),
+  ).toBeVisible();
+  expect(fixture.requests.filter((r) => r.path === '/packages')).toEqual([]);
+  await page.getByLabel('Casillero o documento del cliente').fill('PE00042');
+  await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Todavía no hay paquetes', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Nueva prealerta', exact: true })).toBeEnabled();
+  await expect(page.locator('.inspector')).toHaveCount(0);
+  expect(fixture.requests.filter((r) => r.path.endsWith('/tracking'))).toEqual([]);
+});

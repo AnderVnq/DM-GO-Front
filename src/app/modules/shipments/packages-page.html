@@ -48,6 +48,7 @@
           >Filtrar paquetes del cliente<input
             class="search-input"
             placeholder="Tienda, contenido o tracking"
+            [value]="filter()"
             (input)="filter.set($any($event.target).value)"
         /></label>
       </div>
@@ -198,10 +199,10 @@
     <p>Busca su casillero, DNI o RUC para consultar los paquetes y registrar prealertas.</p>
   </section>
 }
-<dialog #prealertDialog>
+<dialog #prealertDialog aria-labelledby="package-prealert-title">
   <div class="dialog-header">
     <div>
-      <h2>Nueva prealerta</h2>
+      <h2 id="package-prealert-title">Nueva prealerta</h2>
       <p class="muted">{{ customer()?.name }}</p>
     </div>
     <button
