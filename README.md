@@ -67,7 +67,7 @@ Solo está implementada el área `/internal`. El portal de clientes se añadirá
 ## Funcionalidad
 
 - Clientes: búsqueda por casillero o DNI/RUC, registro y actualización de contacto.
-- Paquetes: consulta por cliente, prealertas, seguimiento y factura adjunta.
+- Paquetes: consulta por cliente, prealertas, seguimiento con reintento y factura adjunta editable antes de consolidar.
 - Notas de salida: borradores, guías, cargos, destino, liquidación, pagos, revisión de vouchers y PDF.
 - Cotizaciones: compra asistida para prospectos o clientes, desglose y PDF.
 - Resumen: registros recientes y accesos a la operación; sin indicadores globales calculados a partir de muestras.
@@ -87,7 +87,7 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-`test:core` usa el ejecutor de Node y funciona sin instalar Angular. `test` ejecuta las pruebas Angular con Vitest. Playwright comprueba acceso restringido, teclado, adaptación móvil y los recorridos de registro y edición de clientes, errores por campo, prealertas, creación de notas, edición de destinos, guías y cargos, liquidación, pagos y aceptación/rechazo de pagos pendientes. También cubre cambios de cliente durante la búsqueda, archivos inválidos, fallos de carga y renovación de sesión rechazada. Los recorridos usan dobles de OIDC y de la API exclusivos de las pruebas, sin credenciales ni escrituras reales. También se comprueba la indisponibilidad del proveedor de identidad. No sustituyen una prueba de sesión y escrituras contra servicios de desarrollo reales.
+`test:core` usa el ejecutor de Node y funciona sin instalar Angular. `test` ejecuta las pruebas Angular con Vitest. Playwright comprueba acceso restringido, teclado, adaptación móvil y los recorridos de registro y edición de clientes, errores por campo, prealertas, carga y apertura de facturas, seguimiento con reintento, creación de notas, edición de destinos, guías y cargos, liquidación, pagos y aceptación/rechazo de pagos pendientes. También cubre cambios de cliente durante la búsqueda, archivos inválidos, fallos de carga y renovación de sesión rechazada. Los recorridos usan dobles de OIDC y de la API exclusivos de las pruebas, sin credenciales ni escrituras reales. También se comprueba la indisponibilidad del proveedor de identidad. No sustituyen una prueba de sesión y escrituras contra servicios de desarrollo reales.
 
 La API actual de notas devuelve el estado y la referencia de cada pago, pero no su `evidence_document_id`. Se puede registrar evidencia y aceptar o rechazar pagos pendientes; abrir el comprobante desde la lista requiere que el backend exponga ese identificador o un enlace autorizado.
 

@@ -134,7 +134,7 @@ test('traduce el desglose y rechaza una respuesta de PDF incorrecta', async ({ p
 });
 
 test('muestra el rechazo de una factura grande y conserva el paquete', async ({ page }) => {
-  await mockPanel(page);
+  await mockPanel(page, 'supervisor', { package: { status: 'PREALERTED' } });
   await page.route('**/api/v1/packages/package-test/invoice', (route) =>
     route.fulfill({ status: 413, json: {} }),
   );

@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 import { ShipmentsApi } from './shipments-api';
 import { type Package, type TrackingResponse } from './package.model';
+import { canAttachInvoice, declaredValueIssue } from './package-rules';
 import { CustomersApi, type Customer } from '../customers';
 import { Icon } from '../../shared/icon';
 import { Status } from '../../shared/status';
@@ -38,6 +39,7 @@ export class PackagesPage {
   readonly timeline = signal<TrackingResponse | null>(null);
   readonly loading = signal(false);
   readonly trackingLoading = signal(false);
+  readonly trackingError = signal('');
   readonly busy = signal(false);
   readonly error = signal('');
   readonly detailError = signal('');
@@ -53,6 +55,7 @@ export class PackagesPage {
   readonly money = formatUsd;
   readonly date = formatDate;
   readonly weight = formatWeight;
+  readonly invoiceEditable = canAttachInvoice;
   readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('prealertDialog');
   private request?: Subscription;
   private trackingRequest?: Subscription;
@@ -143,23 +146,34 @@ export class PackagesPage {
   }
 
   select(item: Package) {
-    this.trackingRequest?.unsubscribe();
+    if (this.busy()) return;
     this.selected.set(item);
-    this.timeline.set(null);
     this.detailError.set('');
-    this.trackingLoading.set(true);
     void this.router.navigate([], {
       queryParams: { package_id: item.id },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
-    this.trackingRequest = this.api.tracking(item.id).subscribe({
+    this.loadTracking(item.id);
+  }
+
+  retryTracking() {
+    const item = this.selected();
+    if (item && !this.busy() && !this.trackingLoading()) this.loadTracking(item.id);
+  }
+
+  private loadTracking(id: string) {
+    this.trackingRequest?.unsubscribe();
+    this.timeline.set(null);
+    this.trackingError.set('');
+    this.trackingLoading.set(true);
+    this.trackingRequest = this.api.tracking(id).subscribe({
       next: (timeline) => {
         this.timeline.set(timeline);
         this.trackingLoading.set(false);
       },
       error: (error: unknown) => {
-        this.detailError.set(requestMessage(error));
+        this.trackingError.set(requestMessage(error));
         this.trackingLoading.set(false);
       },
     });
@@ -169,8 +183,9 @@ export class PackagesPage {
     const customer = this.customer();
     const cents = parseAmountToCents(this.form.getRawValue().amount);
     if (this.form.invalid || this.busy() || !customer) return;
-    if (cents === null) {
-      this.formError.set('Indica un importe válido con hasta dos decimales.');
+    const issue = declaredValueIssue(cents);
+    if (issue || cents === null) {
+      this.formError.set(issue ?? 'Indica un importe válido.');
       return;
     }
     const { amount: _amount, ...input } = this.form.getRawValue();
@@ -197,7 +212,10 @@ export class PackagesPage {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     const item = this.selected();
-    if (!file || !item || this.busy()) return;
+    if (!file || !item || this.busy() || !canAttachInvoice(item.status)) {
+      input.value = '';
+      return;
+    }
     const validation = fileError(file);
     if (validation) {
       this.detailError.set(validation);

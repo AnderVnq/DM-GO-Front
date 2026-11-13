@@ -8,7 +8,12 @@ import type { Agency, DispatchNote } from '../../src/app/modules/billing/dispatc
 export async function mockPanel(
   page: Page,
   role = 'supervisor',
-  options: { note?: Partial<DispatchNote>; customer?: Partial<Customer>; agencies?: Agency[] } = {},
+  options: {
+    note?: Partial<DispatchNote>;
+    customer?: Partial<Customer>;
+    agencies?: Agency[];
+    package?: Partial<Package>;
+  } = {},
 ) {
   const issuer = 'http://localhost:3000/test-idp/realms/dm48';
   let nonce = '';
@@ -37,6 +42,7 @@ export async function mockPanel(
       declared_value_cents: 10000,
       has_invoice: false,
       created_at: customer.created_at,
+      ...options.package,
     },
   ];
   let note: DispatchNote = {
@@ -169,20 +175,33 @@ export async function mockPanel(
     } else if (path === '/packages' && method === 'POST') {
       data = { ...packages[0], ...body, id: 'prealert-test', status: 'PREALERTED' };
       packages.unshift(data as Package);
-    } else if (/^\/packages\/[^/]+\/tracking$/.test(path))
-      data = {
-        package_id: path.split('/')[2],
-        status: 'RELEASED',
-        events: [
-          {
-            at: customer.created_at,
-            action: 'package.released',
-            title: 'Liberado por aduana',
-            location: 'LIM-01',
-          },
-        ],
+    } else if (path === '/packages/package-test/invoice' && method === 'POST') {
+      const index = packages.findIndex((item) => item.id === 'package-test');
+      packages[index] = {
+        ...packages[index]!,
+        has_invoice: true,
+        invoice_document_id: 'invoice-test',
       };
-    else if (path === '/dispatch-notes' && method === 'GET') data = { dispatch_notes: [note] };
+      data = packages[index];
+    } else if (/^\/packages\/[^/]+\/tracking$/.test(path)) {
+      const id = path.split('/')[2];
+      const item = packages.find((p) => p.id === id);
+      const milestones: Record<string, { action: string; title: string }> = {
+        PREALERTED: { action: 'package.prealerted', title: 'Compra prealertada' },
+        RECEIVED_USA: {
+          action: 'package.received_usa',
+          title: 'Recibido en nuestro almacén de USA',
+        },
+        CONSOLIDATED: { action: 'package.consolidated', title: 'Preparado para el envío' },
+        RELEASED: { action: 'package.released', title: 'Liberado por aduana' },
+      };
+      const milestone = milestones[item?.status ?? ''];
+      data = {
+        package_id: id,
+        status: item?.status,
+        events: milestone ? [{ ...milestone, at: customer.created_at, location: 'LIM-01' }] : [],
+      };
+    } else if (path === '/dispatch-notes' && method === 'GET') data = { dispatch_notes: [note] };
     else if (path === '/dispatch-notes' && method === 'POST') {
       note = {
         ...note,
@@ -287,7 +306,9 @@ export async function mockPanel(
     } else if (path === `/dispatch-notes/${note.id}/packages/package-test` && method === 'DELETE') {
       note = { ...note, guides: [] };
       data = note;
-    } else if (path === '/documents' && method === 'POST')
+    } else if (path === '/documents/invoice-test/download' && method === 'GET')
+      data = { url: 'https://files.example.test/invoice.pdf', expires_at: '2026-11-30T00:00:00Z' };
+    else if (path === '/documents' && method === 'POST')
       data = {
         id: 'document-test',
         original_name: 'voucher.pdf',

@@ -129,7 +129,7 @@
           </div>
         </dl>
         @if (detailError()) {
-          <p class="alert" role="alert">{{ detailError() }}</p>
+          <p class="alert error" role="alert">{{ detailError() }}</p>
         }
         <div class="actions">
           @if (item.invoice_document_id) {
@@ -137,22 +137,40 @@
               Ver factura adjunta
             </button>
           }
-          <button class="button compact" (click)="invoiceInput.click()" [disabled]="busy()">
+          <button
+            class="button compact"
+            (click)="invoiceInput.click()"
+            [disabled]="busy() || !invoiceEditable(item.status)"
+          >
             {{
               busy() ? 'Procesando…' : item.has_invoice ? 'Cambiar factura' : 'Adjuntar factura'
             }}</button><input
             #invoiceInput
             class="sr-only"
             type="file"
+            [disabled]="busy() || !invoiceEditable(item.status)"
             tabindex="-1"
             accept="application/pdf,image/jpeg,image/png,image/webp"
             (change)="attach($event)"
           />
         </div>
+        @if (!invoiceEditable(item.status)) {
+          <p class="fine-print actions">La factura solo se puede cambiar antes de consolidar.</p>
+        }
         <section class="detail-section">
           <h3>Seguimiento del paquete</h3>
           @if (trackingLoading()) {
             <p role="status">Cargando seguimiento…</p>
+          }
+          @if (trackingError()) {
+            <p class="alert error" role="alert">{{ trackingError() }}</p>
+            <button
+              class="button compact"
+              (click)="retryTracking()"
+              [disabled]="busy() || trackingLoading()"
+            >
+              Reintentar seguimiento
+            </button>
           }
           <ol class="timeline">
             @for (event of timeline()?.events; track $index) {
@@ -214,7 +232,7 @@
           inputmode="decimal"
           placeholder="0.00"
           required
-        /><span class="field-hint">Máximo dos decimales.</span></label
+        /><span class="field-hint">De USD 0.01 a USD 100 000; máximo dos decimales.</span></label
       >
     </div>
     @if (formError()) {
