@@ -93,6 +93,8 @@ export class QuotesPage {
   }
   select(quote: Quote) {
     if (this.busy()) return;
+    this.request?.unsubscribe();
+    this.loading.set(false);
     this.detailRequest?.unsubscribe();
     this.selected.set(quote);
     this.error.set('');
@@ -117,6 +119,10 @@ export class QuotesPage {
       this.formError.set('La cantidad y el peso en gramos deben ser enteros.');
       return;
     }
+    this.request?.unsubscribe();
+    this.detailRequest?.unsubscribe();
+    this.loading.set(false);
+    this.error.set('');
     this.busy.set(true);
     this.formError.set('');
     this.api
