@@ -20,12 +20,19 @@ export class AuthService {
   private readonly config = inject(RuntimeConfig);
   private keycloak: Keycloak | null = null;
   private refreshing: Promise<boolean> | null = null;
+  private initialization: Promise<void> | null = null;
   readonly user = signal<UserProfile | null>(null);
   readonly error = signal('');
   readonly staff = computed(() => isStaff(this.user()?.roles ?? []));
   readonly manager = computed(() => canManage(this.user()?.roles ?? []));
 
-  async initialize(): Promise<void> {
+  ensureInitialized(retryFailed = false): Promise<void> {
+    if (retryFailed && this.error()) this.initialization = null;
+    return (this.initialization ??= this.initialize());
+  }
+
+  private async initialize(): Promise<void> {
+    this.error.set('');
     const config = this.config.value;
     this.keycloak = new Keycloak({
       url: config.oidcUrl,
@@ -50,9 +57,19 @@ export class AuthService {
   }
 
   async login(returnUrl?: string): Promise<void> {
-    if (!this.keycloak)
-      throw new Error('El servicio de acceso no está disponible. Recarga la página.');
-    await this.keycloak.login({ redirectUri: `${location.origin}${safeReturnUrl(returnUrl)}` });
+    await this.ensureInitialized(true);
+    if (!this.keycloak || this.error())
+      throw new Error('El servicio de acceso no está disponible.');
+    const callback = new URL('/login', location.origin);
+    if (returnUrl) callback.searchParams.set('returnUrl', safeReturnUrl(returnUrl));
+    await this.keycloak.login({ redirectUri: callback.href });
+  }
+
+  async register(): Promise<void> {
+    await this.ensureInitialized();
+    if (!this.keycloak || this.error())
+      throw new Error('El servicio de registro no está disponible.');
+    await this.keycloak.register({ redirectUri: `${location.origin}/portal` });
   }
 
   async logout(): Promise<void> {

@@ -8,7 +8,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: theme });
     await mockPanel(page);
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'Panel interno', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     const colors = await page.locator('body').evaluate((el) => {
       const style = getComputedStyle(el);
@@ -76,7 +76,7 @@ test('sigue cambios del sistema hasta que se elige un tema manualmente', async (
   await page.emulateMedia({ colorScheme: 'light' });
   await mockPanel(page);
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Panel interno', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.getByRole('button', { name: 'Cambiar a modo claro', exact: true }).click();

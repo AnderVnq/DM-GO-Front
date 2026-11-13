@@ -10,7 +10,7 @@ test('protege el área interna sin una sesión válida', async ({ page }) => {
   await page.goto('/internal/packages');
   // Keycloak espera hasta 10 s por el iframe cuando el proveedor no responde.
   await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
-  await expect(page.getByRole('heading', { name: 'Panel interno' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible({
     timeout: 15000,
   });
   await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
@@ -18,7 +18,7 @@ test('protege el área interna sin una sesión válida', async ({ page }) => {
 
 test('mantiene legible el acceso y permite navegar con teclado', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Panel interno' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible({
     timeout: 15000,
   });
   const noHorizontalOverflow = await page.evaluate(
@@ -26,6 +26,7 @@ test('mantiene legible el acceso y permite navegar con teclado', async ({ page }
   );
   expect(noHorizontalOverflow).toBe(true);
   const button = page.getByRole('button', { name: 'Iniciar sesión' });
+  await expect(button).toBeEnabled({ timeout: 15000 });
   await button.focus();
   await expect(button).toBeFocused();
 });

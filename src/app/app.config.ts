@@ -15,7 +15,18 @@ export const appConfig: ApplicationConfig = {
       inject(ThemeService);
       const config = inject(RuntimeConfig);
       const auth = inject(AuthService);
-      return config.load().then(() => auth.initialize());
+      return config.load().then(() => {
+        const callback = new URLSearchParams(location.hash.slice(1));
+        // Procesar el retorno antes de que el router capture el fragmento OIDC.
+        if (
+          /^\/(?:login|portal|internal)(?:\/|$)/.test(location.pathname) &&
+          callback.has('state') &&
+          (callback.has('code') || callback.has('error'))
+        ) {
+          return auth.ensureInitialized();
+        }
+        return undefined;
+      });
     }),
   ],
 };

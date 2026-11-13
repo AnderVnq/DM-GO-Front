@@ -1,14 +1,32 @@
 import { type Routes } from '@angular/router';
 import { staffGuard } from './core/staff.guard';
+import { portalGuard } from './core/portal.guard';
 
 export const routes: Routes = [
-  { path: 'login', loadComponent: () => import('./core/login-page').then((m) => m.LoginPage) },
+  {
+    path: 'portal',
+    title: 'Mi casillero · DM48',
+    canActivate: [portalGuard],
+    loadComponent: () => import('./modules/portal/portal-page').then((m) => m.PortalPage),
+  },
+  {
+    path: '',
+    title: 'DM48 · Casillero en USA y envíos a Perú',
+    pathMatch: 'full',
+    loadComponent: () => import('./modules/home/home-page').then((m) => m.HomePage),
+  },
+  {
+    path: 'login',
+    title: 'Iniciar sesión · DM48',
+    loadComponent: () => import('./core/login-page').then((m) => m.LoginPage),
+  },
   {
     path: 'forbidden',
     loadComponent: () => import('./core/forbidden-page').then((m) => m.ForbiddenPage),
   },
   {
     path: 'internal',
+    title: 'Panel interno · DM48',
     canActivate: [staffGuard],
     canActivateChild: [staffGuard],
     loadComponent: () => import('./layout/internal-shell').then((m) => m.InternalShell),
@@ -36,6 +54,5 @@ export const routes: Routes = [
       { path: '', redirectTo: 'overview', pathMatch: 'full' },
     ],
   },
-  { path: '', redirectTo: 'internal/overview', pathMatch: 'full' },
-  { path: '**', redirectTo: 'internal/overview' },
+  { path: '**', redirectTo: '' },
 ];

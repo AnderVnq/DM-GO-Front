@@ -28,17 +28,20 @@ test('separa roles de personal y de gestión', () => {
   assert.equal(canManage(['admin']), true);
   assert.equal(isStaff(['customer', 'driver']), false);
 });
-test('solo permite retornar a rutas internas del panel', () => {
+test('solo permite retornar a las áreas protegidas de personal y clientes', () => {
   assert.equal(
     safeReturnUrl('/internal/packages?customer_id=123'),
     '/internal/packages?customer_id=123',
   );
+  assert.equal(safeReturnUrl('/portal'), '/portal');
+  assert.equal(safeReturnUrl('/portal?step=registration'), '/portal?step=registration');
   for (const input of [
     'https://evil.test',
     '//evil.test',
     '/internality',
     '/internal/\\evil',
-    '/portal',
+    '/portal-evil',
+    '/portal/%2f%2fevil.test',
     '/internal/%2F%2Fevil',
   ]) {
     assert.equal(safeReturnUrl(input), '/internal/overview');

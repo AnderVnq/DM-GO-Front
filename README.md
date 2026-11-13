@@ -1,6 +1,6 @@
 # DM48 · Frontend
 
-Panel interno para la operación courier USA → Perú. Una aplicación Angular organizada como monolito modular, con autenticación Keycloak y conexión a la API REST de DM48.
+Portada pública, registro de casillero y panel interno para la operación courier USA → Perú. Una aplicación Angular organizada como monolito modular, con autenticación Keycloak y conexión a la API REST de DM48.
 
 ## Requisitos
 
@@ -53,6 +53,8 @@ src/app/
 ├── shared/     # controles, iconos y formatos
 ├── layout/     # estructura visual y navegación
 └── modules/
+    ├── home/
+    ├── portal/
     ├── customers/
     ├── shipments/
     ├── billing/
@@ -62,7 +64,7 @@ src/app/
 
 Cada módulo reúne sus modelos, servicio, rutas, página y pruebas en archivos directos. Las rutas cargan módulos bajo demanda. Las dependencias entre módulos pasan por sus exportaciones públicas en `index.ts`; `core` y `shared` no dependen de módulos.
 
-Solo está implementada el área `/internal`. El portal de clientes se añadirá posteriormente dentro de la misma aplicación.
+La portada pública está en `/`, el alta y casillero propio en `/portal` y el panel del personal en `/internal`. Las operaciones adicionales del portal se incorporarán por separado.
 
 ## Funcionalidad
 
@@ -101,3 +103,22 @@ En producción registra el dominio y callbacks HTTPS en Keycloak. No se configur
 ## Contribuciones
 
 Rama principal: `main`. Usa identificadores en inglés, textos de interfaz en español y mensajes como `feat(shipments): añadir seguimiento de paquetes`. Incluye el archivo de bloqueo, ejecuta las validaciones relevantes y revisa las rutas preparadas antes de cada commit.
+
+## Portada y registro de casillero
+
+`/` presenta la empresa, servicios, pasos del envío y preguntas frecuentes. La
+portada carga sin esperar a Keycloak. «Crear mi casillero» abre el registro del
+cliente público OIDC configurado; `/login` sirve a clientes y personal. Tras
+iniciar sesión, el personal accede a `/internal/overview` y el cliente a `/portal`.
+
+El área inicial de clientes permite completar DNI/RUC, nombre y teléfono, y
+consultar el código y direcciones reales del casillero. Usa `GET /portal/me`,
+`POST /portal/onboarding` y `GET /portal/link-request`. Si el documento requiere
+vinculación, muestra el estado de revisión sin revelar el casillero existente.
+Los paquetes, pagos y demás recorridos del portal se desarrollarán por separado.
+
+Los datos públicos de la empresa están en `public/business-info.json`: razón
+social, RUC y domicilio fiscal. Completa `email`, `phone` y `hours` cuando estén
+definidos; los campos vacíos se omiten de la portada. No copies configuración
+privada a ese archivo. Mantén habilitado el registro público en Keycloak y registra
+los callbacks `/login` y `/portal` en las URLs permitidas de `dm48-web`.

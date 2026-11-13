@@ -1,0 +1,158 @@
+<a class="skip-link" href="#portal-content">Saltar al contenido</a>
+<header class="portal-header">
+  <a class="wordmark" routerLink="/" aria-label="DM48, inicio"
+    >DM48<span class="brand-dot"></span
+  ></a>
+  <div>
+    <app-theme-toggle /><button class="text-button" (click)="auth.logout()">Cerrar sesión</button>
+  </div>
+</header>
+<main id="portal-content" class="portal-page" tabindex="-1">
+  @if (state() === 'loading') {
+    <p role="status">Consultando tu casillero…</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  @if (state() === 'onboarding') {
+    <div class="portal-intro">
+      <h1>Tu cuenta ya está creada.<br /><span>Ahora, tu casillero.</span></h1>
+      <p>
+        Completa tus datos de identificación para recibir el código y la dirección que usarás al
+        comprar en USA.
+      </p>
+      <p class="account-email">Cuenta: {{ auth.user()?.email }}</p>
+    </div>
+    <form class="surface surface-body onboarding-form" [formGroup]="form" (ngSubmit)="create()">
+      <h2>Datos del titular</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label for="portal-document-type">Tipo de documento</label
+          ><select id="portal-document-type" formControlName="doc_type">
+            <option value="dni">DNI</option>
+            <option value="ruc">RUC</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="portal-document-number">Número de documento</label
+          ><input
+            id="portal-document-number"
+            formControlName="doc_number"
+            inputmode="numeric"
+            required
+            [attr.maxlength]="form.controls.doc_type.value === 'dni' ? 8 : 11"
+            [pattern]="form.controls.doc_type.value === 'dni' ? '[0-9]{8}' : '[0-9]{11}'"
+            [attr.aria-invalid]="
+              form.controls.doc_number.invalid && form.controls.doc_number.dirty ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              form.controls.doc_number.invalid && form.controls.doc_number.dirty
+                ? 'portal-document-error'
+                : null
+            "
+          />
+          @if (form.controls.doc_number.invalid && form.controls.doc_number.dirty) {
+            <span id="portal-document-error" class="field-error"
+              >Ingresa 8 dígitos para DNI o 11 dígitos para RUC.</span
+            >
+          }
+        </div>
+        <div class="field full">
+          <label for="portal-name">Nombre completo o razón social</label
+          ><input id="portal-name" formControlName="name" autocomplete="name" required />
+        </div>
+        <div class="field full">
+          <label for="portal-phone">Teléfono</label
+          ><input
+            id="portal-phone"
+            formControlName="phone"
+            type="tel"
+            autocomplete="tel"
+            maxlength="32"
+            aria-describedby="portal-phone-hint"
+          /><span id="portal-phone-hint" class="field-hint"
+            >Opcional, máximo 32 caracteres. Para coordinar la atención de tus compras.</span
+          >
+        </div>
+      </div>
+      <p class="fine-print">
+        Si tu documento ya está registrado, revisaremos la vinculación antes de dar acceso al
+        casillero existente.
+      </p>
+      <button class="button primary" [disabled]="form.invalid || busy()">
+        {{ busy() ? 'Creando casillero…' : 'Crear mi casillero' }}<app-icon name="arrow" />
+      </button>
+    </form>
+  }
+  @if (state() === 'ready') {
+    @if (profile(); as customer) {
+      <div class="portal-intro">
+        <app-icon name="check" class="ready-icon" />
+        <h1>Tu casillero está listo</h1>
+        <p>{{ customer.name }}, estos son los datos que identifican tus compras en USA.</p>
+      </div>
+      <section class="locker-code surface surface-body">
+        <div>
+          <h2>Tu código de casillero</h2>
+          <strong>{{ customer.locker_code }}</strong>
+        </div>
+        <button class="button" (click)="copy(customer.locker_code)">Copiar código</button>
+      </section>
+      <h2 class="addresses-title">Dirección para tus compras</h2>
+      @for (address of customer.locker_addresses; track address.warehouse_code) {
+        <section class="surface surface-body locker-address">
+          <h3>Almacén {{ address.warehouse_code }}</h3>
+          <dl>
+            <div>
+              <dt>Nombre del destinatario</dt>
+              <dd>{{ address.recipient }}</dd>
+            </div>
+            <div>
+              <dt>Dirección</dt>
+              <dd>{{ address.line1 }}</dd>
+              <dd>{{ address.line2 }}</dd>
+            </div>
+            <div>
+              <dt>Ciudad, estado y código postal</dt>
+              <dd>{{ address.city }}, {{ address.state }} {{ address.postal_code }}</dd>
+            </div>
+            <div>
+              <dt>País</dt>
+              <dd>{{ address.country }}</dd>
+            </div>
+          </dl>
+          <button class="button" (click)="copy(addressText(address))">Copiar dirección</button>
+        </section>
+      } @empty {
+        <p class="alert">
+          Tu código ya está asignado. La dirección de recepción aún no está disponible; vuelve a
+          consultar antes de realizar tu compra.
+        </p>
+        <button class="button" (click)="load()">Volver a consultar</button>
+      }
+      @if (copied()) {
+        <p role="status" class="copy-status">{{ copied() }}</p>
+      }
+      <p class="fine-print">
+        Incluye tu código de casillero en los datos de envío para identificar correctamente tus
+        paquetes. Guarda estos datos antes de tu primera compra.
+      </p>
+    }
+  }
+  @if (state() === 'link') {
+    <section class="portal-message">
+      <app-icon name="customers" />
+      <h1>Estamos revisando tu vinculación</h1>
+      <p>
+        Tu documento ya tiene un registro. El equipo revisará la solicitud para vincular tu cuenta
+        al casillero correspondiente.
+      </p>
+      <p>Mientras se completa la revisión, los datos de ese casillero se mantienen protegidos.</p>
+      <button class="button primary" (click)="load()">Consultar estado</button>
+    </section>
+  }
+  @if (state() === 'error') {
+    <button class="button primary" (click)="load()">Volver a consultar</button>
+  }
+  <a class="back-home" routerLink="/">Volver al inicio</a>
+</main>

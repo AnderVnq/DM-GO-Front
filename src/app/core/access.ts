@@ -8,7 +8,7 @@ export function canManage(roles: readonly string[]): boolean {
 
 export function safeReturnUrl(value: string | null | undefined): string {
   if (!value || /[\\%\r\n]/.test(value)) return '/internal/overview';
-  return /^\/internal(?:\/|\?|$)/.test(value) ? value : '/internal/overview';
+  return /^\/(?:internal|portal)(?:\/|\?|$)/.test(value) ? value : '/internal/overview';
 }
 
 export function isApiRequest(url: string, base: string, origin: string): boolean {

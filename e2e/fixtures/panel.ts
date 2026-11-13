@@ -17,6 +17,13 @@ export async function mockPanel(
 ) {
   const issuer = 'http://localhost:3000/test-idp/realms/dm48';
   let nonce = '';
+  const identity = {
+    id: 'staff-test',
+    username: role === 'customer' ? 'client.test' : 'staff.test',
+    name: role === 'customer' ? 'Cliente de prueba' : 'Personal de prueba',
+    email: role === 'customer' ? 'cliente@example.test' : 'personal@example.test',
+    roles: [role],
+  };
   const requests: { path: string; method: string; body: Record<string, unknown> | null }[] = [];
   let customer: Customer = {
     id: 'customer-test',
@@ -96,7 +103,7 @@ export async function mockPanel(
         contentType: 'text/html',
         body: "<script>parent.postMessage('supported', location.origin)</script>",
       });
-    } else if (url.pathname.endsWith('/auth')) {
+    } else if (url.pathname.endsWith('/auth') || url.pathname.endsWith('/registrations')) {
       const callback = new URL(url.searchParams.get('redirect_uri')!);
       const params = new URLSearchParams({ state: url.searchParams.get('state')!, iss: issuer });
       if (url.searchParams.get('prompt') === 'none') params.set('error', 'login_required');
@@ -109,7 +116,7 @@ export async function mockPanel(
     } else if (url.pathname.endsWith('/token')) {
       const now = Math.floor(Date.now() / 1000);
       const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
-      const token = `${encode({ alg: 'none' })}.${encode({ sub: 'staff-test', iss: issuer, aud: 'dm48-web', iat: now, exp: now + 300, nonce, realm_access: { roles: [role] } })}.test`;
+      const token = `${encode({ alg: 'none' })}.${encode({ sub: identity.id, preferred_username: identity.username, name: identity.name, email: identity.email, iss: issuer, aud: 'dm48-web', iat: now, exp: now + 300, nonce, realm_access: { roles: [role] } })}.test`;
       await route.fulfill({
         json: {
           access_token: token,
@@ -135,13 +142,7 @@ export async function mockPanel(
       return;
     }
     let data: unknown;
-    if (path === '/me')
-      data = {
-        id: 'staff-test',
-        username: 'staff.test',
-        name: 'Personal de prueba',
-        roles: [role],
-      };
+    if (path === '/me') data = identity;
     else if (path === '/customers' && method === 'POST') {
       customer = {
         ...customer,

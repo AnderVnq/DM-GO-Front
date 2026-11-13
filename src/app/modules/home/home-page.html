@@ -1,0 +1,240 @@
+<a class="skip-link" href="#public-content">Saltar al contenido</a>
+<header class="public-header">
+  <a class="wordmark" routerLink="/" aria-label="DM48, inicio"
+    >DM48<span class="brand-dot"></span
+  ></a>
+  <nav aria-label="Navegación pública">
+    <a href="#about">Quiénes somos</a><a href="#how-it-works">Cómo funciona</a
+    ><a href="#services">Servicios</a>
+  </nav>
+  <div class="header-actions">
+    <app-theme-toggle /><a class="sign-in" routerLink="/login"
+      >Iniciar sesión<app-icon name="arrow"
+    /></a>
+  </div>
+</header>
+<main id="public-content" tabindex="-1">
+  <section class="hero public-width">
+    <div class="hero-copy">
+      <h1>Tus compras en Estados Unidos,<br /><span>más cerca de ti en Perú.</span></h1>
+      <p>
+        Un casillero para recibir tus compras en USA y un equipo que conecta cada etapa hasta su
+        entrega en Perú.
+      </p>
+      <div class="hero-actions">
+        <button class="button primary" [disabled]="busy()" (click)="createLocker()">
+          {{ busy() ? 'Abriendo registro…' : 'Crear mi casillero'
+          }}<app-icon name="arrow" /></button
+        ><a href="#how-it-works" class="learn-link">Conoce cómo funciona</a>
+      </div>
+      @if (error()) {
+        <p class="alert error" role="alert">{{ error() }}</p>
+      }
+      <p class="hero-note">Para tus compras personales y las de tu negocio.</p>
+    </div>
+    <aside class="journey" aria-label="Así conecta tu casillero las compras y la entrega">
+      <div class="journey-route">
+        <span>Estados Unidos<small>El origen de tus compras</small></span
+        ><app-icon name="plane" /><span>Perú<small>Donde las necesitas</small></span>
+      </div>
+      <div class="locker-illustration">
+        <app-icon name="packages" />
+        <h2>Una dirección en USA.<br />Un código que te identifica.</h2>
+        <p>
+          Al completar tu registro recibirás los datos de tu casillero para identificar tus compras.
+        </p>
+        <div class="address-anatomy">
+          <span>Tu nombre</span><span>Tu código de casillero</span
+          ><span>La dirección de recepción</span>
+        </div>
+      </div>
+      <div class="journey-footer">
+        <app-icon name="check" /><span>Recepción, seguimiento y coordinación de entrega.</span>
+      </div>
+    </aside>
+  </section>
+  <section id="about" class="about public-width section-space">
+    <div>
+      <h2>Quiénes somos</h2>
+      <p class="section-lead">Hacemos que comprar lejos<br />se sienta más cerca.</p>
+    </div>
+    <div class="about-copy">
+      <p>
+        En DM48 conectamos tus compras en Estados Unidos con su destino en Perú. A través de tu
+        casillero, identificamos tus paquetes y organizamos su recorrido desde la recepción hasta la
+        entrega.
+      </p>
+      <p>
+        Ya sea una compra personal o mercadería para tu negocio, la idea es la misma: saber qué
+        estás enviando y en qué etapa se encuentra.
+      </p>
+      <a href="#services" class="learn-link"
+        >Conoce nuestras formas de atención<app-icon name="arrow"
+      /></a>
+    </div>
+  </section>
+  <section id="how-it-works" class="process section-space">
+    <div class="public-width">
+      <div class="section-heading-public">
+        <h2>De tu primera compra a tu puerta</h2>
+        <p>Conoce el recorrido antes de empezar.</p>
+      </div>
+      <ol class="steps">
+        <li>
+          <span class="step-marker"><app-icon name="customers" /></span>
+          <h3>Crea tu casillero</h3>
+          <p>
+            Registra tu cuenta y completa tus datos para obtener tu código y dirección de recepción.
+          </p>
+        </li>
+        <li>
+          <span class="step-marker"><app-icon name="quotes" /></span>
+          <h3>Compra y prealerta</h3>
+          <p>Usa los datos de tu casillero al comprar e informa qué paquete viene en camino.</p>
+        </li>
+        <li>
+          <span class="step-marker"><app-icon name="packages" /></span>
+          <h3>Recibimos en USA</h3>
+          <p>Identificamos tus compras cuando llegan al almacén y registramos su recepción.</p>
+        </li>
+        <li>
+          <span class="step-marker"><app-icon name="plane" /></span>
+          <h3>Conectamos con Perú</h3>
+          <p>El envío continúa su traslado y las gestiones de ingreso correspondientes.</p>
+        </li>
+        <li>
+          <span class="step-marker"><app-icon name="check" /></span>
+          <h3>Coordinamos la entrega</h3>
+          <p>Según la modalidad de tu envío: recojo, domicilio o entrega mediante agencia.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+  <section id="services" class="services public-width section-space">
+    <div class="section-heading-public">
+      <h2>Tú eliges cómo comprar.<br />Nosotros conectamos el recorrido.</h2>
+      <p>Dos formas de empezar, un mismo destino.</p>
+    </div>
+    <div class="service-list">
+      <article>
+        <app-icon name="packages" />
+        <div>
+          <h3>Compra por tu cuenta</h3>
+          <p>
+            Elige tus productos en la tienda de tu preferencia y usa la dirección de tu casillero.
+            Nosotros recibimos los paquetes y continuamos con el envío a Perú.
+          </p>
+          <span>Para quienes ya saben qué y dónde comprar.</span>
+        </div>
+      </article>
+      <article>
+        <app-icon name="quotes" />
+        <div>
+          <h3>Compra asistida</h3>
+          <p>
+            Comparte el producto que necesitas para que el equipo prepare una cotización con el
+            desglose de costos antes de continuar.
+          </p>
+          <span>Para quienes buscan acompañamiento en su compra.</span>
+        </div>
+      </article>
+    </div>
+  </section>
+  <section class="trust section-space">
+    <div class="public-width trust-layout">
+      <h2>La confianza empieza<br />con las cosas claras.</h2>
+      <div>
+        <article>
+          <h3>Tu identidad, tu casillero</h3>
+          <p>
+            El registro vincula tu cuenta y tu documento. Los datos de tu casillero se consultan
+            dentro de tu sesión.
+          </p>
+        </article>
+        <article>
+          <h3>Cada etapa tiene su lugar</h3>
+          <p>
+            Recepción, traslado y entrega forman parte de un recorrido que el equipo registra para
+            dar seguimiento a tus compras.
+          </p>
+        </article>
+        <article>
+          <h3>Costos antes de decidir</h3>
+          <p>
+            En compra asistida, la cotización detalla los conceptos del envío. Las condiciones
+            aplicables se revisan antes de continuar.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section id="questions" class="faq public-width section-space">
+    <h2>Antes de tu primera compra</h2>
+    <div class="faq-list">
+      <details>
+        <summary>¿Qué es un casillero en USA?</summary>
+        <p>
+          Es la dirección de recepción que usas al comprar en Estados Unidos, junto con un código
+          que permite identificar tus paquetes como tuyos. Recibirás esos datos cuando completes tu
+          registro.
+        </p>
+      </details>
+      <details>
+        <summary>¿Qué necesito para crear mi casillero?</summary>
+        <p>
+          Crea tu cuenta y completa tus datos de identificación con DNI o RUC. Si el documento ya
+          está registrado, el equipo revisará la vinculación antes de dar acceso a ese casillero.
+        </p>
+      </details>
+      <details>
+        <summary>¿Puedo comprar si tengo un negocio?</summary>
+        <p>
+          Puedes completar el registro con RUC. Las condiciones del envío dependen del producto, su
+          valor y la modalidad; consulta con el equipo antes de realizar tu compra.
+        </p>
+      </details>
+      <details>
+        <summary>¿Cuánto demora y cuánto cuesta el envío?</summary>
+        <p>
+          Los costos y tiempos dependen del producto, peso, modalidad y gestiones de ingreso. Revisa
+          las condiciones de tu envío con el equipo; no todos los productos tienen el mismo
+          recorrido.
+        </p>
+      </details>
+    </div>
+  </section>
+  <section class="closing public-width">
+    <h2>Tu próxima compra<br />empieza con tu casillero.</h2>
+    <div>
+      <p>Crea tu cuenta y ten a mano los datos que necesitas para recibir tus compras en USA.</p>
+      <button class="button primary" [disabled]="busy()" (click)="createLocker()">
+        {{ busy() ? 'Abriendo registro…' : 'Crear mi casillero' }}<app-icon name="arrow" />
+      </button>
+    </div>
+  </section>
+</main>
+<footer class="public-footer public-width">
+  <div class="footer-brand">
+    <a class="wordmark" routerLink="/">DM48<span class="brand-dot"></span></a>
+    <p>Estados Unidos → Perú<br />Courier internacional</p>
+  </div>
+  <div class="business-details">
+    @if (business(); as company) {
+      <strong>{{ company.legalName }}</strong>
+      <p>RUC {{ company.taxId }}</p>
+      <p>Domicilio fiscal: {{ company.fiscalAddress }}</p>
+      @if (company.email) {
+        <a [href]="'mailto:' + company.email">{{ company.email }}</a>
+      }
+      @if (company.phone) {
+        <p>{{ company.phone }}</p>
+      }
+      @if (company.hours) {
+        <p>{{ company.hours }}</p>
+      }
+    }
+  </div>
+  <div class="footer-end">
+    <span>© {{ year }} DM48</span><a routerLink="/login">Acceder a mi cuenta</a>
+  </div>
+</footer>

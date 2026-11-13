@@ -1,0 +1,141 @@
+:host {
+  display: block;
+}
+.portal-header {
+  width: min(100% - 3rem, 75rem);
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 6rem;
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+.portal-header > div {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.portal-page {
+  width: min(100% - 3rem, 42rem);
+  margin: 4rem auto;
+}
+.portal-intro {
+  margin-bottom: 2rem;
+}
+h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  margin: 0 0 1.2rem;
+}
+h1 span {
+  color: var(--accent);
+}
+.portal-intro p,
+.portal-message p {
+  color: var(--muted);
+  line-height: 1.75;
+}
+.account-email {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.onboarding-form h2 {
+  font-size: 1.2rem;
+  margin: 0 0 1.5rem;
+}
+.onboarding-form .button {
+  width: 100%;
+  margin-top: 1.2rem;
+  min-height: 3rem;
+}
+.onboarding-form .fine-print {
+  margin-top: 1.2rem;
+}
+.back-home {
+  display: inline-block;
+  margin-top: 2rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-underline-offset: 0.3em;
+}
+.ready-icon {
+  color: var(--success);
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+}
+.locker-code {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: center;
+}
+.locker-code h2 {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin: 0 0 0.65rem;
+}
+.locker-code strong {
+  font-size: 2rem;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.addresses-title {
+  margin: 2rem 0 1rem;
+  font-size: 1.25rem;
+}
+.locker-address {
+  margin-bottom: 1.2rem;
+}
+.locker-address h3 {
+  margin: 0 0 1.5rem;
+}
+.locker-address dl {
+  margin: 0 0 1.5rem;
+}
+.locker-address dl > div {
+  margin-top: 1.2rem;
+}
+.locker-address dt {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.locker-address dd {
+  margin: 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.copy-status {
+  color: var(--success);
+  font-size: 0.875rem;
+}
+.portal-message > app-icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+}
+.portal-message .button {
+  margin-top: 1rem;
+}
+@media (max-width: 700px) {
+  .portal-header {
+    width: calc(100% - 2rem);
+    min-height: 5rem;
+  }
+  .portal-header > div {
+    gap: 0.7rem;
+  }
+  .portal-page {
+    width: calc(100% - 2rem);
+    margin-block: 2.5rem;
+  }
+  .locker-code {
+    flex-wrap: wrap;
+  }
+}

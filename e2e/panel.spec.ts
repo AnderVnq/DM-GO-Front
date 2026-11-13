@@ -79,7 +79,8 @@ test('el vendedor consulta notas sin acciones de gestión', async ({ page }) => 
 
 test('una cuenta de cliente no accede al panel del personal', async ({ page }) => {
   await mockPanel(page, 'customer');
-  await login(page);
+  await page.goto('/internal/overview');
+  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
   await expect(page).toHaveURL(/\/forbidden/);
   await expect(page.getByRole('navigation')).toHaveCount(0);
 });
