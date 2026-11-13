@@ -23,8 +23,9 @@ Las dependencias están fijadas en `pnpm-lock.yaml`. Usa `pnpm install --frozen-
 ## Apariencia
 
 El botón de sol o luna permite alternar entre los temas azul claro y oscuro desde
-el acceso y la cabecera del panel. Los colores cambian con una transición de 200 ms,
-que se desactiva si se solicita movimiento reducido. La elección se guarda en este navegador. Sin
+el acceso y la cabecera del panel. El tema oscuro se revela desde la esquina superior derecha hasta la inferior izquierda
+en 400 ms; al volver a claro el barrido se invierte. Con movimiento reducido o en
+navegadores sin soporte del efecto, el cambio es inmediato. La elección se guarda en este navegador. Sin
 una elección guardada se utiliza la apariencia del sistema, incluyendo sus cambios.
 El selector funciona con teclado y sigue disponible si el navegador bloquea el
 almacenamiento local; en ese caso la elección dura durante la sesión de la página.

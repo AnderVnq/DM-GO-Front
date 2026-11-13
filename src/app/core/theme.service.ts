@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, Injector, afterNextRender, inject, signal } from '@angular/core';
 
 type ThemeMode = 'light' | 'dark';
 const storageKey = 'dm48-theme';
@@ -12,7 +12,9 @@ export class ThemeService {
   private readonly current = signal<ThemeMode>('light');
   readonly mode = this.current.asReadonly();
   private preferred: ThemeMode | null = null;
-  private animationTimer?: number;
+  private readonly injector = inject(Injector);
+  private transition?: ViewTransition;
+  private transitionRequest = 0;
 
   constructor() {
     this.preferred = this.readPreference();
@@ -22,38 +24,60 @@ export class ThemeService {
     };
     const onStorageChange = (event: StorageEvent) => {
       if (event.key !== storageKey && event.key !== null) return;
+      this.stopTransition();
       this.preferred = this.readPreference();
       this.apply(this.preferred ?? this.systemMode());
     };
     this.media?.addEventListener('change', onSystemChange);
     this.window?.addEventListener('storage', onStorageChange);
     inject(DestroyRef).onDestroy(() => {
-      this.window?.clearTimeout(this.animationTimer);
-      this.document.documentElement.classList.remove('theme-changing');
+      this.stopTransition();
       this.media?.removeEventListener('change', onSystemChange);
       this.window?.removeEventListener('storage', onStorageChange);
     });
   }
 
   toggle() {
-    this.preferred = this.mode() === 'dark' ? 'light' : 'dark';
-    this.window?.clearTimeout(this.animationTimer);
-    const root = this.document.documentElement;
-    if (this.window && !this.window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      root.classList.add('theme-changing');
-      this.animationTimer = this.window.setTimeout(
-        () => root.classList.remove('theme-changing'),
-        240,
-      );
-    } else {
-      root.classList.remove('theme-changing');
-    }
-    this.apply(this.preferred);
+    const mode = (this.preferred ?? this.mode()) === 'dark' ? 'light' : 'dark';
+    this.preferred = mode;
+    this.stopTransition();
+    if (
+      typeof this.document.startViewTransition === 'function' &&
+      !this.window?.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      const request = this.transitionRequest;
+      try {
+        const transition = this.document.startViewTransition(() => {
+          if (request !== this.transitionRequest) return;
+          this.apply(mode);
+          return new Promise<void>((resolve) => {
+            afterNextRender(() => resolve(), { injector: this.injector });
+          });
+        });
+        this.transition = transition;
+        void transition.ready.catch(() => {});
+        void transition.finished
+          .catch(() => {
+            if (request === this.transitionRequest) this.apply(mode);
+          })
+          .finally(() => {
+            if (this.transition === transition) this.transition = undefined;
+          });
+      } catch {
+        this.apply(mode);
+      }
+    } else this.apply(mode);
     try {
       this.window?.localStorage.setItem(storageKey, this.preferred);
     } catch {
       // Conservar la elección en memoria cuando no se permite almacenamiento local.
     }
+  }
+
+  private stopTransition() {
+    this.transitionRequest++;
+    this.transition?.skipTransition();
+    this.transition = undefined;
   }
 
   private readPreference(): ThemeMode | null {

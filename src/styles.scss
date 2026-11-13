@@ -94,15 +94,52 @@ small {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-// Activar solo durante un cambio manual; no animar la carga inicial ni la navegación.
-:root.theme-changing,
-:root.theme-changing *,
-:root.theme-changing *::before,
-:root.theme-changing *::after {
-  transition-property: background-color, color, border-color, fill, stroke;
-  transition-duration: 200ms;
-  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
-  transition-delay: 0s;
+// Revelar el tema oscuro desde arriba a la derecha; retirarlo en sentido inverso.
+::view-transition,
+::view-transition-group(root),
+::view-transition-image-pair(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  pointer-events: none;
+}
+::view-transition-group(root) {
+  animation: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  mix-blend-mode: normal;
+  animation: none;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
+  animation: theme-reveal 400ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+:root[data-theme='light']::view-transition-old(root) {
+  z-index: 2;
+  animation: theme-conceal 400ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+:root[data-theme='light']::view-transition-new(root) {
+  z-index: 1;
+  animation: none;
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0% at 100% 0%);
+  }
+  to {
+    clip-path: circle(150% at 100% 0%);
+  }
+}
+@keyframes theme-conceal {
+  from {
+    clip-path: circle(150% at 100% 0%);
+  }
+  to {
+    clip-path: circle(0% at 100% 0%);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
