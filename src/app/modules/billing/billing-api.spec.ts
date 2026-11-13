@@ -35,3 +35,27 @@ describe('BillingApi', () => {
     request.flush({ url: 'https://storage.test/note.pdf', expires_at: '2026-12-01T00:00:00Z' });
   });
 });
+
+it('envía los filtros admitidos y desenvuelve las notas de salida', () => {
+  let notes: unknown;
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
+    ],
+  });
+  TestBed.inject(BillingApi)
+    .list({ customer_id: 'customer-42', status: 'pending_payment', limit: 5 })
+    .subscribe((data) => {
+      notes = data;
+    });
+  const http = TestBed.inject(HttpTestingController);
+  const request = http.expectOne((req) => req.url === '/api/v1/dispatch-notes');
+  expect(request.request.params.get('customer_id')).toBe('customer-42');
+  expect(request.request.params.get('status')).toBe('pending_payment');
+  expect(request.request.params.get('limit')).toBe('5');
+  request.flush({ dispatch_notes: [] });
+  expect(notes).toEqual([]);
+  http.verify();
+});

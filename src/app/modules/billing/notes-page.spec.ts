@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { convertToParamMap, ActivatedRoute } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { NotesPage } from './notes-page';
 import { BillingApi } from './billing-api';
 import { type DispatchNote } from './dispatch-note.model';
@@ -116,4 +116,48 @@ describe('NotesPage: registro de pagos', () => {
     expect(upload).toHaveBeenCalledTimes(withEvidence ? 1 : 0);
     expect(page.selected()?.status).toBe('paid');
   });
+});
+
+it('recupera una nota modificada por otro operador y retira el éxito anterior', () => {
+  const original: DispatchNote = {
+    id: 'note-conflict',
+    number: 'NS-CONFLICT',
+    customer_id: 'customer-1',
+    status: 'draft',
+    method: 'pickup',
+    total_cents: 10000,
+    paid_cents: 0,
+    balance_cents: 10000,
+    currency: 'USD',
+    guides: [],
+    lines: [],
+    payments: [],
+    created_at: '2026-11-13T00:00:00Z',
+  };
+  TestBed.configureTestingModule({
+    providers: [
+      {
+        provide: BillingApi,
+        useValue: {
+          list: () => of([original]),
+          updateCharge: () => throwError(() => ({ status: 409 })),
+          get: () => of({ ...original, status: 'paid', paid_cents: 10000, balance_cents: 0 }),
+        },
+      },
+      { provide: CustomersApi, useValue: {} },
+      { provide: ShipmentsApi, useValue: {} },
+      { provide: DocumentsApi, useValue: {} },
+      { provide: AuthService, useValue: { manager: () => true } },
+      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+    ],
+  });
+  const page = TestBed.createComponent(NotesPage).componentInstance;
+  page.success.set('Operación completada.');
+  page.toggleCharge('line-1', false);
+  expect(page.selected()?.status).toBe('paid');
+  expect(page.selected()?.balance_cents).toBe(0);
+  expect(page.notes()[0]?.paid_cents).toBe(10000);
+  expect(page.success()).toBe('');
+  expect(page.error()).toContain('El registro cambió.');
+  expect(page.busy()).toBe(false);
 });

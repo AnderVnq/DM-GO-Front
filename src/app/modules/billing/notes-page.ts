@@ -75,6 +75,7 @@ export class NotesPage {
   private evidence: File | null = null;
   private confirmation: (() => Observable<DispatchNote>) | null = null;
   readonly confirmTitle = signal('');
+  readonly confirmationReady = signal(false);
   readonly needsReason = signal(false);
   readonly filters = this.fb.nonNullable.group({ status: [''] });
   readonly creation = this.fb.nonNullable.group({
@@ -307,15 +308,13 @@ export class NotesPage {
           this.paymentDialog().nativeElement.close();
           this.success.set('Pago registrado.');
         },
-        error: (failure: unknown) => {
-          this.formError.set(requestMessage(failure));
-          this.busy.set(false);
-        },
+        error: (failure: unknown) => this.handleMutationError(failure),
       });
   }
 
   confirmAction(title: string, reasonRequired: boolean, action: () => Observable<DispatchNote>) {
     this.confirmation = action;
+    this.confirmationReady.set(true);
     this.confirmTitle.set(title);
     this.needsReason.set(reasonRequired);
     this.reason.reset();
@@ -363,10 +362,7 @@ export class NotesPage {
         this.confirmDialog().nativeElement.close();
         this.success.set('Operación completada.');
       },
-      error: (error: unknown) => {
-        this.formError.set(requestMessage(error));
-        this.busy.set(false);
-      },
+      error: (error: unknown) => this.handleMutationError(error),
     });
   }
 
@@ -396,10 +392,7 @@ export class NotesPage {
         this.busy.set(false);
         this.chargeDialog().nativeElement.close();
       },
-      error: (error: unknown) => {
-        this.formError.set(requestMessage(error));
-        this.busy.set(false);
-      },
+      error: (error: unknown) => this.handleMutationError(error),
     });
   }
   toggleCharge(lineId: string, applies: boolean) {
@@ -445,10 +438,7 @@ export class NotesPage {
         this.packages.update((items) => items.filter((item) => item.id !== packageId));
         this.busy.set(false);
       },
-      error: (error: unknown) => {
-        this.formError.set(requestMessage(error));
-        this.busy.set(false);
-      },
+      error: (error: unknown) => this.handleMutationError(error),
     });
   }
   prepareRate(lineId: string, cents: number | null) {
@@ -473,10 +463,7 @@ export class NotesPage {
         this.busy.set(false);
         this.rateDialog().nativeElement.close();
       },
-      error: (error: unknown) => {
-        this.formError.set(requestMessage(error));
-        this.busy.set(false);
-      },
+      error: (error: unknown) => this.handleMutationError(error),
     });
   }
   prepareDestination() {
@@ -522,10 +509,7 @@ export class NotesPage {
         this.busy.set(false);
         this.destinationDialog().nativeElement.close();
       },
-      error: (error: unknown) => {
-        this.formError.set(requestMessage(error));
-        this.busy.set(false);
-      },
+      error: (error: unknown) => this.handleMutationError(error),
     });
   }
   private mutate(request: Observable<DispatchNote>) {
@@ -537,8 +521,38 @@ export class NotesPage {
         this.apply(note);
         this.busy.set(false);
       },
-      error: (error: unknown) => {
-        this.error.set(requestMessage(error));
+      error: (error: unknown) => this.handleMutationError(error, false),
+    });
+  }
+  private handleMutationError(failure: unknown, inForm = true) {
+    const message = inForm ? this.formError : this.error;
+    message.set(requestMessage(failure));
+    this.success.set('');
+    const conflict =
+      failure !== null &&
+      typeof failure === 'object' &&
+      'status' in failure &&
+      failure.status === 409;
+    const id = this.selected()?.id;
+    if (!conflict || !id) {
+      this.busy.set(false);
+      return;
+    }
+    this.confirmation = null;
+    this.confirmationReady.set(false);
+    this.detailRequest?.unsubscribe();
+    this.detailRequest = this.api.get(id).subscribe({
+      next: (note) => {
+        this.apply(note);
+        this.busy.set(false);
+      },
+      error: () => {
+        this.selected.set(null);
+        this.notes.update((notes) => notes.filter((note) => note.id !== id));
+        message.update(
+          (text) =>
+            `${text} No se pudo actualizar la nota. Cierra el diálogo y vuelve a consultar.`,
+        );
         this.busy.set(false);
       },
     });

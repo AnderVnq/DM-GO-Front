@@ -231,9 +231,9 @@
   }
 </div>
 
-<dialog #createDialog>
+<dialog #createDialog aria-labelledby="billing-create-title">
   <div class="dialog-header">
-    <h2>Nueva nota de salida</h2>
+    <h2 id="billing-create-title">Nueva nota de salida</h2>
     <button
       class="icon-button"
       aria-label="Cerrar"
@@ -329,9 +329,9 @@
     </div>
   </form>
 </dialog>
-<dialog #paymentDialog>
+<dialog #paymentDialog aria-labelledby="billing-payment-title">
   <div class="dialog-header">
-    <h2>Registrar pago</h2>
+    <h2 id="billing-payment-title">Registrar pago</h2>
     <button
       class="icon-button"
       aria-label="Cerrar"
@@ -378,14 +378,17 @@
     <div class="actions">
       <button type="button" class="button" (click)="paymentDialog.close()" [disabled]="busy()">
         Cancelar</button
-      ><button class="button primary" [disabled]="payment.invalid || busy()">
+      ><button
+        class="button primary"
+        [disabled]="payment.invalid || busy() || selected()?.status !== 'pending_payment'"
+      >
         {{ busy() ? 'Registrando…' : 'Registrar pago' }}
       </button>
     </div>
   </form>
 </dialog>
-<dialog #confirmDialog>
-  <h2>{{ confirmTitle() }}</h2>
+<dialog #confirmDialog aria-labelledby="billing-confirm-title">
+  <h2 id="billing-confirm-title">{{ confirmTitle() }}</h2>
   <p class="muted">{{ selected()?.number }}. Revisa los datos antes de confirmar.</p>
   @if (needsReason()) {
     <label class="field">Motivo<textarea [formControl]="reason" required></textarea></label>
@@ -398,14 +401,14 @@
     ><button
       class="button primary"
       (click)="confirm()"
-      [disabled]="busy() || (needsReason() && !reason.value.trim())"
+      [disabled]="busy() || !confirmationReady() || (needsReason() && !reason.value.trim())"
     >
       {{ busy() ? 'Procesando…' : 'Confirmar' }}
     </button>
   </div>
 </dialog>
-<dialog #chargeDialog>
-  <h2>Añadir cargo</h2>
+<dialog #chargeDialog aria-labelledby="billing-charge-title">
+  <h2 id="billing-charge-title">Añadir cargo</h2>
   <form [formGroup]="charge" (ngSubmit)="addCharge()">
     <div class="form-grid">
       <label class="field full"
@@ -437,17 +440,26 @@
     <div class="actions">
       <button type="button" class="button" (click)="chargeDialog.close()" [disabled]="busy()">
         Cancelar</button
-      ><button class="button primary" [disabled]="charge.invalid || busy()">Añadir cargo</button>
+      ><button
+        class="button primary"
+        [disabled]="charge.invalid || busy() || selected()?.status !== 'draft'"
+      >
+        Añadir cargo
+      </button>
     </div>
   </form>
 </dialog>
-<dialog #packageDialog>
-  <h2>Añadir paquetes a la nota</h2>
+<dialog #packageDialog aria-labelledby="billing-package-title">
+  <h2 id="billing-package-title">Añadir paquetes a la nota</h2>
   <div class="package-options">
     @for (item of packages(); track item.id) {
       <div class="line-list">
         <span>{{ item.description }} · {{ item.carrier_tracking }}</span
-        ><button class="button compact" (click)="addPackage(item.id)" [disabled]="busy()">
+        ><button
+          class="button compact"
+          (click)="addPackage(item.id)"
+          [disabled]="busy() || selected()?.status !== 'draft'"
+        >
           Añadir
         </button>
       </div>
@@ -462,19 +474,25 @@
     <button class="button" (click)="packageDialog.close()" [disabled]="busy()">Cerrar</button>
   </div>
 </dialog>
-<dialog #rateDialog>
-  <h2>Cambiar tarifa del cargo</h2>
+<dialog #rateDialog aria-labelledby="billing-rate-title">
+  <h2 id="billing-rate-title">Cambiar tarifa del cargo</h2>
   <label class="field">Tarifa en USD<input [formControl]="rate" inputmode="decimal" /></label>
   @if (formError()) {
     <p class="alert error" role="alert">{{ formError() }}</p>
   }
   <div class="actions">
     <button class="button" (click)="rateDialog.close()" [disabled]="busy()">Cancelar</button
-    ><button class="button primary" (click)="saveRate()" [disabled]="busy()">Guardar tarifa</button>
+    ><button
+      class="button primary"
+      (click)="saveRate()"
+      [disabled]="busy() || selected()?.status !== 'draft'"
+    >
+      Guardar tarifa
+    </button>
   </div>
 </dialog>
-<dialog #destinationDialog>
-  <h2>Cambiar destino</h2>
+<dialog #destinationDialog aria-labelledby="billing-destination-title">
+  <h2 id="billing-destination-title">Cambiar destino</h2>
   <form [formGroup]="creation" (ngSubmit)="saveDestination()">
     <div class="form-grid">
       <label class="field full"
@@ -531,7 +549,9 @@
     <div class="actions">
       <button type="button" class="button" (click)="destinationDialog.close()" [disabled]="busy()">
         Cancelar</button
-      ><button class="button primary" [disabled]="busy()">Guardar destino</button>
+      ><button class="button primary" [disabled]="busy() || selected()?.status !== 'draft'">
+        Guardar destino
+      </button>
     </div>
   </form>
 </dialog>
