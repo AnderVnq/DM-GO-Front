@@ -146,3 +146,32 @@ test('permite cambiar de tema cuando el almacenamiento de preferencias está blo
   await page.getByRole('button', { name: 'Cambiar a modo claro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`el cambio de tema anima los colores con movimiento ${reducedMotion}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion });
+    await mockPanel(page);
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Cambiar a modo oscuro', exact: true }).click();
+    const animated = await page
+      .locator('body')
+      .evaluate((el) =>
+        el
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation instanceof CSSTransition &&
+              animation.transitionProperty === 'background-color',
+          ),
+      );
+    expect(animated).toBe(reducedMotion === 'no-preference');
+    // Una segunda pulsación debe invertir el cambio sin esperar a que termine.
+    await page.getByRole('button', { name: 'Cambiar a modo claro', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(248, 250, 252)');
+    await expect
+      .poll(() => page.locator('body').evaluate((el) => el.getAnimations().length))
+      .toBe(0);
+    expect(await page.evaluate(() => localStorage.getItem('dm48-theme'))).toBe('light');
+  });
+}

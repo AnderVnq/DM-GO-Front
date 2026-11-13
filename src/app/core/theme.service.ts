@@ -12,6 +12,7 @@ export class ThemeService {
   private readonly current = signal<ThemeMode>('light');
   readonly mode = this.current.asReadonly();
   private preferred: ThemeMode | null = null;
+  private animationTimer?: number;
 
   constructor() {
     this.preferred = this.readPreference();
@@ -27,6 +28,8 @@ export class ThemeService {
     this.media?.addEventListener('change', onSystemChange);
     this.window?.addEventListener('storage', onStorageChange);
     inject(DestroyRef).onDestroy(() => {
+      this.window?.clearTimeout(this.animationTimer);
+      this.document.documentElement.classList.remove('theme-changing');
       this.media?.removeEventListener('change', onSystemChange);
       this.window?.removeEventListener('storage', onStorageChange);
     });
@@ -34,6 +37,17 @@ export class ThemeService {
 
   toggle() {
     this.preferred = this.mode() === 'dark' ? 'light' : 'dark';
+    this.window?.clearTimeout(this.animationTimer);
+    const root = this.document.documentElement;
+    if (this.window && !this.window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('theme-changing');
+      this.animationTimer = this.window.setTimeout(
+        () => root.classList.remove('theme-changing'),
+        240,
+      );
+    } else {
+      root.classList.remove('theme-changing');
+    }
     this.apply(this.preferred);
     try {
       this.window?.localStorage.setItem(storageKey, this.preferred);
