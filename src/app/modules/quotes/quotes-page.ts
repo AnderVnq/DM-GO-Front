@@ -54,7 +54,7 @@ export class QuotesPage {
     prospect_phone: [''],
     product_name: ['', Validators.required],
     product_url: [''],
-    store: ['', Validators.required],
+    store: [''],
     price: ['', Validators.required],
     quantity: [1, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)]],
     grams: [0, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)]],
