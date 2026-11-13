@@ -18,7 +18,7 @@ pnpm start
 
 Abre `http://localhost:3000`. El servidor de desarrollo envía `/api/**` al backend mediante `proxy.conf.json`. Los callbacks y orígenes del cliente Keycloak deben admitir `http://localhost:3000/*`.
 
-La primera instalación requiere acceso al registro npm y genera `pnpm-lock.yaml`. Versiona ese archivo y usa `pnpm install --frozen-lockfile` en las instalaciones siguientes. No es necesario instalar Angular globalmente.
+Las dependencias están fijadas en `pnpm-lock.yaml`. Usa `pnpm install --frozen-lockfile` para reproducir la instalación; requiere acceso al registro npm. No es necesario instalar Angular globalmente.
 
 ## Configuración pública
 
@@ -77,7 +77,7 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-`test:core` usa el ejecutor de Node y funciona sin instalar Angular. `test` ejecuta las pruebas Angular con Vitest. Las pruebas de acceso de Playwright simulan la indisponibilidad del proveedor de identidad y comprueban el acceso restringido, teclado y adaptación del inicio de sesión. No sustituyen una prueba de sesión y escrituras contra servicios de desarrollo reales.
+`test:core` usa el ejecutor de Node y funciona sin instalar Angular. `test` ejecuta las pruebas Angular con Vitest. Playwright comprueba acceso restringido, teclado, adaptación móvil y los recorridos de clientes, prealertas, liquidación y pagos. Los recorridos usan dobles de OIDC y de la API exclusivos de las pruebas, sin credenciales ni escrituras reales. También se comprueba la indisponibilidad del proveedor de identidad. No sustituyen una prueba de sesión y escrituras contra servicios de desarrollo reales.
 
 ## Compilación y despliegue
 

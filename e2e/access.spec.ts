@@ -8,14 +8,19 @@ test.beforeEach(async ({ page }) => {
 
 test('protege el área interna sin una sesión válida', async ({ page }) => {
   await page.goto('/internal/packages');
-  await expect(page).toHaveURL(/\/login/);
-  await expect(page.getByRole('heading', { name: 'Panel interno' })).toBeVisible();
+  // Keycloak espera hasta 10 s por el iframe cuando el proveedor no responde.
+  await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Panel interno' })).toBeVisible({
+    timeout: 15000,
+  });
   await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
 });
 
 test('mantiene legible el acceso y permite navegar con teclado', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Panel interno' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Panel interno' })).toBeVisible({
+    timeout: 15000,
+  });
   const noHorizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth <= window.innerWidth,
   );
