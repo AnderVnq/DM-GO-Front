@@ -1,0 +1,52 @@
+.awb-board {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.85fr) minmax(0, 1.3fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.awb-board > section {
+  min-width: 0;
+}
+.package-card,
+.guide-group {
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  padding: 1rem;
+  margin-block: 1rem;
+  background: var(--surface);
+}
+.package-card[draggable='true'] {
+  cursor: grab;
+}
+.move-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.move-controls .field {
+  flex: 1;
+  min-width: 10rem;
+}
+.guide-group > .page-header {
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.group-package {
+  padding-block: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.draft {
+  border-style: dashed;
+}
+h2:focus,
+h3:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+@media (max-width: 950px) {
+  .awb-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

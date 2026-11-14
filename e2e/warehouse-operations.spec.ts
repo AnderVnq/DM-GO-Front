@@ -81,12 +81,17 @@ async function warehouseOperations(page: Page, role = 'admin') {
           mode: 'courier',
           store: '',
           has_invoice: false,
+          unit_value_cents: 0,
+          quantity: 1,
+          observation: '',
+          invoice_pending: true,
+          locker_code: 'PE00042',
           declared_value_cents: 0,
           created_at: us.created_at,
           receipt: {
             number: 'WR-000042',
             weight_g: 1000,
-            weight_kg: '1.00',
+            weight_kg: '1.000',
             received_at: us.created_at,
             dimensions_mm: [200, 100, 100],
             condition: 'good',
@@ -173,7 +178,7 @@ test('supervisión recibe con fotos y asigna sin conservar una búsqueda anterio
   await expect(page.getByRole('option', { name: /LIM-01|USA-03/ })).toHaveCount(0);
   await page.getByLabel('Tracking del transportista (opcional)').fill('TRACK-42');
   await page.getByLabel('Descripción del contenido').fill('Audífonos');
-  await page.getByLabel(/^Peso \(g\)/).fill('1000');
+  await page.getByLabel(/^Peso \(KG\)/).fill('1,000');
   await page.getByLabel('Largo (mm)', { exact: true }).fill('200');
   await page.getByLabel('Ancho (mm)', { exact: true }).fill('100');
   await page.getByLabel(/^Alto \(mm\)/).fill('100');
@@ -191,7 +196,7 @@ test('supervisión recibe con fotos y asigna sin conservar una búsqueda anterio
   );
   await page.getByRole('button', { name: 'Registrar recepción' }).click();
   await expect(page.getByRole('alert')).toContainText('Indica el casillero');
-  await expect(page.getByLabel(/^Peso \(g\)/)).toHaveValue('1000');
+  await expect(page.getByLabel(/^Peso \(KG\)/)).toHaveValue('1,000');
   await expect(page.getByRole('list', { name: 'Fotografías adjuntas' })).toContainText(
     'arrival.png',
   );
@@ -202,13 +207,13 @@ test('supervisión recibe con fotos y asigna sin conservar una búsqueda anterio
     warehouse_code: 'USA-01',
     carrier_tracking: 'TRACK-42',
     locker_code: 'PE00042',
-    weight_g: 1000,
+    weight_kg: '1.000',
     length_mm: 200,
     width_mm: 100,
     height_mm: 100,
     photo_document_ids: ['arrival-photo'],
   });
-  await expect(page.getByLabel(/^Peso \(g\)/)).toBeDisabled();
+  await expect(page.getByLabel(/^Peso \(KG\)/)).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Registrar recepción' })).toBeDisabled();
   await page.getByRole('button', { name: 'Cambiar a modo oscuro' }).click();
   await page.evaluate(() => window.scrollTo(0, 0));

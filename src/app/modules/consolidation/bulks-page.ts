@@ -1,3 +1,4 @@
+import { normalizeWeightKg, weightKgHint, formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,8 +8,8 @@ import { Observable, Subscription, catchError, forkJoin, of } from 'rxjs';
 import { CustomersApi, type Customer } from '../customers';
 import { ShipmentsApi, type Package } from '../shipments';
 import { WarehousesApi, type Warehouse } from '../warehouses';
-import { requestMessage } from '../../core/api-problem';
-import { formatDate, formatWeight } from '../../shared/amount';
+import { requestFieldError, requestMessage } from '../../core/api-problem';
+import { formatDate } from '../../shared/amount';
 import { savePdf } from '../../shared/download';
 import { Status } from '../../shared/status';
 import { ConsolidationApi } from './consolidation-api';
@@ -49,20 +50,20 @@ export class BulksPage {
   readonly success = signal('');
   readonly removing = signal('');
   readonly date = formatDate;
-  readonly weight = (value: number | undefined) =>
-    value === undefined ? '—' : formatWeight(value);
+  readonly measuredWeight = formatMeasuredWeight;
+  readonly validWeight = normalizeWeightKg;
+  readonly weightHint = weightKgHint;
+  readonly weightError = signal('');
   reference = '';
   warehouseCode = '';
   locker = '';
   candidateId = '';
   reason = '';
-  closure: BulkClosure = { seal: '', weight_g: 0, length_mm: 0, width_mm: 0, height_mm: 0 };
+  closure: BulkClosure = { seal: '', weight_kg: '', length_mm: 0, width_mm: 0, height_mm: 0 };
   get canClose() {
     return (
       !!this.closure.seal.trim() &&
-      Number.isInteger(this.closure.weight_g) &&
-      this.closure.weight_g >= 1 &&
-      this.closure.weight_g <= 500000 &&
+      normalizeWeightKg(this.closure.weight_kg) !== null &&
       [this.closure.length_mm, this.closure.width_mm, this.closure.height_mm].every(
         (v) => Number.isInteger(v) && v >= 1 && v <= 3000,
       )
@@ -124,7 +125,8 @@ export class BulksPage {
     this.success.set('');
   }
   private resetClosure() {
-    this.closure = { seal: '', weight_g: 0, length_mm: 0, width_mm: 0, height_mm: 0 };
+    this.weightError.set('');
+    this.closure = { seal: '', weight_kg: '', length_mm: 0, width_mm: 0, height_mm: 0 };
   }
   create() {
     if (
@@ -311,9 +313,11 @@ export class BulksPage {
   close() {
     const bulk = this.bulk();
     if (!bulk || bulk.status !== 'open' || !this.canClose || this.busy()) return;
+    this.weightError.set('');
     this.mutate(
       this.api.closeBulk(bulk.id, {
         ...this.closure,
+        weight_kg: normalizeWeightKg(this.closure.weight_kg)!,
         seal: this.closure.seal.trim().toUpperCase(),
       }),
       'Bulto cerrado.',
@@ -341,6 +345,7 @@ export class BulksPage {
       error: (error: unknown) => {
         this.busy.set(false);
         this.closeDialog().nativeElement.close();
+        this.weightError.set(requestFieldError(error, 'weight_kg'));
         this.error.set(requestMessage(error));
       },
     });

@@ -42,3 +42,10 @@ export function requestCode(error: unknown): string {
     ? problem.code
     : '';
 }
+
+export function requestFieldError(error: unknown, field: string): string {
+  if (!error || typeof error !== 'object' || !('error' in error)) return '';
+  const problem = error.error as ApiProblem | null;
+  const message = problem?.errors?.[field];
+  return typeof message === 'string' ? message : '';
+}

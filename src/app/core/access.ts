@@ -1,3 +1,7 @@
+export function isAdmin(roles: readonly string[]): boolean {
+  return roles.includes('admin');
+}
+
 export function isStaff(roles: readonly string[]): boolean {
   return roles.some((role) => ['admin', 'supervisor', 'seller'].includes(role));
 }

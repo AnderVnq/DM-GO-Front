@@ -5,8 +5,8 @@
   </div>
   <button
     class="button primary"
-    [disabled]="!customer() || busy()"
-    (click)="prealertDialog.showModal()"
+    [disabled]="!customer() || busy() || loading()"
+    (click)="prealertForm.reset(); prealertDialog.showModal()"
   >
     <app-icon name="plus" />Nueva prealerta
   </button>
@@ -34,20 +34,30 @@
     <app-icon name="search" />
   </button>
 </form>
+<div class="actions">
+  <button
+    class="button"
+    [disabled]="busy() || loading()"
+    [attr.aria-pressed]="pendingOnly()"
+    (click)="loadPending()"
+  >
+    Pendientes de factura
+  </button>
+</div>
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
 @if (loading()) {
   <p role="status" class="muted">Cargando paquetes…</p>
 }
-@if (customer()) {
+@if (customer() || pendingOnly()) {
   <div class="split-view">
     <section class="surface">
       <div class="surface-body">
         <label class="field"
-          >Filtrar paquetes del cliente<input
+          >Filtrar paquetes del cliente o pendientes<input
             class="search-input"
-            placeholder="Tienda, contenido o tracking"
+            placeholder="Compañía, contenido o tracking"
             [value]="filter()"
             (input)="filter.set($any($event.target).value)"
         /></label>
@@ -56,8 +66,9 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Tienda y contenido</th>
+              <th>Compañía y contenido</th>
               <th>Tracking</th>
+              <th>Casillero</th>
               <th>Estado</th>
               <th>Valor declarado</th>
             </tr>
@@ -72,11 +83,17 @@
                     (click)="select(item)"
                     [attr.aria-pressed]="selected()?.id === item.id"
                   >
-                    {{ item.store || 'Sin tienda' }}<small>{{ item.description }}</small>
+                    {{ item.store || 'Sin compañía' }}<small>{{ item.description }}</small>
                   </button>
                 </td>
                 <td class="numeric">{{ item.carrier_tracking }}</td>
-                <td><app-status [value]="item.status" /></td>
+                <td>{{ item.locker_code }}</td>
+                <td>
+                  <app-status [value]="item.status" />
+                  @if (item.invoice_pending) {
+                    <small>Falta factura · en espera</small>
+                  }
+                </td>
                 <td class="numeric">{{ money(item.declared_value_cents) }}</td>
               </tr>
             }
@@ -86,18 +103,29 @@
       @if (!filtered().length) {
         <div class="empty-state">
           <app-icon name="packages" />
-          <h2>{{ packages().length ? 'Sin coincidencias' : 'Todavía no hay paquetes' }}</h2>
+          <h2>
+            {{
+              packages().length
+                ? 'Sin coincidencias'
+                : pendingOnly()
+                  ? 'No hay facturas pendientes'
+                  : 'Todavía no hay paquetes'
+            }}
+          </h2>
           <p>
             {{
               packages().length
                 ? 'Prueba otro filtro.'
-                : 'Registra una prealerta para este cliente.'
+                : pendingOnly()
+                  ? 'Los paquetes con factura pendiente aparecerán aquí.'
+                  : 'Registra una prealerta para este cliente.'
             }}
           </p>
         </div>
       }
       <div class="table-footer">
-        {{ filtered().length }} de {{ packages().length }} paquetes del cliente seleccionado
+        {{ filtered().length }} de {{ packages().length }} paquetes
+        {{ pendingOnly() ? 'pendientes de factura' : 'del cliente seleccionado' }}
       </div>
     </section>
     @if (selected(); as item) {
@@ -109,6 +137,9 @@
             <h3>{{ item.store }}</h3>
             <p>{{ item.description }}</p>
             <app-status [value]="item.status" />
+            @if (item.invoice_pending) {
+              <p role="status">Falta factura · en espera</p>
+            }
             @if (auth.manager() && item.status === 'RECEIVED_USA' && item.mode === 'courier') {
               <div class="actions">
                 <a
@@ -136,7 +167,23 @@
           </div>
           <div>
             <dt>Peso recibido</dt>
-            <dd>{{ item.receipt ? weight(item.receipt.weight_g) : 'Pendiente de recepción' }}</dd>
+            <dd>{{ item.receipt ? measuredWeight(item.receipt) : 'Pendiente de recepción' }}</dd>
+          </div>
+          <div>
+            <dt>Precio por unidad</dt>
+            <dd>{{ money(item.unit_value_cents) }}</dd>
+          </div>
+          <div>
+            <dt>Cantidad</dt>
+            <dd>{{ item.quantity }}</dd>
+          </div>
+          <div>
+            <dt>Casillero</dt>
+            <dd>{{ item.locker_code }}</dd>
+          </div>
+          <div>
+            <dt>Observación</dt>
+            <dd>{{ item.observation || 'Sin observación' }}</dd>
           </div>
         </dl>
         @if (detailError()) {
@@ -209,7 +256,11 @@
     <p>Busca su casillero, DNI o RUC para consultar los paquetes y registrar prealertas.</p>
   </section>
 }
-<dialog #prealertDialog aria-labelledby="package-prealert-title">
+<dialog
+  #prealertDialog
+  (cancel)="busy() && $event.preventDefault()"
+  aria-labelledby="package-prealert-title"
+>
   <div class="dialog-header">
     <div>
       <h2 id="package-prealert-title">Nueva prealerta</h2>
@@ -225,36 +276,11 @@
       <app-icon name="close" />
     </button>
   </div>
-  <form [formGroup]="form" (ngSubmit)="create()">
-    <div class="form-grid">
-      <label class="field"
-        >Modalidad<select formControlName="mode">
-          <option value="courier">Courier</option>
-          <option value="traveler">Viajero</option>
-        </select></label
-      ><label class="field">Tienda<input formControlName="store" required /></label
-      ><label class="field full"
-        >Tracking del transportista<input formControlName="carrier_tracking" required /></label
-      ><label class="field full"
-        >Contenido del paquete<input formControlName="description" required /></label
-      ><label class="field"
-        >Valor declarado en USD<input
-          formControlName="amount"
-          inputmode="decimal"
-          placeholder="0.00"
-          required
-        /><span class="field-hint">De USD 0.01 a USD 100 000; máximo dos decimales.</span></label
-      >
-    </div>
-    @if (formError()) {
-      <p class="alert error" role="alert">{{ formError() }}</p>
-    }
-    <div class="actions">
-      <button type="button" class="button" (click)="prealertDialog.close()" [disabled]="busy()">
-        Cancelar</button
-      ><button class="button primary" [disabled]="form.invalid || busy()">
-        {{ busy() ? 'Registrando…' : 'Registrar prealerta' }}
-      </button>
-    </div>
-  </form>
+  <app-prealert-form
+    #prealertForm
+    [portal]="false"
+    [customerId]="customer()?.id || ''"
+    (busyChange)="busy.set($event)"
+    (created)="onCreated($event)"
+  />
 </dialog>

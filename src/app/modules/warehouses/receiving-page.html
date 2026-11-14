@@ -72,15 +72,34 @@
           ></label
         >
         <label class="field"
-          >Peso (g)<input
-            name="weight_g"
-            [(ngModel)]="input.weight_g"
-            type="number"
-            min="1"
-            max="500000"
-            step="1"
+          >Peso (KG)<input
+            name="weight_kg"
+            [(ngModel)]="input.weight_kg"
+            type="text"
+            inputmode="decimal"
+            min="0.001"
+            max="500"
+            step="0.001"
+            placeholder="0.000"
+            #receiptWeight="ngModel"
+            (ngModelChange)="weightError.set('')"
+            aria-describedby="receipt-weight-error"
+            [attr.aria-invalid]="
+              weightError() || (receiptWeight.touched && !validWeight(input.weight_kg))
+                ? true
+                : null
+            "
             required
-          /><span class="field-hint">1 kg = 1000 g. Máximo 500000 g.</span></label
+          /><span class="field-hint">{{ weightHint }}</span
+          ><span
+            id="receipt-weight-error"
+            class="field-hint"
+            [attr.role]="weightError() ? 'alert' : null"
+            >{{
+              weightError() ||
+                (receiptWeight.touched && !validWeight(input.weight_kg) ? weightHint : '')
+            }}</span
+          ></label
         >
         <label class="field"
           >Largo (mm)<input
@@ -184,7 +203,7 @@
         </div>
         <div>
           <dt>Peso registrado</dt>
-          <dd>{{ weight(result.package.receipt?.weight_g) }}</dd>
+          <dd>{{ measuredWeight(result.package.receipt) }}</dd>
         </div>
         <div>
           <dt>Fecha de recepción</dt>

@@ -1,3 +1,4 @@
+import { formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,7 +7,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, Subscription, catchError, forkJoin, of } from 'rxjs';
 import { WarehousesApi, type Warehouse } from '../warehouses';
 import { requestMessage } from '../../core/api-problem';
-import { formatDate, formatWeight } from '../../shared/amount';
+import { formatDate } from '../../shared/amount';
 import { Status } from '../../shared/status';
 import { ConsolidationApi } from './consolidation-api';
 import { lotReference } from './lot-reference';
@@ -42,8 +43,7 @@ export class ConsolidationsPage {
   readonly detailError = signal('');
   readonly success = signal('');
   readonly date = formatDate;
-  readonly weight = (value: number | undefined) =>
-    value === undefined ? '—' : formatWeight(value);
+  readonly measuredWeight = formatMeasuredWeight;
   reference = '';
   bulkReference = '';
   warehouseCode = '';

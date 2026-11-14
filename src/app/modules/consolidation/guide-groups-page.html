@@ -1,0 +1,173 @@
+<div class="page-header">
+  <div>
+    <h1>Creación de AWB</h1>
+    <p>Arrastra las facturas para agruparlas por AWB.</p>
+  </div>
+  <div class="actions">
+    <a class="button" routerLink="/internal/consolidations" [queryParams]="{ consolidation_id: id }"
+      >Volver al consolidado</a
+    ><button class="button" (click)="reload()" [disabled]="busy() || loading()">
+      Actualizar tablero
+    </button>
+  </div>
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+<p role="status" aria-live="polite">
+  {{ busy() ? 'Guardando agrupación…' : loading() ? 'Cargando tablero…' : notice() }}
+</p>
+@if (board(); as board) {
+  <p>
+    <strong>{{ board.code }}</strong> ·
+    {{ board.status === 'open' ? 'Consolidado abierto' : 'Consolidado cerrado · Solo lectura' }}
+  </p>
+  <div class="awb-board" [attr.aria-busy]="busy() || loading()">
+    <section class="available" aria-labelledby="awb-available">
+      <h2 id="awb-available" tabindex="-1">
+        Casilleros disponibles <span class="muted">({{ board.ungrouped.length }})</span>
+      </h2>
+      <label class="field"
+        >Buscar por tracking o casillero<input
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+          placeholder="Tracking o PE00003"
+      /></label>
+      <p class="fine-print">
+        Cada tarjeta es un paquete. Los paquetes sueltos reciben su propia guía al cerrar.
+      </p>
+      @for (card of available(); track card.id) {
+        <article
+          class="package-card"
+          [draggable]="editable()"
+          (dragstart)="startDrag($event, card.id)"
+        >
+          <app-guide-package-card [card]="card" />
+          @if (board.status === 'open') {
+            <div class="move-controls">
+              <label class="field"
+                ><span class="sr-only">Grupo para {{ card.carrier_tracking }}</span
+                ><select
+                  #target
+                  [value]="hasDestination(card.id) ? destinations()[card.id] : ''"
+                  (change)="chooseTarget(card.id, target.value)"
+                  [disabled]="!editable() || !targets().length"
+                >
+                  <option value="">Selecciona un grupo</option>
+                  @for (group of targets(); track group.id) {
+                    <option [value]="group.id">{{ group.label }}</option>
+                  }
+                </select></label
+              ><button
+                class="button compact"
+                [disabled]="!editable() || !hasDestination(card.id)"
+                (click)="move(card.id, target.value)"
+                [attr.aria-label]="'Mover ' + card.carrier_tracking + ' a grupo'"
+              >
+                Mover a grupo
+              </button>
+            </div>
+          }
+        </article>
+      } @empty {
+        <p class="empty-state">
+          {{
+            board.ungrouped.length
+              ? 'Sin coincidencias. Prueba otro tracking o casillero.'
+              : 'No hay paquetes sueltos disponibles.'
+          }}
+        </p>
+      }
+    </section>
+    <section aria-labelledby="awb-groups">
+      <div class="page-header">
+        <h2 id="awb-groups" tabindex="-1">
+          Agrupaciones ({{ board.groups.length + drafts().length }})
+        </h2>
+        @if (board.status === 'open') {
+          <button class="button primary" (click)="addGroup()" [disabled]="!editable()">
+            Agregar grupo
+          </button>
+        }
+      </div>
+      <p class="fine-print">
+        Una guía reúne paquetes del mismo cliente y consignatario. El orden de los grupos define el
+        manifiesto.
+      </p>
+      @for (group of board.groups; track group.id; let i = $index) {
+        <section
+          class="guide-group"
+          (dragover)="allowDrop($event)"
+          (drop)="drop($event, group.id)"
+          [attr.aria-labelledby]="'awb-' + group.id"
+        >
+          <div class="page-header">
+            <h3 [id]="'awb-' + group.id" tabindex="-1">
+              Grupo {{ i + 1 }} · {{ group.packages.length }} paquete(s)
+            </h3>
+            @if (board.status === 'open') {
+              <div class="actions">
+                <button
+                  class="button compact"
+                  [disabled]="!editable() || i === 0"
+                  (click)="reorder(group.id, -1)"
+                  [attr.aria-label]="'Subir grupo ' + (i + 1)"
+                >
+                  Subir</button
+                ><button
+                  class="button compact"
+                  [disabled]="!editable() || i === board.groups.length - 1"
+                  (click)="reorder(group.id, 1)"
+                  [attr.aria-label]="'Bajar grupo ' + (i + 1)"
+                >
+                  Bajar</button
+                ><button
+                  class="text-button"
+                  [disabled]="!editable()"
+                  (click)="deleteGroup(group.id)"
+                >
+                  Eliminar grupo
+                </button>
+              </div>
+            }
+          </div>
+          @for (card of group.packages; track card.id) {
+            <article class="group-package">
+              <app-guide-package-card [card]="card" />
+              @if (board.status === 'open') {
+                <button
+                  class="text-button"
+                  (click)="remove(group.id, card.id)"
+                  [disabled]="!editable()"
+                  [attr.aria-label]="'Quitar ' + card.carrier_tracking + ' del grupo'"
+                >
+                  Quitar del grupo
+                </button>
+              }
+            </article>
+          }
+        </section>
+      }
+      @for (draft of drafts(); track draft; let i = $index) {
+        <section
+          class="guide-group draft"
+          (dragover)="allowDrop($event)"
+          (drop)="drop($event, draft)"
+          [attr.aria-labelledby]="'awb-' + draft"
+        >
+          <h3 [id]="'awb-' + draft" tabindex="-1">Nuevo grupo {{ board.groups.length + i + 1 }}</h3>
+          <p>Arrastra un paquete aquí o usa «Mover a grupo» para guardarlo.</p>
+          <button class="text-button" [disabled]="!editable()" (click)="deleteGroup(draft)">
+            Quitar grupo vacío
+          </button>
+        </section>
+      }
+      @if (!board.groups.length && !drafts().length) {
+        <div class="empty-state">
+          <h3>Crea grupos de facturas para ordenarlos en el manifiesto</h3>
+          <p>Agrega un grupo y mueve los paquetes que compartirán una guía.</p>
+        </div>
+      }
+    </section>
+  </div>
+}

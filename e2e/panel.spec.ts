@@ -13,24 +13,32 @@ test('busca un cliente, consulta el seguimiento y registra una prealerta', async
   await expect(page.getByText('Liberado por aduana', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Tienda', { exact: true }).fill('Otra tienda');
-  await dialog.getByLabel('Tracking del transportista').fill('TEST-NEW-43');
-  await dialog.getByLabel('Contenido del paquete').fill('Libro de prueba');
-  await dialog.getByLabel('Valor declarado en USD').fill('49.99');
+  await dialog.getByLabel('Compañía de envío').fill('Otra tienda');
+  await dialog.getByLabel('Número de tracking').fill('TEST-NEW-43');
+  await dialog.getByLabel('Contenido', { exact: true }).fill('Libro de prueba');
+  await dialog.getByLabel('Precio por unidad (USD)').fill('49.99');
   await dialog.getByRole('button', { name: 'Registrar prealerta', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.inspector')).toContainText('Libro de prueba');
-  expect(fixture.requests.filter((r) => r.path === '/packages' && r.method === 'POST')).toEqual([
+  expect(
+    fixture.requests.filter((r) => r.path === '/packages/batch' && r.method === 'POST'),
+  ).toEqual([
     {
-      path: '/packages',
+      path: '/packages/batch',
       method: 'POST',
       body: {
         customer_id: fixture.customer.id,
         mode: 'courier',
-        store: 'Otra tienda',
-        carrier_tracking: 'TEST-NEW-43',
-        description: 'Libro de prueba',
-        declared_value_cents: 4999,
+        packages: [
+          {
+            store: 'Otra tienda',
+            carrier_tracking: 'TEST-NEW-43',
+            description: 'Libro de prueba',
+            unit_value_cents: 4999,
+            quantity: 1,
+            observation: '',
+          },
+        ],
       },
     },
   ]);

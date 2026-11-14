@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <h1>Consolidados</h1>
-    <p>Reúne bultos cerrados y emite las guías de cada paquete.</p>
+    <p>Reúne bultos cerrados y organiza los paquetes por guía.</p>
   </div>
   <div class="actions">
     <a class="button" routerLink="/internal/bulks">Bultos</a
@@ -48,6 +48,11 @@
           Copiar enlace
         </button>
       </div>
+      <div class="actions">
+        <a class="button" [routerLink]="['/internal/consolidations', item.id, 'guide-groups']">{{
+          item.status === 'open' ? 'Creación de AWB' : 'Ver agrupaciones AWB'
+        }}</a>
+      </div>
       <h3 class="detail-section">Bultos incluidos</h3>
       <ul class="line-list">
         @for (id of item.bulk_ids; track id) {
@@ -55,7 +60,7 @@
             <a routerLink="/internal/bulks" [queryParams]="{ bulk_id: id }">{{
               contents()[id]?.code || id
             }}</a><span>{{
-              contents()[id] ? weight(contents()[id].weight_g) : 'Detalle no disponible'
+              contents()[id] ? measuredWeight(contents()[id]) : 'Detalle no disponible'
             }}</span>
           </li>
         } @empty {
@@ -94,15 +99,15 @@
               <li>
                 <strong>{{ guide.number }}</strong><span
                   >{{ guide.package_ids.length }} paquete(s)</span
-                ><a
-                  class="text-button"
-                  routerLink="/internal/packages"
-                  [queryParams]="{
-                    customer_id: guide.customer_id,
-                    package_id: guide.package_ids[0],
-                  }"
-                  >Ver paquete</a
                 >
+                @for (packageId of guide.package_ids; track packageId; let i = $index) {
+                  <a
+                    class="text-button"
+                    routerLink="/internal/packages"
+                    [queryParams]="{ customer_id: guide.customer_id, package_id: packageId }"
+                    >Ver paquete {{ i + 1 }}</a
+                  >
+                }
               </li>
             } @empty {
               <li>
@@ -197,7 +202,7 @@
             </div>
             <div>
               <dt>Peso</dt>
-              <dd>{{ weight(bulk.weight_g) }}</dd>
+              <dd>{{ measuredWeight(bulk) }}</dd>
             </div>
           </dl>
           @if (unavailable) {

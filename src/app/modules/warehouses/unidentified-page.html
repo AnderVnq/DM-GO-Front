@@ -39,7 +39,7 @@
                 </button>
               </td>
               <td>{{ item.description }}</td>
-              <td>{{ weight(item.receipt?.weight_g) }}</td>
+              <td>{{ measuredWeight(item.receipt) }}</td>
               <td>{{ date(item.receipt?.received_at || item.created_at) }}</td>
             </tr>
           }

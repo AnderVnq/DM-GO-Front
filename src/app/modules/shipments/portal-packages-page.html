@@ -3,7 +3,11 @@
     <h1>Mis paquetes</h1>
     <p>Prealerta tus compras y consulta su recorrido hasta Perú.</p>
   </div>
-  <button class="button primary" (click)="openCreate()" [disabled]="busy()">
+  <button
+    class="button primary"
+    (click)="prealertForm.reset(); openCreate()"
+    [disabled]="busy() || loading()"
+  >
     <app-icon name="plus" />Nueva prealerta
   </button>
 </div>
@@ -12,7 +16,7 @@
     >Filtrar mis paquetes<input
       [value]="filter()"
       (input)="filter.set($any($event.target).value)"
-      placeholder="Tienda, contenido o tracking" /></label
+      placeholder="Compañía, contenido o tracking" /></label
   ><button class="button" (click)="reload()" [disabled]="loading() || busy()">Actualizar</button>
 </div>
 @if (error()) {
@@ -38,11 +42,16 @@
             <tr [class.selected]="selected()?.id === item.id">
               <td>
                 <button class="row-button" (click)="select(item)" [disabled]="busy()">
-                  {{ item.store || 'Sin tienda' }}<small>{{ item.description }}</small>
+                  {{ item.store || 'Sin compañía' }}<small>{{ item.description }}</small>
                 </button>
               </td>
               <td>{{ item.carrier_tracking }}</td>
-              <td><app-status [value]="item.status" /></td>
+              <td>
+                <app-status [value]="item.status" />
+                @if (item.invoice_pending) {
+                  <small>Falta factura · en espera</small>
+                }
+              </td>
               <td class="numeric">{{ money(item.declared_value_cents) }}</td>
             </tr>
           }
@@ -68,14 +77,17 @@
     <aside class="inspector">
       <h2>{{ item.description }}</h2>
       <app-status [value]="item.status" />
+      @if (item.invoice_pending) {
+        <p role="status">Falta factura · en espera</p>
+      }
       <dl class="detail-grid">
         <div>
           <dt>Tracking</dt>
           <dd>{{ item.carrier_tracking }}</dd>
         </div>
         <div>
-          <dt>Tienda</dt>
-          <dd>{{ item.store || 'Sin tienda' }}</dd>
+          <dt>Compañía de envío</dt>
+          <dd>{{ item.store || 'Sin compañía' }}</dd>
         </div>
         <div>
           <dt>Valor declarado</dt>
@@ -83,7 +95,23 @@
         </div>
         <div>
           <dt>Peso recibido</dt>
-          <dd>{{ item.receipt ? weight(item.receipt.weight_g) : 'Pendiente de recepción' }}</dd>
+          <dd>{{ item.receipt ? measuredWeight(item.receipt) : 'Pendiente de recepción' }}</dd>
+        </div>
+        <div>
+          <dt>Precio por unidad</dt>
+          <dd>{{ money(item.unit_value_cents) }}</dd>
+        </div>
+        <div>
+          <dt>Cantidad</dt>
+          <dd>{{ item.quantity }}</dd>
+        </div>
+        <div>
+          <dt>Casillero</dt>
+          <dd>{{ item.locker_code }}</dd>
+        </div>
+        <div>
+          <dt>Observación</dt>
+          <dd>{{ item.observation || 'Sin observación' }}</dd>
         </div>
       </dl>
       <section class="detail-section">
@@ -163,7 +191,11 @@
     </aside>
   }
 </div>
-<dialog #createDialog aria-labelledby="portal-prealert-title">
+<dialog
+  #createDialog
+  (cancel)="busy() && $event.preventDefault()"
+  aria-labelledby="portal-prealert-title"
+>
   <div class="dialog-header">
     <h2 id="portal-prealert-title">Nueva prealerta</h2>
     <button
@@ -175,34 +207,10 @@
       <app-icon name="close" />
     </button>
   </div>
-  <form [formGroup]="form" (ngSubmit)="create()">
-    <div class="form-grid">
-      <label class="field"
-        >Modalidad<select formControlName="mode">
-          <option value="courier">Courier</option>
-          <option value="traveler">Viajero</option>
-        </select></label
-      ><label class="field">Tienda<input formControlName="store" required /></label
-      ><label class="field full"
-        >Tracking del transportista<input formControlName="carrier_tracking" required /></label
-      ><label class="field full"
-        >Contenido del paquete<input formControlName="description" required /></label
-      ><label class="field"
-        >Valor declarado en USD<input formControlName="amount" inputmode="decimal" required
-      /></label>
-    </div>
-    <p class="fine-print actions">
-      Indica el valor de tu compra, hasta USD 100 000, con máximo dos decimales.
-    </p>
-    @if (formError()) {
-      <p class="alert error" role="alert">{{ formError() }}</p>
-    }
-    <div class="actions">
-      <button type="button" class="button" (click)="createDialog.close()" [disabled]="busy()">
-        Cancelar</button
-      ><button class="button primary" [disabled]="form.invalid || busy()">
-        {{ busy() ? 'Registrando…' : 'Registrar prealerta' }}
-      </button>
-    </div>
-  </form>
+  <app-prealert-form
+    #prealertForm
+    [portal]="true"
+    (busyChange)="busy.set($event)"
+    (created)="onCreated($event)"
+  />
 </dialog>

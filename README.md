@@ -80,7 +80,7 @@ La portada pública está en `/`, el alta y casillero propio en `/portal` y el p
 - Cotizaciones: compra asistida para prospectos o clientes, desglose y PDF. Un prospecto requiere nombre y al menos correo o teléfono; tienda y enlace del producto son opcionales.
 - Resumen: registros recientes y accesos a la operación; sin indicadores globales calculados a partir de muestras.
 
-Las acciones de gestión requieren `admin` o `supervisor`; `seller` accede a las operaciones admitidas para personal. El backend sigue validando permisos, estados y reglas financieras. Ante un conflicto en una nota, el panel consulta su estado actualizado y conserva las entradas; si la consulta falla, bloquea la nota obsoleta hasta volver a cargarla. Los importes se envían como centavos enteros, el peso como gramos y los totales se toman de la API.
+Las acciones de gestión requieren `admin` o `supervisor`; `seller` accede a las operaciones admitidas para personal. El backend sigue validando permisos, estados y reglas financieras. Ante un conflicto en una nota, el panel consulta su estado actualizado y conserva las entradas; si la consulta falla, bloquea la nota obsoleta hasta volver a cargarla. Los importes se envían como centavos enteros, el peso como texto decimal en kilogramos (hasta tres decimales) y los totales se toman de la API.
 
 ## Validación
 
@@ -151,7 +151,7 @@ Los tres módulos usan exclusivamente endpoints `/portal/`. Playwright comprueba
 ## Almacenes y recepción
 
 - `/internal/warehouses`: catálogo consultable por todo el personal. Solo administración crea y actualiza sedes; el código y país se conservan después del alta. Los almacenes inactivos mantienen su historial.
-- `/internal/warehouses/receiving`: supervisión y administración registran llegadas en sedes activas de Estados Unidos. Peso en gramos, dimensiones en milímetros y al menos una foto JPEG, PNG o WEBP (15 MB por archivo). La nota de entrada, el peso facturable y el flete se muestran según la respuesta del backend; sus medidas son inmutables.
+- `/internal/warehouses/receiving`: supervisión y administración registran llegadas en sedes activas de Estados Unidos. Peso en kilogramos (0.001–500 kg, hasta tres decimales; se acepta coma decimal), dimensiones en milímetros y al menos una foto JPEG, PNG o WEBP (15 MB por archivo). La nota de entrada, el peso facturable y el flete se muestran según la respuesta del backend; sus medidas son inmutables.
 - `/internal/warehouses/unidentified`: cola de paquetes sin propietario. La asignación requiere resolver un cliente por casillero; editar la búsqueda o cambiar de paquete descarta el cliente anterior.
 
 Las recepciones usan `POST /warehouse/receipts`; la cola usa `GET /warehouse/unidentified` y la asignación `POST /packages/:id/assign`. Las fotografías se suben al servicio de documentos antes de registrar la recepción y se conservan en el formulario tras errores recuperables. Los recorridos de navegador usan API simulada y no realizan escrituras reales.

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import { RuntimeConfig } from '../../core/runtime-config';
-import type { Package, PrealertInput, TrackingResponse } from './package.model';
+import type { Package, PrealertBatchInput, TrackingResponse } from './package.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortalShipmentsApi {
@@ -21,8 +21,10 @@ export class PortalShipmentsApi {
       `${this.base}/packages/${encodeURIComponent(id)}/tracking`,
     );
   }
-  prealert(input: Omit<PrealertInput, 'customer_id'>) {
-    return this.http.post<Package>(`${this.base}/prealerts`, input);
+  prealertBatch(input: PrealertBatchInput) {
+    return this.http
+      .post<{ packages: Package[] }>(`${this.base}/prealerts/batch`, input)
+      .pipe(map((data) => data.packages));
   }
   attachInvoice(id: string, file: File) {
     const body = new FormData();

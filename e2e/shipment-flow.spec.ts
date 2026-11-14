@@ -122,25 +122,27 @@ test('bloquea valores fuera del contrato y conserva el formulario de prealerta',
   await openPackages(page);
   await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Tienda', { exact: true }).fill('Tienda de prueba');
-  await dialog.getByLabel('Tracking del transportista', { exact: true }).fill('TEST-NEW-42');
-  await dialog.getByLabel('Contenido del paquete', { exact: true }).fill('Audífonos nuevos');
-  const amount = dialog.getByLabel('Valor declarado en USD');
+  await dialog.getByLabel('Compañía de envío').fill('Tienda de prueba');
+  await dialog.getByLabel('Número de tracking').fill('TEST-NEW-42');
+  await dialog.getByLabel('Contenido', { exact: true }).fill('Audífonos nuevos');
+  const amount = dialog.getByLabel('Precio por unidad (USD)');
   for (const value of ['0', '100000.01']) {
     await amount.fill(value);
     await dialog.getByRole('button', { name: 'Registrar prealerta', exact: true }).click();
-    await expect(dialog.getByRole('alert')).toContainText('mayor que cero y de hasta USD 100 000');
+    await expect(dialog.getByText(/Indica un precio positivo/)).toBeVisible();
     expect(
-      fixture.requests.filter((r) => r.path === '/packages' && r.method === 'POST'),
+      fixture.requests.filter((r) => r.path === '/packages/batch' && r.method === 'POST'),
     ).toHaveLength(0);
   }
   await amount.fill('100000');
   await dialog.getByRole('button', { name: 'Registrar prealerta', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   expect(
-    fixture.requests.find((r) => r.path === '/packages' && r.method === 'POST')?.body?.[
-      'declared_value_cents'
-    ],
+    (
+      fixture.requests.find((r) => r.path === '/packages/batch' && r.method === 'POST')?.body?.[
+        'packages'
+      ] as Record<string, unknown>[]
+    )[0]?.['unit_value_cents'],
   ).toBe(10000000);
 });
 
@@ -185,12 +187,12 @@ test('al cambiar de cliente no conserva el filtro invisible del cliente anterior
     else await route.fallback();
   });
   await openPackages(page);
-  await page.getByLabel('Filtrar paquetes del cliente').fill('sin coincidencias');
+  await page.getByLabel('Filtrar paquetes del cliente o pendientes').fill('sin coincidencias');
   await expect(page.getByRole('heading', { name: 'Sin coincidencias', exact: true })).toBeVisible();
   await page.getByLabel('Casillero o documento del cliente').fill('PE00043');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await expect(page.locator('.identity')).toContainText('Segundo cliente');
-  await expect(page.getByLabel('Filtrar paquetes del cliente')).toHaveValue('');
+  await expect(page.getByLabel('Filtrar paquetes del cliente o pendientes')).toHaveValue('');
   await expect(page.getByRole('cell', { name: 'SECOND-TRACK', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'TEST-TRACK-42', exact: true })).toHaveCount(0);
 });
@@ -224,7 +226,7 @@ test('bloquea el doble envío de prealerta y restaura la selección desde la URL
   const pending = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route('**/api/v1/packages', async (route) => {
+  await page.route('**/api/v1/packages/batch', async (route) => {
     if (route.request().method() === 'POST') {
       writes++;
       await pending;
@@ -235,21 +237,23 @@ test('bloquea el doble envío de prealerta y restaura la selección desde la URL
     await openPackages(page);
     await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Tienda', { exact: true }).fill('Nueva tienda');
-    await dialog.getByLabel('Tracking del transportista').fill('TEST-NEW-43');
-    await dialog.getByLabel('Contenido del paquete').fill('Nuevo libro');
-    await dialog.getByLabel('Valor declarado en USD').fill('49.99');
+    await dialog.getByLabel('Compañía de envío').fill('Nueva tienda');
+    await dialog.getByLabel('Número de tracking').fill('TEST-NEW-43');
+    await dialog.getByLabel('Contenido', { exact: true }).fill('Nuevo libro');
+    await dialog.getByLabel('Precio por unidad (USD)').fill('49.99');
     await dialog.locator('form').evaluate((form: HTMLFormElement) => {
       form.requestSubmit();
       form.requestSubmit();
     });
     await expect.poll(() => writes).toBe(1);
-    await expect(dialog.getByRole('button', { name: 'Registrando…', exact: true })).toBeDisabled();
+    await expect(
+      dialog.getByRole('button', { name: 'Registrando y subiendo facturas…', exact: true }),
+    ).toBeDisabled();
     release();
     await expect(dialog).not.toBeVisible();
     await expect(page.locator('.inspector')).toContainText('TEST-NEW-43');
     expect(
-      fixture.requests.filter((r) => r.path === '/packages' && r.method === 'POST'),
+      fixture.requests.filter((r) => r.path === '/packages/batch' && r.method === 'POST'),
     ).toHaveLength(1);
     await page.getByRole('button', { name: /Tienda de prueba.*Audífonos de prueba/ }).click();
     await expect(page).toHaveURL(/package_id=package-test/);

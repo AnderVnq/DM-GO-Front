@@ -216,14 +216,33 @@
               <label class="field full"
                 >Número de precinto<input name="seal" [(ngModel)]="closure.seal" required /></label
               ><label class="field"
-                >Peso final (g)<input
-                  name="weight_g"
-                  [(ngModel)]="closure.weight_g"
-                  type="number"
+                >Peso (KG)<input
+                  name="weight_kg"
+                  [(ngModel)]="closure.weight_kg"
+                  type="text"
+                  inputmode="decimal"
                   required
-                  min="1"
-                  max="500000"
-                  step="1" /></label
+                  min="0.001"
+                  max="500"
+                  step="0.001"
+                  placeholder="0.000"
+                  #bulkWeight="ngModel"
+                  (ngModelChange)="weightError.set('')"
+                  aria-describedby="bulk-weight-error"
+                  [attr.aria-invalid]="
+                    weightError() || (bulkWeight.touched && !validWeight(closure.weight_kg))
+                      ? true
+                      : null
+                  "
+                /><span
+                  id="bulk-weight-error"
+                  class="field-hint"
+                  [attr.role]="weightError() ? 'alert' : null"
+                  >{{
+                    weightError() ||
+                      (bulkWeight.touched && !validWeight(closure.weight_kg) ? weightHint : '')
+                  }}</span
+                ></label
               ><label class="field"
                 >Largo final (mm)<input
                   name="length_mm"
@@ -273,7 +292,7 @@
           </div>
           <div>
             <dt>Peso final</dt>
-            <dd>{{ weight(bulk.weight_g) }}</dd>
+            <dd>{{ measuredWeight(bulk) }}</dd>
           </div>
           <div>
             <dt>Medidas (mm)</dt>
@@ -363,7 +382,7 @@
     </div>
     <div>
       <dt>Peso</dt>
-      <dd>{{ weight(closure.weight_g) }}</dd>
+      <dd>{{ measuredWeight(closure) }}</dd>
     </div>
     <div>
       <dt>Medidas (mm)</dt>

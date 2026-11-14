@@ -1,3 +1,4 @@
+import { formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +8,7 @@ import { CustomersApi, type Customer } from '../customers';
 import type { Package } from '../shipments';
 import { ReceivingApi } from './receiving-api';
 import { warehouseError } from './warehouse-error';
-import { formatDate, formatWeight } from '../../shared/amount';
+import { formatDate } from '../../shared/amount';
 
 @Component({
   selector: 'app-unidentified-page',
@@ -31,8 +32,7 @@ export class UnidentifiedPage {
   readonly lookupError = signal('');
   readonly success = signal('');
   readonly date = formatDate;
-  readonly weight = (grams: number | undefined) =>
-    grams === undefined ? '—' : formatWeight(grams);
+  readonly measuredWeight = formatMeasuredWeight;
   locker = '';
   constructor() {
     this.reload();

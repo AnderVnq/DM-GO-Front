@@ -1,3 +1,4 @@
+import { formatMeasuredWeight } from '../../shared/weight';
 import {
   Component,
   DestroyRef,
@@ -8,21 +9,21 @@ import {
   type ElementRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { PortalShipmentsApi } from './portal-shipments-api';
 import type { Package, TrackingResponse } from './package.model';
-import { canAttachInvoice, declaredValueIssue } from './package-rules';
+import { PrealertForm, type PrealertResult } from './prealert-form';
+import { canAttachInvoice } from './package-rules';
 import { requestCode, requestMessage } from '../../core/api-problem';
-import { formatDate, formatUsd, formatWeight, parseAmountToCents } from '../../shared/amount';
+import { formatDate, formatUsd } from '../../shared/amount';
 import { fileError } from '../../shared/download';
 import { Status } from '../../shared/status';
 import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-packages-page',
-  imports: [ReactiveFormsModule, Status, Icon, RouterLink],
+  imports: [PrealertForm, Status, Icon, RouterLink],
   templateUrl: './portal-packages-page.html',
 })
 export class PortalPackagesPage {
@@ -30,7 +31,6 @@ export class PortalPackagesPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly fb = inject(FormBuilder);
   private reading?: Subscription;
   private trackingRequest?: Subscription;
   readonly packages = signal<Package[]>([]);
@@ -42,7 +42,6 @@ export class PortalPackagesPage {
   readonly error = signal('');
   readonly detailError = signal('');
   readonly trackingError = signal('');
-  readonly formError = signal('');
   readonly filter = signal('');
   readonly filtered = computed(() =>
     this.packages().filter((item) =>
@@ -53,16 +52,9 @@ export class PortalPackagesPage {
   );
   readonly money = formatUsd;
   readonly date = formatDate;
-  readonly weight = formatWeight;
+  readonly measuredWeight = formatMeasuredWeight;
   readonly editable = canAttachInvoice;
   readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('createDialog');
-  readonly form = this.fb.nonNullable.group({
-    mode: ['courier'],
-    store: ['', Validators.required],
-    carrier_tracking: ['', Validators.required],
-    description: ['', Validators.required],
-    amount: ['', Validators.required],
-  });
 
   constructor() {
     this.reload();
@@ -122,40 +114,21 @@ export class PortalPackagesPage {
     });
   }
   openCreate() {
-    this.form.reset();
-    this.formError.set('');
     this.dialog().nativeElement.showModal();
   }
-  create() {
-    if (this.form.invalid || this.busy()) return;
-    const { amount, ...input } = this.form.getRawValue();
-    const cents = parseAmountToCents(amount);
-    const issue = declaredValueIssue(cents);
-    if (issue || cents === null) {
-      this.formError.set(issue ?? 'Revisa el valor declarado.');
-      return;
-    }
-    this.reading?.unsubscribe();
-    this.loading.set(false);
-    this.busy.set(true);
-    this.formError.set('');
-    this.api
-      .prealert({ ...input, declared_value_cents: cents })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (item) => {
-          this.packages.update((items) => [item, ...items]);
-          this.filter.set('');
-          this.busy.set(false);
-          this.dialog().nativeElement.close();
-          this.select(item);
-        },
-        error: (error: unknown) => {
-          this.formError.set(requestMessage(error));
-          this.busy.set(false);
-        },
-      });
+  onCreated(result: PrealertResult) {
+    this.packages.update((items) => [...result.packages, ...items]);
+    this.filter.set('');
+    this.busy.set(false);
+    this.dialog().nativeElement.close();
+    if (result.packages[0]) this.select(result.packages[0]);
+    this.detailError.set(
+      result.warning
+        ? `Los paquetes se registraron. No se pudieron subir estas facturas; vuelve a adjuntarlas: ${result.warning}`
+        : '',
+    );
   }
+
   attach(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];

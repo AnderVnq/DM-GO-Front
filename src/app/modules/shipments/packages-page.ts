@@ -1,3 +1,4 @@
+import { formatMeasuredWeight } from '../../shared/weight';
 import {
   Component,
   DestroyRef,
@@ -12,11 +13,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 import { ShipmentsApi } from './shipments-api';
 import { type Package, type TrackingResponse } from './package.model';
-import { canAttachInvoice, declaredValueIssue } from './package-rules';
+import { PrealertForm, type PrealertResult } from './prealert-form';
+import { canAttachInvoice } from './package-rules';
 import { CustomersApi, type Customer } from '../customers';
 import { Icon } from '../../shared/icon';
 import { Status } from '../../shared/status';
-import { formatDate, formatUsd, formatWeight, parseAmountToCents } from '../../shared/amount';
+import { formatDate, formatUsd } from '../../shared/amount';
 import { AuthService } from '../../core/auth.service';
 import { DocumentsApi } from '../../core/documents-api';
 import { requestMessage } from '../../core/api-problem';
@@ -24,7 +26,7 @@ import { fileError, openDownload } from '../../shared/download';
 
 @Component({
   selector: 'app-packages-page',
-  imports: [ReactiveFormsModule, Icon, Status, RouterLink],
+  imports: [ReactiveFormsModule, PrealertForm, Icon, Status, RouterLink],
   templateUrl: './packages-page.html',
 })
 export class PackagesPage {
@@ -45,18 +47,18 @@ export class PackagesPage {
   readonly busy = signal(false);
   readonly error = signal('');
   readonly detailError = signal('');
-  readonly formError = signal('');
   readonly filter = signal('');
+  readonly pendingOnly = signal(false);
   readonly filtered = computed(() =>
     this.packages().filter((item) =>
-      `${item.store} ${item.description} ${item.carrier_tracking}`
+      `${item.locker_code} ${item.store} ${item.description} ${item.carrier_tracking}`
         .toLowerCase()
         .includes(this.filter().toLowerCase()),
     ),
   );
   readonly money = formatUsd;
   readonly date = formatDate;
-  readonly weight = formatWeight;
+  readonly measuredWeight = formatMeasuredWeight;
   readonly invoiceEditable = canAttachInvoice;
   readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('prealertDialog');
   private request?: Subscription;
@@ -65,18 +67,15 @@ export class PackagesPage {
     kind: ['locker'],
     value: ['', Validators.required],
   });
-  readonly form = this.fb.nonNullable.group({
-    mode: ['courier'],
-    store: ['', Validators.required],
-    carrier_tracking: ['', Validators.required],
-    description: ['', Validators.required],
-    amount: ['', Validators.required],
-  });
 
   constructor() {
     const subscription = this.route.queryParamMap.subscribe((params) => {
+      if (params.get('view') === 'invoice-pending') {
+        if (!this.pendingOnly()) this.loadPending();
+        return;
+      }
       const id = params.get('customer_id');
-      if (id && id !== this.customer()?.id) this.load(id);
+      if (id && (id !== this.customer()?.id || this.pendingOnly())) this.load(id);
     });
     inject(DestroyRef).onDestroy(() => {
       subscription.unsubscribe();
@@ -85,8 +84,43 @@ export class PackagesPage {
     });
   }
 
+  loadPending() {
+    if (this.busy()) return;
+    this.request?.unsubscribe();
+    this.trackingRequest?.unsubscribe();
+    const requested =
+      this.route.snapshot.queryParamMap.get('view') === 'invoice-pending'
+        ? this.route.snapshot.queryParamMap.get('package_id')
+        : null;
+    this.pendingOnly.set(true);
+    void this.router.navigate([], {
+      queryParams: { view: 'invoice-pending', package_id: requested },
+      replaceUrl: true,
+    });
+    this.customer.set(null);
+    this.selected.set(null);
+    this.packages.set([]);
+    this.timeline.set(null);
+    this.error.set('');
+    this.filter.set('');
+    this.loading.set(true);
+    this.request = this.api.invoicePending().subscribe({
+      next: (items) => {
+        this.packages.set(items);
+        this.loading.set(false);
+        const item = items.find((entry) => entry.id === requested) ?? items[0];
+        if (item) this.select(item);
+      },
+      error: (error: unknown) => {
+        this.error.set(requestMessage(error));
+        this.loading.set(false);
+      },
+    });
+  }
+
   find() {
     if (this.search.invalid || this.busy()) return;
+    this.pendingOnly.set(false);
     const { kind, value } = this.search.getRawValue();
     this.request?.unsubscribe();
     this.trackingRequest?.unsubscribe();
@@ -120,6 +154,7 @@ export class PackagesPage {
   }
 
   load(id: string) {
+    this.pendingOnly.set(false);
     this.request?.unsubscribe();
     this.trackingRequest?.unsubscribe();
     this.filter.set('');
@@ -153,8 +188,9 @@ export class PackagesPage {
     this.selected.set(item);
     this.detailError.set('');
     void this.router.navigate([], {
-      queryParams: { package_id: item.id },
-      queryParamsHandling: 'merge',
+      queryParams: this.pendingOnly()
+        ? { view: 'invoice-pending', package_id: item.id }
+        : { customer_id: item.customer_id, package_id: item.id },
       replaceUrl: true,
     });
     this.loadTracking(item.id);
@@ -182,33 +218,17 @@ export class PackagesPage {
     });
   }
 
-  create() {
-    const customer = this.customer();
-    const cents = parseAmountToCents(this.form.getRawValue().amount);
-    if (this.form.invalid || this.busy() || !customer) return;
-    const issue = declaredValueIssue(cents);
-    if (issue || cents === null) {
-      this.formError.set(issue ?? 'Indica un importe válido.');
-      return;
-    }
-    const { amount: _amount, ...input } = this.form.getRawValue();
-    this.busy.set(true);
-    this.formError.set('');
-    this.api
-      .prealert({ ...input, customer_id: customer.id, declared_value_cents: cents })
-      .subscribe({
-        next: (item) => {
-          this.packages.update((items) => [item, ...items]);
-          this.busy.set(false);
-          this.dialog().nativeElement.close();
-          this.form.reset();
-          this.select(item);
-        },
-        error: (error: unknown) => {
-          this.formError.set(requestMessage(error));
-          this.busy.set(false);
-        },
-      });
+  onCreated(result: PrealertResult) {
+    this.packages.update((items) => [...result.packages, ...items]);
+    this.filter.set('');
+    this.busy.set(false);
+    this.dialog().nativeElement.close();
+    if (result.packages[0]) this.select(result.packages[0]);
+    this.detailError.set(
+      result.warning
+        ? `Los paquetes se registraron. No se pudieron subir estas facturas; vuelve a adjuntarlas: ${result.warning}`
+        : '',
+    );
   }
 
   attach(event: Event) {
@@ -229,9 +249,20 @@ export class PackagesPage {
     this.detailError.set('');
     this.api.attachInvoice(item.id, file).subscribe({
       next: (updated) => {
-        this.packages.update((items) => items.map((p) => (p.id === updated.id ? updated : p)));
-        if (this.selected()?.id === updated.id) this.selected.set(updated);
+        this.packages.update((items) =>
+          items
+            .map((p) => (p.id === updated.id ? updated : p))
+            .filter((p) => !this.pendingOnly() || p.invoice_pending),
+        );
         this.busy.set(false);
+        if (this.pendingOnly() && !updated.invoice_pending) {
+          this.selected.set(null);
+          this.timeline.set(null);
+          this.trackingRequest?.unsubscribe();
+          this.trackingLoading.set(false);
+          const next = this.packages()[0];
+          if (next) this.select(next);
+        } else if (this.selected()?.id === updated.id) this.selected.set(updated);
         input.value = '';
       },
       error: (error: unknown) => {

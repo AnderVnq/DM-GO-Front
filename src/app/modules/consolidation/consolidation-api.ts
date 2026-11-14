@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { RuntimeConfig } from '../../core/runtime-config';
-import type { Bulk, BulkClosure, Consolidation } from './consolidation.model';
+import type { Bulk, BulkClosure, Consolidation, GuideBoard } from './consolidation.model';
 
 @Injectable({ providedIn: 'root' })
 export class ConsolidationApi {
@@ -9,6 +9,31 @@ export class ConsolidationApi {
   private readonly config = inject(RuntimeConfig);
   private get base() {
     return this.config.value.apiBaseUrl;
+  }
+  guideGroups(id: string) {
+    return this.http.get<GuideBoard>(
+      `${this.base}/consolidations/${encodeURIComponent(id)}/guide-groups`,
+    );
+  }
+  createGuideGroup(id: string, packageIds: string[]) {
+    return this.http.post<GuideBoard>(
+      `${this.base}/consolidations/${encodeURIComponent(id)}/guide-groups`,
+      { package_ids: packageIds },
+    );
+  }
+  updateGuideGroup(id: string, packageIds: string[]) {
+    return this.http.put<GuideBoard>(`${this.base}/guide-groups/${encodeURIComponent(id)}`, {
+      package_ids: packageIds,
+    });
+  }
+  deleteGuideGroup(id: string) {
+    return this.http.delete<void>(`${this.base}/guide-groups/${encodeURIComponent(id)}`);
+  }
+  orderGuideGroups(id: string, groupIds: string[]) {
+    return this.http.put<GuideBoard>(
+      `${this.base}/consolidations/${encodeURIComponent(id)}/guide-groups/order`,
+      { group_ids: groupIds },
+    );
   }
   createBulk(warehouseCode: string) {
     return this.http.post<Bulk>(`${this.base}/bulks`, { warehouse_code: warehouseCode });

@@ -6,6 +6,11 @@ export interface Package {
   store: string;
   carrier_tracking: string;
   description: string;
+  unit_value_cents: number;
+  quantity: number;
+  observation: string;
+  invoice_pending: boolean;
+  locker_code: string;
   declared_value_cents: number;
   has_invoice: boolean;
   invoice_document_id?: string;
@@ -20,7 +25,7 @@ export interface Package {
     number: string;
     warehouse_id?: string;
     weight_g: number;
-    weight_kg: string;
+    weight_kg?: string;
     received_at: string;
     dimensions_mm: number[];
     condition?: string;
@@ -34,10 +39,15 @@ export interface TrackingResponse {
   events: { at: string; action: string; title: string; location?: string }[];
 }
 export interface PrealertInput {
-  customer_id: string;
-  mode: string;
   store: string;
   carrier_tracking: string;
   description: string;
-  declared_value_cents: number;
+  unit_value_cents: number;
+  quantity: number;
+  observation: string;
+}
+export interface PrealertBatchInput {
+  customer_id?: string;
+  mode?: string;
+  packages: PrealertInput[];
 }

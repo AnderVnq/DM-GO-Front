@@ -2,8 +2,20 @@ export function canAttachInvoice(status: string): boolean {
   return status === 'PREALERTED' || status === 'RECEIVED_USA';
 }
 
-export function declaredValueIssue(cents: number | null): string | null {
-  return cents === null || !Number.isSafeInteger(cents) || cents <= 0 || cents > 10_000_000
-    ? 'Indica un valor declarado mayor que cero y de hasta USD 100 000, con un máximo de dos decimales.'
-    : null;
+export function prealertTotal(cents: number | null, quantity: number): number | null {
+  if (
+    cents === null ||
+    !Number.isSafeInteger(cents) ||
+    cents <= 0 ||
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > 999
+  )
+    return null;
+  const total = cents * quantity;
+  return Number.isSafeInteger(total) && total <= 10_000_000 ? total : null;
+}
+
+export function normalizeTracking(value: string): string | null {
+  return /^[a-z0-9-]{6,40}$/i.test(value) ? value.toUpperCase() : null;
 }

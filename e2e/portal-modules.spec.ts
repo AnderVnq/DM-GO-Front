@@ -12,6 +12,11 @@ async function operations(page: Page) {
     store: 'Tienda de prueba',
     carrier_tracking: 'CLIENT-42',
     description: 'Audífonos',
+    unit_value_cents: 10000,
+    quantity: 1,
+    observation: '',
+    invoice_pending: true,
+    locker_code: 'PE00042',
     declared_value_cents: 10000,
     has_invoice: false,
     created_at: '2026-11-13T00:00:00Z',
@@ -56,13 +61,19 @@ async function operations(page: Page) {
             ],
           },
         });
-      if (path === '/portal/prealerts') {
-        const created = { ...original, ...body, id: 'new-client-package' };
+      if (path === '/portal/prealerts/batch') {
+        const input = (body?.['packages'] as Record<string, unknown>[])[0];
+        const created = {
+          ...original,
+          ...input,
+          id: 'new-client-package',
+          declared_value_cents: Number(input?.['unit_value_cents']) * Number(input?.['quantity']),
+        };
         packages.unshift(created);
-        return route.fulfill({ status: 201, json: created });
+        return route.fulfill({ status: 201, json: { packages: [created] } });
       }
       if (path.endsWith('/invoice')) {
-        packages[0] = { ...packages[0]!, has_invoice: true };
+        packages[0] = { ...packages[0]!, has_invoice: true, invoice_pending: false };
         return route.fulfill({ json: packages[0] });
       }
       if (path === '/portal/dispatch-notes')
@@ -179,19 +190,25 @@ test('el cliente prealerta y adjunta factura desde sus paquetes sin enviar custo
   await expect(page.getByText('Compra prealertada', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Nueva prealerta', exact: true });
-  await dialog.getByLabel('Tienda', { exact: true }).fill('Otra tienda');
-  await dialog.getByLabel('Tracking del transportista').fill('CLIENT-43');
-  await dialog.getByLabel('Contenido del paquete').fill('Libro');
-  await dialog.getByLabel('Valor declarado en USD').fill('49.99');
+  await dialog.getByLabel('Compañía de envío').fill('Otra tienda');
+  await dialog.getByLabel('Número de tracking').fill('CLIENT-43');
+  await dialog.getByLabel('Contenido', { exact: true }).fill('Libro');
+  await dialog.getByLabel('Precio por unidad (USD)').fill('49.99');
   await dialog.getByRole('button', { name: 'Registrar prealerta', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.inspector')).toContainText('CLIENT-43');
-  expect(fixture.calls.find((r) => r.path === '/portal/prealerts')?.body).toEqual({
+  expect(fixture.calls.find((r) => r.path === '/portal/prealerts/batch')?.body).toEqual({
     mode: 'courier',
-    store: 'Otra tienda',
-    carrier_tracking: 'CLIENT-43',
-    description: 'Libro',
-    declared_value_cents: 4999,
+    packages: [
+      {
+        store: 'Otra tienda',
+        carrier_tracking: 'CLIENT-43',
+        description: 'Libro',
+        unit_value_cents: 4999,
+        quantity: 1,
+        observation: '',
+      },
+    ],
   });
   await page.locator('.inspector input[type=file]').setInputFiles({
     name: 'factura.pdf',

@@ -101,6 +101,13 @@ export const routes: Routes = [
         loadComponent: () => import('./modules/consolidation/bulks-page').then((m) => m.BulksPage),
       },
       {
+        path: 'consolidations/:id/guide-groups',
+        title: 'Creación de AWB · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () =>
+          import('./modules/consolidation/guide-groups-page').then((m) => m.GuideGroupsPage),
+      },
+      {
         path: 'consolidations',
         title: 'Consolidados · DM48',
         canActivate: [managerGuard],

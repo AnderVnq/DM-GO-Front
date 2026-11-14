@@ -34,6 +34,11 @@ async function logistics(page: Page, role = 'supervisor', failClose = false) {
     carrier_tracking: 'TRACK-42',
     description: 'Audífonos',
     store: '',
+    unit_value_cents: 10000,
+    quantity: 1,
+    observation: '',
+    invoice_pending: false,
+    locker_code: 'PE00042',
     declared_value_cents: 10000,
     has_invoice: true,
     invoice_document_id: 'invoice-test',
@@ -42,7 +47,7 @@ async function logistics(page: Page, role = 'supervisor', failClose = false) {
       number: 'WR-000042',
       warehouse_id: 'wh-test',
       weight_g: 1000,
-      weight_kg: '1.00',
+      weight_kg: '1.000',
       dimensions_mm: [200, 100, 100],
       received_at: stamp,
     },
@@ -98,7 +103,7 @@ async function logistics(page: Page, role = 'supervisor', failClose = false) {
           ...bulk,
           status: 'closed',
           seal: String(body?.['seal']),
-          weight_g: Number(body?.['weight_g']),
+          weight_kg: String(body?.['weight_kg']),
           dimensions_mm: [
             Number(body?.['length_mm']),
             Number(body?.['width_mm']),
@@ -166,7 +171,7 @@ async function filledBulk(page: Page) {
 }
 async function closeBulk(page: Page) {
   await page.getByLabel('Número de precinto', { exact: true }).fill('SEAL-42');
-  await page.getByLabel('Peso final (g)', { exact: true }).fill('1500');
+  await page.getByLabel('Peso (KG)', { exact: true }).fill('1.500');
   await page.getByLabel('Largo final (mm)', { exact: true }).fill('300');
   await page.getByLabel('Ancho final (mm)', { exact: true }).fill('200');
   await page.getByLabel('Alto final (mm)', { exact: true }).fill('200');
@@ -197,7 +202,7 @@ test('flujo físico: bulto, retiro con motivo, precinto y guías del consolidado
   const closed = calls.find((call) => call.path === `/bulks/${bulkId}/close`);
   expect(closed?.body).toEqual({
     seal: 'SEAL-42',
-    weight_g: 1500,
+    weight_kg: '1.500',
     length_mm: 300,
     width_mm: 200,
     height_mm: 200,

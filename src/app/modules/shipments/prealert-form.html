@@ -1,0 +1,128 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <label class="field"
+    >Modalidad<select formControlName="mode">
+      <option value="courier">Courier</option>
+      <option value="traveler">Viajero</option>
+    </select></label
+  >
+  <div formArrayName="packages">
+    @for (row of rows.controls; track row; let i = $index) {
+      <fieldset [formGroupName]="i">
+        <legend>Datos del paquete {{ i + 1 }}</legend>
+        <div class="form-grid">
+          <label class="field full"
+            >Número de tracking<input
+              formControlName="carrier_tracking"
+              required
+              minlength="6"
+              maxlength="40"
+              (input)="
+                row.controls.carrier_tracking.setValue(
+                  row.controls.carrier_tracking.value.toUpperCase()
+                )
+              "
+              [attr.aria-invalid]="!!issue(i, 'carrier_tracking')"
+            /><small>6–40 letras, números o guiones.</small
+            ><small class="error" aria-live="polite">{{
+              issue(i, 'carrier_tracking')
+            }}</small></label
+          >
+          <label class="field full"
+            >Compañía de envío<input
+              formControlName="store"
+              required
+              maxlength="100"
+              placeholder="Amazon, eBay, Ripley, UPS…"
+              [attr.aria-invalid]="!!issue(i, 'store')"
+            /><small class="error" aria-live="polite">{{ issue(i, 'store') }}</small></label
+          >
+          <label class="field full"
+            >Contenido<input
+              formControlName="description"
+              required
+              maxlength="300"
+              [attr.aria-invalid]="!!issue(i, 'description')"
+            /><small class="error" aria-live="polite">{{ issue(i, 'description') }}</small></label
+          >
+          <label class="field"
+            >Precio por unidad (USD)<input
+              formControlName="amount"
+              inputmode="decimal"
+              required
+              placeholder="0.00"
+              [attr.aria-invalid]="!!issue(i, 'amount')"
+            /><small class="error" aria-live="polite">{{ issue(i, 'amount') }}</small></label
+          >
+          <label class="field"
+            >Cantidad<input
+              type="number"
+              formControlName="quantity"
+              min="1"
+              max="999"
+              step="1"
+              required
+              [attr.aria-invalid]="!!issue(i, 'quantity')"
+            /><small class="error" aria-live="polite">{{ issue(i, 'quantity') }}</small></label
+          >
+          <label class="field full"
+            >Observación (opcional)<textarea
+              formControlName="observation"
+              maxlength="300"
+              [attr.aria-invalid]="!!issue(i, 'observation')"
+            ></textarea
+            ><small class="error" aria-live="polite">{{ issue(i, 'observation') }}</small></label
+          >
+          <label class="field full"
+            >Factura (PDF o imagen)<input
+              #invoiceFile
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              [disabled]="busy()"
+              (change)="chooseFile(i, $event)"
+            /><small>PDF, JPEG, PNG o WEBP, hasta 15 MB.</small>
+            @if (fileIssues()[i]) {
+              <small class="error" role="alert">{{ fileIssues()[i] }}</small>
+            }
+          </label>
+          @if (files[i] || fileIssues()[i]) {
+            <button
+              type="button"
+              class="text-button full"
+              [disabled]="busy()"
+              (click)="clearFile(i, invoiceFile)"
+            >
+              Continuar sin factura en el paquete {{ i + 1 }}
+            </button>
+          }
+        </div>
+        <p>
+          Total del paquete (máximo USD 100 000):
+          <strong>{{ total(i) === null ? '—' : money(total(i)!) }}</strong>
+        </p>
+        @if (!files[i] && form.controls.mode.value === 'courier') {
+          <p class="fine-print">Sin factura quedará en espera hasta que la subas.</p>
+        }
+        <button
+          type="button"
+          class="button compact"
+          [disabled]="busy() || rows.length === 1"
+          (click)="remove(i)"
+        >
+          Quitar paquete {{ i + 1 }}
+        </button>
+      </fieldset>
+    }
+  </div>
+  <button type="button" class="button" (click)="add()" [disabled]="busy() || rows.length >= 50">
+    Agregar paquete
+  </button>
+  <p class="fine-print">
+    {{ rows.length }} de 50 paquetes. El lote se registra completo; las facturas se suben después.
+  </p>
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  <button class="button primary" [disabled]="busy()">
+    {{ busy() ? 'Registrando y subiendo facturas…' : 'Registrar prealerta' }}
+  </button>
+</form>

@@ -1,3 +1,5 @@
+import { requestFieldError } from '../../core/api-problem';
+import { normalizeWeightKg, weightKgHint, formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, type NgForm } from '@angular/forms';
@@ -6,7 +8,7 @@ import { concatMap, from } from 'rxjs';
 import { DocumentsApi, type DocumentResponse } from '../../core/documents-api';
 import { fileError } from '../../shared/download';
 import { Status } from '../../shared/status';
-import { formatDate, formatUsd, formatWeight } from '../../shared/amount';
+import { formatDate, formatUsd } from '../../shared/amount';
 import { WarehousesApi } from './warehouses-api';
 import { ReceivingApi } from './receiving-api';
 import type { Warehouse } from './warehouse.model';
@@ -33,9 +35,11 @@ export class ReceivingPage {
   readonly uploadError = signal('');
   readonly catalogError = signal('');
   readonly date = formatDate;
+  readonly measuredWeight = formatMeasuredWeight;
+  readonly validWeight = normalizeWeightKg;
+  readonly weightHint = weightKgHint;
+  readonly weightError = signal('');
   readonly money = (cents: number | undefined) => (cents === undefined ? '—' : formatUsd(cents));
-  readonly weight = (grams: number | undefined) =>
-    grams === undefined ? '—' : formatWeight(grams);
   readonly matched = (value: string) =>
     ({
       tracking: 'Prealerta encontrada por tracking',
@@ -46,9 +50,7 @@ export class ReceivingPage {
   get valid() {
     return (
       this.warehouses().some((w) => w.code === this.input.warehouse_code) &&
-      Number.isInteger(this.input.weight_g) &&
-      this.input.weight_g >= 1 &&
-      this.input.weight_g <= 500000 &&
+      normalizeWeightKg(this.input.weight_kg) !== null &&
       [this.input.length_mm, this.input.width_mm, this.input.height_mm].every(
         (v) => Number.isInteger(v) && v >= 1 && v <= 3000,
       ) &&
@@ -131,8 +133,10 @@ export class ReceivingPage {
       return;
     this.busy.set(true);
     this.error.set('');
+    this.weightError.set('');
     const input = {
       ...this.input,
+      weight_kg: normalizeWeightKg(this.input.weight_kg)!,
       carrier_tracking: this.input.carrier_tracking.trim().toUpperCase(),
       locker_code: this.input.locker_code.trim().toUpperCase(),
       description: this.input.description.trim(),
@@ -148,6 +152,7 @@ export class ReceivingPage {
         },
         error: (error: unknown) => {
           this.busy.set(false);
+          this.weightError.set(requestFieldError(error, 'weight_kg'));
           this.error.set(warehouseError(error));
         },
       });
@@ -160,6 +165,7 @@ export class ReceivingPage {
     this.result.set(null);
     this.error.set('');
     this.uploadError.set('');
+    this.weightError.set('');
     form.resetForm(this.input);
   }
 }

@@ -15,6 +15,11 @@ const first: Package = {
   store: 'Primera',
   carrier_tracking: 'FIRST',
   description: 'Primero',
+  unit_value_cents: 1000,
+  quantity: 1,
+  observation: '',
+  invoice_pending: true,
+  locker_code: 'PE00043',
   declared_value_cents: 1000,
   has_invoice: false,
   created_at: '2026-11-13T00:00:00Z',
@@ -36,7 +41,7 @@ const customer: Customer = {
   created_at: first.created_at,
 };
 
-function setup(shipments: object, customers: object = {}) {
+function setup(shipments: object, customers: object = {}, params: Record<string, string> = {}) {
   TestBed.configureTestingModule({
     providers: [
       { provide: ShipmentsApi, useValue: shipments },
@@ -46,8 +51,8 @@ function setup(shipments: object, customers: object = {}) {
       {
         provide: ActivatedRoute,
         useValue: {
-          queryParamMap: of(convertToParamMap({})),
-          snapshot: { queryParamMap: convertToParamMap({}) },
+          queryParamMap: of(convertToParamMap(params)),
+          snapshot: { queryParamMap: convertToParamMap(params) },
         },
       },
     ],
@@ -90,4 +95,57 @@ it('cambiar de cliente descarta la respuesta anterior de paquetes y ficha', () =
   expect(page.selected()?.id).toBe('second');
   expect(page.timeline()?.package_id).toBe('second');
   expect(page.loading()).toBe(false);
+});
+
+it('buscar cliente desde pendientes vuelve a activar la carga por cliente', () => {
+  const page = setup(
+    { invoicePending: () => of([]), tracking: () => of({ events: [] }) },
+    { findByLocker: () => of(customer) },
+  );
+  page.loadPending();
+  page.search.patchValue({ value: 'PE00043' });
+  page.find();
+  expect(page.pendingOnly()).toBe(false);
+});
+
+it('retira de pendientes el paquete con factura subida y selecciona el siguiente', () => {
+  const page = setup({
+    invoicePending: () => of([first, second]),
+    tracking: (id: string) => of({ package_id: id, events: [] }),
+    attachInvoice: () => of({ ...first, has_invoice: true, invoice_pending: false }),
+  });
+  page.loadPending();
+  const input = {
+    files: [new File(['pdf'], 'factura.pdf', { type: 'application/pdf' })],
+    value: 'factura.pdf',
+  };
+  page.attach({ target: input } as unknown as Event);
+  expect(page.packages().map((item) => item.id)).toEqual(['second']);
+  expect(page.selected()?.id).toBe('second');
+});
+
+it('restaura el paquete correcto al abrir un enlace de pendientes sin cliente', () => {
+  const page = setup(
+    {
+      invoicePending: () => of([first, second]),
+      tracking: (id: string) => of({ package_id: id, events: [] }),
+    },
+    {},
+    { view: 'invoice-pending', package_id: 'second' },
+  );
+  expect(page.pendingOnly()).toBe(true);
+  expect(page.selected()?.id).toBe('second');
+});
+it('la cola genera una URL sin arrastrar el cliente anterior', () => {
+  const page = setup({
+    invoicePending: () => of([first, second]),
+    tracking: (id: string) => of({ package_id: id, events: [] }),
+  });
+  const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+  page.loadPending();
+  page.select(second);
+  expect(navigate).toHaveBeenLastCalledWith([], {
+    queryParams: { view: 'invoice-pending', package_id: 'second' },
+    replaceUrl: true,
+  });
 });

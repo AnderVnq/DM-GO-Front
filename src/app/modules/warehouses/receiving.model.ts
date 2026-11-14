@@ -4,7 +4,7 @@ export interface ReceiveInput {
   carrier_tracking: string;
   locker_code: string;
   description: string;
-  weight_g: number;
+  weight_kg: string;
   length_mm: number;
   width_mm: number;
   height_mm: number;
@@ -22,7 +22,7 @@ export function emptyReceipt(): ReceiveInput {
     carrier_tracking: '',
     locker_code: '',
     description: '',
-    weight_g: 0,
+    weight_kg: '',
     length_mm: 0,
     width_mm: 0,
     height_mm: 0,

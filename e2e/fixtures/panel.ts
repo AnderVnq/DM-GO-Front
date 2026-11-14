@@ -46,6 +46,13 @@ export async function mockPanel(
       store: 'Tienda de prueba',
       carrier_tracking: 'TEST-TRACK-42',
       description: 'Audífonos de prueba',
+      unit_value_cents: 10000,
+      quantity: 1,
+      observation: '',
+      invoice_pending:
+        ['PREALERTED', 'RECEIVED_USA'].includes(options.package?.status ?? 'RELEASED') &&
+        !options.package?.has_invoice,
+      locker_code: customer.locker_code,
       declared_value_cents: 10000,
       has_invoice: false,
       created_at: customer.created_at,
@@ -75,7 +82,7 @@ export async function mockPanel(
     product_name: 'Producto de prueba',
     unit_cents: 10000,
     quantity: 1,
-    grams: 500,
+    weight_kg: '0.500',
     currency: 'USD',
     total_cents: 11500,
     breakdown: [
@@ -173,14 +180,23 @@ export async function mockPanel(
         return;
       }
       data = { packages };
-    } else if (path === '/packages' && method === 'POST') {
-      data = { ...packages[0], ...body, id: 'prealert-test', status: 'PREALERTED' };
-      packages.unshift(data as Package);
+    } else if (path === '/packages/batch' && method === 'POST') {
+      const created = (body?.['packages'] as Record<string, unknown>[]).map((input, index) => ({
+        ...packages[0],
+        ...input,
+        id: `prealert-test-${index}`,
+        status: 'PREALERTED',
+        invoice_pending: true,
+        declared_value_cents: Number(input['unit_value_cents']) * Number(input['quantity']),
+      })) as Package[];
+      packages.unshift(...created);
+      data = { packages: created };
     } else if (path === '/packages/package-test/invoice' && method === 'POST') {
       const index = packages.findIndex((item) => item.id === 'package-test');
       packages[index] = {
         ...packages[index]!,
         has_invoice: true,
+        invoice_pending: false,
         invoice_document_id: 'invoice-test',
       };
       data = packages[index];
@@ -213,7 +229,7 @@ export async function mockPanel(
             package_id: 'package-test',
             guide_number: 'HAWB-TEST-42',
             wr: 'WR-TEST-42',
-            billable_grams: 500,
+            billable_weight_kg: '0.500',
           },
         ],
       };
@@ -319,7 +335,7 @@ export async function mockPanel(
             package_id: 'package-test',
             guide_number: 'HAWB-TEST-42',
             wr: 'WR-TEST-42',
-            billable_grams: 500,
+            billable_weight_kg: '0.500',
           },
         ],
       };
