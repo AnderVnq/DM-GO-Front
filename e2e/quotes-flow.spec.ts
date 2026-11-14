@@ -22,7 +22,7 @@ for (const { store, url } of [
     await dialog.getByLabel(/^Tienda/).fill(store);
     await dialog.getByLabel(/^Enlace del producto/).fill(url);
     await dialog.getByLabel('Precio unitario en USD').fill('100.00');
-    await dialog.getByLabel('Peso estimado en gramos').fill('500');
+    await dialog.getByLabel('Peso (KG)').fill('0.500');
     await expect(
       dialog.getByRole('button', { name: 'Crear cotización', exact: true }),
     ).toBeEnabled();
@@ -36,7 +36,7 @@ for (const { store, url } of [
       product_url: url,
       product_name: 'Audífonos',
       unit_cents: 10000,
-      grams: 500,
+      weight_kg: '0.500',
       quantity: 1,
     });
   });
@@ -69,7 +69,7 @@ for (const status of [422, 403, 409]) {
     await dialog.getByLabel('Correo electrónico').fill('prospecto@example.test');
     await dialog.getByLabel('Producto', { exact: true }).fill('Audífonos');
     await dialog.getByLabel('Precio unitario en USD').fill('100.25');
-    await dialog.getByLabel('Peso estimado en gramos').fill('500');
+    await dialog.getByLabel('Peso (KG)').fill('0.500');
     await dialog.getByRole('button', { name: 'Crear cotización', exact: true }).click();
     await expect(dialog.getByRole('alert')).toHaveText('No se pudo registrar esta cotización.');
     await expect(dialog.getByLabel('Nombre del cliente o prospecto')).toHaveValue(
@@ -110,7 +110,7 @@ test('exige correo o teléfono del prospecto antes de enviar la cotización', as
   await dialog.getByLabel('Nombre del cliente o prospecto').fill('Nuevo prospecto');
   await dialog.getByLabel('Producto', { exact: true }).fill('Audífonos');
   await dialog.getByLabel('Precio unitario en USD').fill('100');
-  await dialog.getByLabel('Peso estimado en gramos').fill('500');
+  await dialog.getByLabel('Peso (KG)').fill('0.500');
   await dialog.getByRole('button', { name: 'Crear cotización', exact: true }).click();
   await expect(dialog.getByRole('alert')).toHaveText(
     'Indica al menos un correo electrónico o teléfono para el prospecto.',
@@ -129,4 +129,90 @@ test('exige correo o teléfono del prospecto antes de enviar la cotización', as
     prospect_phone: '999000043',
     prospect_email: '',
   });
+});
+
+test('prepara tarifas y servicios con resumen adaptable en ambos temas', async ({ page }, info) => {
+  const fixture = await mockPanel(page);
+  await login(page);
+  await navigate(page, 'Cotizaciones', 'quotes');
+  await page.getByRole('button', { name: 'Nueva cotización', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nombre del cliente o prospecto').fill('María Torres');
+  await dialog.getByLabel('Correo electrónico').fill('maria@example.test');
+  await dialog.getByLabel('Producto', { exact: true }).fill('Audífonos inalámbricos');
+  await dialog.getByLabel('Precio unitario en USD').fill('100.00');
+  await dialog.getByLabel('Peso (KG)').fill('1.001');
+  await dialog.getByLabel('Impuesto en USA (%)').fill('7');
+  await dialog.getByLabel('Compra asistida (%)').fill('5');
+  await dialog.getByLabel('Tarifa de envío por kg en USD').fill('10');
+  await dialog.getByRole('button', { name: 'Añadir servicio', exact: true }).click();
+  await dialog
+    .getByRole('combobox', { name: 'Servicio adicional', exact: true })
+    .selectOption('HANDLING_TEST');
+  await dialog.getByLabel('Cantidad del servicio').fill('2');
+  await dialog.getByLabel('Precio del servicio en USD').fill('1.25');
+  const summary = dialog.locator('.quote-summary');
+  await expect(summary.locator('.summary-subtotal')).toContainText(/USD\s+124\.51/);
+  await expect(summary).toContainText('Por calcular');
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((value) => (document.documentElement.dataset['theme'] = value), theme);
+    await dialog.evaluate((element) => (element.scrollTop = 0));
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: info.outputPath(`quotes-${theme}.png`), animations: 'disabled' });
+    if (info.project.name === 'mobile') {
+      await summary.scrollIntoViewIfNeeded();
+      await page.screenshot({
+        path: info.outputPath(`quotes-summary-${theme}.png`),
+        animations: 'disabled',
+      });
+    }
+  }
+  await dialog.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const request = fixture.requests.find((r) => r.path === '/quotes' && r.method === 'POST');
+  expect(request?.body).toMatchObject({
+    weight_kg: '1.001',
+    tax_usa_bp: 700,
+    assisted_bp: 500,
+    rate_per_kg_cents: 1000,
+    extras: [{ code: 'HANDLING_TEST', quantity: 2, unit_cents: 125 }],
+  });
+});
+
+test('Enter busca el casillero sin crear y conserva la tarifa automática del cliente', async ({
+  page,
+}) => {
+  const fixture = await mockPanel(page);
+  await login(page);
+  await navigate(page, 'Cotizaciones', 'quotes');
+  await page.getByRole('button', { name: 'Nueva cotización', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nombre del cliente o prospecto').fill('Cliente de prueba');
+  await dialog.getByLabel('Correo electrónico').fill('cliente@example.test');
+  await dialog.getByLabel('Producto', { exact: true }).fill('Libro');
+  await dialog.getByLabel('Precio unitario en USD').fill('100');
+  await dialog.getByLabel('Peso (KG)').fill('1');
+  await dialog.getByLabel('Casillero de cliente (opcional)').fill('PE00042');
+  await dialog.getByLabel('Casillero de cliente (opcional)').press('Enter');
+  await expect(dialog).toContainText('Cliente seleccionado:');
+  expect(fixture.requests.filter((r) => r.path === '/quotes' && r.method === 'POST')).toHaveLength(
+    0,
+  );
+  await dialog.getByRole('button', { name: 'Añadir servicio', exact: true }).click();
+  await dialog
+    .getByRole('combobox', { name: 'Servicio adicional', exact: true })
+    .selectOption('HANDLING_TEST');
+  await expect(dialog.locator('.quote-summary')).toContainText('Por calcular');
+  await dialog.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const request = fixture.requests.find((r) => r.path === '/quotes' && r.method === 'POST');
+  expect(request?.body).toMatchObject({
+    customer_id: 'customer-test',
+    extras: [{ code: 'HANDLING_TEST', quantity: 1 }],
+  });
+  expect((request?.body?.['extras'] as Record<string, unknown>[])[0]).not.toHaveProperty(
+    'unit_cents',
+  );
 });

@@ -48,3 +48,23 @@ it('consulta las cotizaciones filtradas sin transformar el total del servidor', 
   expect(total).toBe(12345);
   http.verify();
 });
+
+it('consulta el catálogo de servicios adicionales sin solicitar ajustes administrativos', () => {
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
+    ],
+  });
+  let codes: string[] = [];
+  TestBed.inject(QuotesApi)
+    .chargeTypes()
+    .subscribe((types) => (codes = types.map((type) => type.code)));
+  const http = TestBed.inject(HttpTestingController);
+  http.expectOne('/api/v1/charge-types').flush({
+    charge_types: [{ code: 'repack', name: 'Reempaque', active: true, default_cents: 350 }],
+  });
+  expect(codes).toEqual(['repack']);
+  http.verify();
+});

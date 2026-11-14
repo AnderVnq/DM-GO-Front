@@ -3,7 +3,7 @@
     <h1>Cotizaciones</h1>
     <p>Compra asistida, con el costo estimado puesto en Lima.</p>
   </div>
-  <button class="button primary" (click)="createDialog.showModal()">
+  <button class="button primary" (click)="openCreate()">
     <app-icon name="plus" />Nueva cotización
   </button>
 </div>
@@ -84,7 +84,7 @@
         </div>
         <div>
           <dt>Peso estimado</dt>
-          <dd>{{ weight(quote.grams) }}</dd>
+          <dd>{{ weight(quote.weight_kg) }}</dd>
         </div>
         <div>
           <dt>Vigencia</dt>
@@ -96,9 +96,11 @@
         <ul class="line-list">
           @for (line of quote.breakdown; track line.concept) {
             <li>
-              <span>{{ concept(line.concept) }}</span><strong class="numeric">{{
-                money(line.cents)
-              }}</strong>
+              <span>{{
+                line.concept === 'freight'
+                  ? 'Envío USA-PERU (' + summaryWeight(quote.weight_kg) + ' kg)'
+                  : concept(line.concept)
+              }}</span><strong class="numeric">{{ money(line.cents) }}</strong>
             </li>
           }
         </ul>
@@ -116,84 +118,305 @@
     </aside>
   }
 </div>
-<dialog #createDialog aria-labelledby="quote-create-title">
-  <div class="dialog-header">
-    <h2 id="quote-create-title">Nueva cotización</h2>
-    <button
-      class="icon-button"
-      aria-label="Cerrar"
-      (click)="createDialog.close()"
-      [disabled]="busy()"
-    >
-      <app-icon name="close" />
-    </button>
-  </div>
-  <div class="search-bar actions">
-    <label class="field"
-      >Casillero de cliente (opcional)<input
-        [formControl]="locker"
-        placeholder="PE00042"
-        (input)="customer.set(null)"
-    /></label>
-    <button
-      type="button"
-      class="button"
-      (click)="findCustomer()"
-      [disabled]="busy() || !locker.value.trim()"
-    >
-      Buscar cliente
-    </button>
-  </div>
-  @if (customer(); as client) {
-    <p class="alert success">
-      Cliente seleccionado: {{ client.name }} · {{ client.locker_code }}
-      <button type="button" class="text-button" (click)="customer.set(null); locker.reset()">
-        Usar prospecto
-      </button>
-    </p>
-  }
-  <form [formGroup]="form" (ngSubmit)="create()">
-    <div class="form-grid">
-      <label class="field full"
-        >Nombre del cliente o prospecto<input formControlName="prospect_name" required /></label
-      ><label class="field"
-        >Correo electrónico<input type="email" formControlName="prospect_email" /></label
-      ><label class="field">Teléfono<input type="tel" formControlName="prospect_phone" /></label
-      ><label class="field full">Producto<input formControlName="product_name" required /></label
-      ><label class="field">Tienda (opcional)<input formControlName="store" /></label
-      ><label class="field"
-        >Enlace del producto (opcional)<input type="url" formControlName="product_url" /></label
-      ><label class="field"
-        >Precio unitario en USD<input formControlName="price" inputmode="decimal" required /></label
-      ><label class="field"
-        >Cantidad<input type="number" formControlName="quantity" min="1" step="1" /></label
-      ><label class="field"
-        >Peso estimado en gramos<input
-          type="number"
-          formControlName="grams"
-          min="1"
-          step="1" /></label
-      ><label class="field"
-        >Envío en USA en USD<input formControlName="delivery" inputmode="decimal" /></label
-      ><label class="field"
-        >Descuento en USD<input formControlName="discount" inputmode="decimal" /></label
-      ><label class="checkbox-row"
-        ><input type="checkbox" formControlName="traveler" />Modalidad viajero</label
-      ><label class="field full">Observaciones<textarea formControlName="notes"></textarea></label>
+<dialog
+  #createDialog
+  class="quote-workbench"
+  aria-labelledby="quote-create-title"
+  (cancel)="closeCreate($event)"
+>
+  <div class="workbench-heading">
+    <div>
+      <h2 id="quote-create-title">Nueva cotización</h2>
+      <p>Prepara el costo de compra y envío para tu cliente.</p>
     </div>
-    <p class="fine-print">
-      Para un prospecto, indica al menos un correo electrónico o teléfono. Las tasas, el flete y los
-      impuestos se calculan al registrar la cotización.
-    </p>
-    @if (formError()) {
-      <p class="alert error" role="alert">{{ formError() }}</p>
-    }
     <div class="actions">
-      <button type="button" class="button" (click)="createDialog.close()" [disabled]="busy()">
-        Cancelar</button
-      ><button class="button primary" [disabled]="form.invalid || busy()">
-        {{ busy() ? 'Calculando…' : 'Crear cotización' }}
+      <button type="button" class="button" (click)="closeCreate()" [disabled]="busy()">
+        <app-icon name="back" />Ver historial</button
+      ><button
+        type="button"
+        class="icon-button"
+        aria-label="Cerrar"
+        (click)="closeCreate()"
+        [disabled]="busy()"
+      >
+        <app-icon name="close" />
       </button>
     </div>
+  </div>
+  <form [formGroup]="form" (ngSubmit)="create()" class="quote-layout" [attr.aria-busy]="busy()">
+    <fieldset class="quote-fields" [disabled]="busy()">
+      <section class="quote-block" aria-labelledby="quote-customer-heading">
+        <h3 id="quote-customer-heading"><app-icon name="customers" />Datos del cliente</h3>
+        <p class="block-description">
+          Busca un cliente por su casillero o ingresa los datos de un prospecto.
+        </p>
+        <div class="customer-lookup">
+          <label class="field"
+            >Casillero de cliente (opcional)<input
+              [formControl]="locker"
+              placeholder="PE00042"
+              (input)="customer.set(null)"
+              (keydown.enter)="$event.preventDefault(); findCustomer()" /></label
+          ><button
+            type="button"
+            class="button"
+            (click)="findCustomer()"
+            [disabled]="busy() || !locker.value.trim()"
+          >
+            <app-icon name="search" />Buscar cliente
+          </button>
+        </div>
+        @if (customer(); as client) {
+          <p class="alert success">
+            Cliente seleccionado: {{ client.name }} · {{ client.locker_code }}
+            <button type="button" class="text-button" (click)="customer.set(null); locker.reset()">
+              Usar prospecto
+            </button>
+          </p>
+        }
+        <div class="form-grid">
+          <label class="field full"
+            >Nombre del cliente o prospecto<input
+              formControlName="prospect_name"
+              required
+              maxlength="200" /></label
+          ><label class="field"
+            >Correo electrónico<input type="email" formControlName="prospect_email" /></label
+          ><label class="field"
+            >Teléfono<input type="tel" formControlName="prospect_phone"
+          /></label>
+        </div>
+        <p class="field-hint">
+          Para un prospecto, indica al menos un correo electrónico o teléfono.
+        </p>
+      </section>
+      <section class="quote-block" aria-labelledby="quote-product-heading">
+        <h3 id="quote-product-heading"><app-icon name="packages" />Producto y envío</h3>
+        <div class="form-grid">
+          <label class="field full"
+            >Producto<input
+              formControlName="product_name"
+              required
+              maxlength="200"
+              placeholder="Nombre o descripción del producto" /></label
+          ><label class="field"
+            >Tienda (opcional)<input formControlName="store" maxlength="100" /></label
+          ><label class="field"
+            >Enlace del producto (opcional)<input
+              type="url"
+              formControlName="product_url"
+              maxlength="500"
+              placeholder="https://" /></label
+          ><label class="field"
+            >Precio unitario en USD<input
+              formControlName="price"
+              inputmode="decimal"
+              required
+              placeholder="0.00" /></label
+          ><label class="field"
+            >Cantidad<input
+              type="number"
+              formControlName="quantity"
+              min="1"
+              max="1000"
+              step="1" /></label
+          ><label class="field"
+            >Peso (KG)<input
+              type="text"
+              inputmode="decimal"
+              formControlName="weight_kg"
+              placeholder="0.000"
+              step="0.001"
+              required
+              aria-describedby="quote-weight-error"
+              [attr.aria-invalid]="
+                weightError() ||
+                (form.controls.weight_kg.touched && form.controls.weight_kg.invalid)
+                  ? true
+                  : null
+              "
+              (input)="weightError.set('')"
+            />
+            <span
+              id="quote-weight-error"
+              class="field-hint"
+              [attr.role]="weightError() ? 'alert' : null"
+              >{{
+                weightError() ||
+                  (form.controls.weight_kg.touched && form.controls.weight_kg.invalid
+                    ? weightHint
+                    : '')
+              }}</span
+            ></label
+          >
+          <label class="field"
+            >Envío en USA en USD<input formControlName="delivery" inputmode="decimal"
+          /></label>
+        </div>
+        <label class="checkbox-row traveler-control"
+          ><input type="checkbox" formControlName="traveler" />Modalidad viajero</label
+        >
+      </section>
+      <section class="quote-block" aria-labelledby="quote-rates-heading">
+        <h3 id="quote-rates-heading"><app-icon name="billing" />Tarifas e impuestos</h3>
+        <p class="block-description">
+          Deja las tarifas vacías para usar la configuración vigente al guardar.
+        </p>
+        <div class="form-grid">
+          <label class="field"
+            >Impuesto en USA (%)<input
+              formControlName="tax"
+              inputmode="decimal"
+              placeholder="Configuración vigente" /></label
+          ><label class="field"
+            >Compra asistida (%)<input
+              formControlName="assisted"
+              inputmode="decimal"
+              placeholder="Configuración vigente" /></label
+          ><label class="field"
+            >Tarifa de envío por kg en USD<input
+              formControlName="freight"
+              inputmode="decimal"
+              placeholder="Configuración vigente" /></label
+          ><label class="field"
+            >Tributos estimados en Perú<select formControlName="peru">
+              <option value="">Configuración vigente</option>
+              <option value="yes">Aplicar según configuración</option>
+              <option value="no">No aplicar</option>
+            </select></label
+          >
+        </div>
+      </section>
+      <section class="quote-block" aria-labelledby="quote-extras-heading">
+        <div class="block-heading">
+          <h3 id="quote-extras-heading"><app-icon name="plus" />Servicios adicionales</h3>
+          <button
+            type="button"
+            class="button"
+            (click)="addExtra()"
+            [disabled]="catalogLoading() || !charges().length"
+          >
+            <app-icon name="plus" />Añadir servicio
+          </button>
+        </div>
+        @if (catalogLoading()) {
+          <p class="muted" role="status">Cargando servicios…</p>
+        }
+        @if (catalogError()) {
+          <p class="alert error" role="alert">
+            {{ catalogError() }}
+            <button type="button" class="text-button" (click)="loadCharges()">Reintentar</button>
+          </p>
+        }
+        @if (!extras.length && !catalogLoading() && !catalogError()) {
+          <p class="block-description">
+            {{
+              charges().length
+                ? 'Añade los servicios que necesita esta compra.'
+                : 'No hay servicios adicionales disponibles.'
+            }}
+          </p>
+        }
+        <p class="field-hint">
+          Deja el precio vacío para aplicar la tarifa vigente del cliente. Ingresa un precio solo si
+          deseas reemplazarla.
+        </p>
+        <div formArrayName="extras">
+          @for (extra of extras.controls; track extra; let i = $index) {
+            <div class="extra-row" [formGroupName]="i">
+              <label class="field"
+                >Servicio adicional<select formControlName="code" (change)="changeExtra(i)">
+                  <option value="">Seleccionar servicio</option>
+                  @for (charge of charges(); track charge.code) {
+                    <option [value]="charge.code">{{ charge.name }}</option>
+                  }
+                </select></label
+              ><label class="field"
+                >Cantidad del servicio<input
+                  type="number"
+                  formControlName="quantity"
+                  min="1"
+                  max="1000"
+                  step="1" /></label
+              ><label class="field"
+                >Precio del servicio en USD (opcional)<input
+                  formControlName="price"
+                  inputmode="decimal"
+                  placeholder="Tarifa vigente" /></label
+              ><button
+                type="button"
+                class="icon-button"
+                [attr.aria-label]="'Quitar servicio ' + (i + 1)"
+                (click)="extras.removeAt(i)"
+              >
+                <app-icon name="close" />
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+      <section class="quote-block" aria-labelledby="quote-notes-heading">
+        <h3 id="quote-notes-heading"><app-icon name="attachment" />Descuento y observaciones</h3>
+        <div class="form-grid">
+          <label class="field"
+            >Descuento en USD<input formControlName="discount" inputmode="decimal" /></label
+          ><label class="field full"
+            >Observaciones<textarea
+              formControlName="notes"
+              maxlength="1000"
+              rows="3"
+              placeholder="Detalles para el cliente o indicaciones de la compra"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+    </fieldset>
+    <aside class="quote-summary" aria-labelledby="quote-summary-heading">
+      <div class="summary-heading">
+        <span class="summary-icon"><app-icon name="quotes" /></span>
+        <div>
+          <h3 id="quote-summary-heading">Resumen de cotización</h3>
+          <p>Importes en dólares estadounidenses</p>
+        </div>
+      </div>
+      <div class="summary-product">
+        <strong>{{ form.controls.product_name.value || 'Tu producto' }}</strong><span
+          >{{ form.controls.quantity.value }} unidad(es) ·
+          {{
+            form.controls.weight_kg.value ? weight(form.controls.weight_kg.value) : 'Peso pendiente'
+          }}</span
+        >
+      </div>
+      <ul class="summary-lines">
+        @for (line of previewLines(); track line.label) {
+          <li>
+            <span>{{ line.label }}</span><strong
+              class="numeric"
+              [class.pending-amount]="line.cents === null"
+              >{{ line.cents === null ? 'Por calcular' : money(line.cents) }}</strong
+            >
+          </li>
+        }
+      </ul>
+      <div class="summary-subtotal">
+        <span>Subtotal conocido</span><strong class="numeric">{{ money(knownSubtotal()) }}</strong>
+      </div>
+      <p class="summary-note">
+        El total estimado se confirma al guardar, con aduana y los impuestos que correspondan. Los
+        importes pendientes no están incluidos en este subtotal.
+      </p>
+      @if (formError()) {
+        <p class="alert error" role="alert">{{ formError() }}</p>
+      }
+      <button class="button primary save-quote" [disabled]="form.invalid || busy()">
+        <app-icon name="check" />{{ busy() ? 'Calculando…' : 'Crear cotización' }}
+      </button>
+      <p class="pdf-hint">
+        <app-icon name="billing" />Podrás descargar el PDF al crear la cotización.
+      </p>
+      <button type="button" class="button cancel-quote" (click)="closeCreate()" [disabled]="busy()">
+        Cancelar
+      </button>
+    </aside>
   </form>
 </dialog>

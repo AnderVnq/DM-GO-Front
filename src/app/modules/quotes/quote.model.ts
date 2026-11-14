@@ -9,7 +9,7 @@ export interface Quote {
   store?: string;
   unit_cents: number;
   quantity: number;
-  grams: number;
+  weight_kg: string;
   currency: string;
   total_cents: number;
   breakdown: { concept: string; cents: number }[];
@@ -27,10 +27,26 @@ export interface QuoteInput {
   store: string;
   unit_cents: number;
   quantity: number;
-  grams: number;
+  weight_kg: string;
   delivery_usa_cents: number;
   traveler: boolean;
   discount_cents: number;
-  extras: never[];
+  extras: QuoteExtraInput[];
+  tax_usa_bp?: number;
+  assisted_bp?: number;
+  rate_per_kg_cents?: number;
+  peru_tax_on?: boolean;
   notes: string;
+}
+
+export interface QuoteExtraInput {
+  code: string;
+  quantity: number;
+  unit_cents?: number;
+}
+export interface QuoteChargeType {
+  code: string;
+  name: string;
+  active: boolean;
+  default_cents: number | null;
 }

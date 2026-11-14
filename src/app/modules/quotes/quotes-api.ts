@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import { RuntimeConfig } from '../../core/runtime-config';
-import { type Quote, type QuoteInput } from './quote.model';
+import { type Quote, type QuoteInput, type QuoteChargeType } from './quote.model';
 
 @Injectable({ providedIn: 'root' })
 export class QuotesApi {
@@ -26,6 +26,11 @@ export class QuotesApi {
   }
   create(input: QuoteInput) {
     return this.http.post<Quote>(this.base, input);
+  }
+  chargeTypes() {
+    return this.http
+      .get<{ charge_types: QuoteChargeType[] }>(`${this.config.value.apiBaseUrl}/charge-types`)
+      .pipe(map((data) => data.charge_types));
   }
   pdf(id: string) {
     return this.http.get(`${this.base}/${encodeURIComponent(id)}/pdf`, { responseType: 'blob' });
