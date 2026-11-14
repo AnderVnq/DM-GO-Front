@@ -172,3 +172,5 @@ Los temas claro y oscuro comparten una jerarquía de superficies para navegació
 El movimiento explica acciones: trazado inicial USA–Perú en portada, respuesta breve al pulsar y transición de diálogos. La navegación y las tablas no añaden esperas. Con teclado o movimiento reducido se desactivan los desplazamientos de componentes; el cambio de tema por teclado es inmediato.
 
 La navegación de la portada desplaza suavemente entre secciones al usar el puntero; con teclado o movimiento reducido mantiene el salto nativo inmediato. El cierre y el footer agrupan creación de casillero, contacto, domicilio fiscal, ayuda y datos legales. Correo, teléfono y horarios se muestran solo cuando están configurados en `public/business-info.json`.
+
+El portal de clientes usa navegación lateral en escritorio y un menú desplegable en móvil. El menú móvil conserva el foco, se cierra con Escape y se adapta al cambiar de tamaño. La vista del casillero distribuye código y dirección en dos columnas cuando hay espacio, conservando una sola columna en pantallas pequeñas.

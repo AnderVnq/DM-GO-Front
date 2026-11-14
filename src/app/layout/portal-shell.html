@@ -1,26 +1,81 @@
 <a class="skip-link" href="#portal-content">Saltar al contenido</a>
-<header class="portal-header">
-  <a class="wordmark" routerLink="/" aria-label="DM48, inicio"
-    >DM48<span class="brand-dot"></span
-  ></a>
-  <div class="portal-account">
-    <span>{{ auth.user()?.name || auth.user()?.username }}</span><app-theme-toggle /><button
-      class="text-button"
-      (click)="auth.logout()"
-    >
-      Cerrar sesión
-    </button>
-  </div>
-</header>
-<nav class="portal-nav" aria-label="Mi cuenta">
-  @for (link of links; track link.path) {
-    <a
-      [routerLink]="link.path"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: link.path === '/portal' }"
-      ariaCurrentWhenActive="page"
-      ><app-icon [name]="link.icon" />{{ link.label }}</a
-    >
+<div class="app-shell portal-shell">
+  <aside
+    #sidebar
+    id="portal-navigation"
+    class="sidebar portal-sidebar"
+    [class.mobile-open]="mobileOpen()"
+    [attr.role]="mobileOpen() ? 'dialog' : null"
+    [attr.aria-modal]="mobileOpen() ? 'true' : null"
+    aria-label="Navegación de mi cuenta"
+    (keydown)="trapNavigation($event)"
+  >
+    <div class="portal-brand">
+      <a class="wordmark" routerLink="/" aria-label="DM48, inicio" (click)="closeNavigation()"
+        >DM48<span class="brand-dot"></span></a
+      ><button
+        class="icon-button portal-menu-close"
+        aria-label="Cerrar menú de mi cuenta"
+        (click)="closeNavigation()"
+      >
+        <app-icon name="close" />
+      </button>
+    </div>
+    <p class="sidebar-subtitle">Mi cuenta</p>
+    <nav aria-label="Mi cuenta">
+      @for (link of links; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: link.path === '/portal' }"
+          ariaCurrentWhenActive="page"
+          (click)="closeNavigation()"
+          ><app-icon [name]="link.icon" /><span>{{ link.label }}</span></a
+        >
+      }
+    </nav>
+    <div class="sidebar-profile">
+      <span class="avatar">{{
+        (auth.user()?.name || auth.user()?.username || 'D').slice(0, 1)
+      }}</span>
+      <div>
+        <strong>{{ auth.user()?.name || auth.user()?.username }}</strong><span>Mi cuenta DM48</span>
+      </div>
+      <button class="icon-button" aria-label="Cerrar sesión" (click)="auth.logout()">
+        <app-icon name="logout" />
+      </button>
+    </div>
+  </aside>
+  @if (mobileOpen()) {
+    <button
+      class="menu-scrim"
+      tabindex="-1"
+      aria-label="Cerrar menú"
+      (click)="closeNavigation()"
+    ></button>
   }
-</nav>
-<main id="portal-content" class="portal-content" tabindex="-1"><router-outlet /></main>
+  <div class="workspace" [inert]="mobileOpen()">
+    <header class="topbar">
+      <div class="breadcrumb">
+        <button
+          #menuToggle
+          class="icon-button mobile-toggle"
+          aria-label="Abrir menú de mi cuenta"
+          aria-controls="portal-navigation"
+          [attr.aria-expanded]="mobileOpen()"
+          (click)="toggleNavigation()"
+        >
+          <app-icon name="menu" /></button
+        ><span class="portal-breadcrumb-label">Mi cuenta</span
+        ><span class="portal-breadcrumb-label" aria-hidden="true">/</span
+        ><strong>{{ title() }}</strong>
+      </div>
+      <div class="topbar-actions">
+        <app-theme-toggle /><span class="route-context"
+          ><app-icon name="plane" />USA <span aria-hidden="true">→</span> Perú</span
+        >
+      </div>
+    </header>
+    <main id="portal-content" class="portal-content" tabindex="-1"><router-outlet /></main>
+  </div>
+</div>

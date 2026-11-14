@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { mockPortal, loginPortal } from './fixtures/portal';
+import { mockPortal, loginPortal, navigatePortal } from './fixtures/portal';
 
 async function coordination(page: Page) {
   const { customer } = await mockPortal(page, 'existing');
@@ -171,7 +171,7 @@ test('entrega propia: dirección, cambio de agencia y restricción de intentos',
 }, info) => {
   const { writes } = await coordination(page);
   await loginPortal(page);
-  await page.getByRole('link', { name: 'Mis entregas', exact: true }).click();
+  await navigatePortal(page, 'Mis entregas');
   await page.getByLabel('Forma de entrega').selectOption('home');
   await page
     .getByRole('combobox', { name: 'Dirección de entrega', exact: true })
@@ -220,7 +220,7 @@ test('libreta con autorización, asignación recuperable y avisos con enlace seg
 }, info) => {
   const { writes, consent } = await coordination(page);
   await loginPortal(page);
-  await page.getByRole('link', { name: 'Mis destinatarios', exact: true }).click();
+  await navigatePortal(page, 'Mis destinatarios');
   await page.getByText('Añadir destinatario', { exact: true }).click();
   await page.getByLabel('Número de documento').fill('70000043');
   await expect(page.getByRole('button', { name: 'Guardar destinatario' })).toBeDisabled();
@@ -253,7 +253,7 @@ test('libreta con autorización, asignación recuperable y avisos con enlace seg
   await page.getByRole('button', { name: 'Quitar de mi libreta' }).click();
   await page.getByRole('button', { name: 'Confirmar baja' }).click();
   await expect(page.getByRole('status')).toContainText('Destinatario quitado');
-  await page.getByRole('link', { name: 'Mis avisos', exact: true }).click();
+  await navigatePortal(page, 'Mis avisos');
   await expect(page.getByRole('link', { name: 'Ver paquete', exact: true })).toHaveAttribute(
     'href',
     '/portal/packages?package_id=own-package',

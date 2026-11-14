@@ -84,3 +84,10 @@ export async function fillOnboarding(page: Page) {
     .fill('Cliente de prueba');
   await page.getByLabel('Teléfono', { exact: true }).fill('999000042');
 }
+
+export async function navigatePortal(page: Page, label: string) {
+  await expect(page.locator('app-portal-shell')).toBeVisible();
+  const toggle = page.getByRole('button', { name: 'Abrir menú de mi cuenta', exact: true });
+  if (await toggle.isVisible()) await toggle.click();
+  await page.getByRole('link', { name: label, exact: true }).click();
+}

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { mockPortal, loginPortal } from './fixtures/portal';
+import { mockPortal, loginPortal, navigatePortal } from './fixtures/portal';
 
 async function operations(page: Page) {
   await mockPortal(page, 'existing');
@@ -174,7 +174,7 @@ test('el cliente prealerta y adjunta factura desde sus paquetes sin enviar custo
     await page.setViewportSize({ width: 1440, height: 1000 });
   const fixture = await operations(page);
   await loginPortal(page);
-  await page.getByRole('link', { name: 'Mis paquetes', exact: true }).click();
+  await navigatePortal(page, 'Mis paquetes');
   await expect(page.getByRole('heading', { name: 'Mis paquetes', exact: true })).toBeVisible();
   await expect(page.getByText('Compra prealertada', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
@@ -218,7 +218,7 @@ test('reporta un pago con evidencia sin aprobarlo y consulta sus comprobantes', 
       route.fulfill({ contentType: 'text/plain', body: 'Comprobante de prueba' }),
     );
   await loginPortal(page);
-  await page.getByRole('link', { name: 'Mis pagos', exact: true }).click();
+  await navigatePortal(page, 'Mis pagos');
   await page.getByRole('button', { name: 'Reportar pago', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Reportar pago', exact: true });
   await dialog.getByLabel('Importe en USD').fill('100.01');
@@ -253,7 +253,7 @@ test('reporta un pago con evidencia sin aprobarlo y consulta sus comprobantes', 
     path: `.impeccable/review/portal-modules/${testInfo.project.name}-payments.png`,
     fullPage: true,
   });
-  await page.getByRole('link', { name: 'Mis comprobantes', exact: true }).click();
+  await navigatePortal(page, 'Mis comprobantes');
   await expect(page.getByRole('heading', { name: 'B001-42', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Descargar XML', exact: true })).toBeDisabled();
   const popup = page.context().waitForEvent('page');

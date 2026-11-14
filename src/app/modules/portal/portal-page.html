@@ -1,4 +1,4 @@
-<section class="portal-page">
+<section class="portal-page" [class.portal-ready]="state() === 'ready'">
   @if (state() === 'loading') {
     <p role="status">Consultando tu casillero…</p>
   }
@@ -77,57 +77,63 @@
   }
   @if (state() === 'ready') {
     @if (profile(); as customer) {
-      <div class="portal-intro">
-        <app-icon name="check" class="ready-icon" />
-        <h1>Tu casillero está listo</h1>
-        <p>{{ customer.name }}, estos son los datos que identifican tus compras en USA.</p>
-      </div>
-      <section class="locker-code surface surface-body">
-        <div>
-          <h2>Tu código de casillero</h2>
-          <strong>{{ customer.locker_code }}</strong>
+      <div class="portal-ready-layout">
+        <div class="locker-summary">
+          <div class="portal-intro">
+            <app-icon name="check" class="ready-icon" />
+            <h1>Tu casillero está listo</h1>
+            <p>{{ customer.name }}, estos son los datos que identifican tus compras en USA.</p>
+          </div>
+          <section class="locker-code surface surface-body">
+            <div>
+              <h2>Tu código de casillero</h2>
+              <strong>{{ customer.locker_code }}</strong>
+            </div>
+            <button class="button" (click)="copy(customer.locker_code)">Copiar código</button>
+          </section>
+          <p class="fine-print locker-instructions">
+            Incluye tu código de casillero en los datos de envío para identificar correctamente tus
+            paquetes. Guarda estos datos antes de tu primera compra.
+          </p>
+          @if (copied()) {
+            <p role="status" class="copy-status">{{ copied() }}</p>
+          }
         </div>
-        <button class="button" (click)="copy(customer.locker_code)">Copiar código</button>
-      </section>
-      <h2 class="addresses-title">Dirección para tus compras</h2>
-      @for (address of customer.locker_addresses; track address.warehouse_code) {
-        <section class="surface surface-body locker-address">
-          <h3>Almacén {{ address.warehouse_code }}</h3>
-          <dl>
-            <div>
-              <dt>Nombre del destinatario</dt>
-              <dd>{{ address.recipient }}</dd>
-            </div>
-            <div>
-              <dt>Dirección</dt>
-              <dd>{{ address.line1 }}</dd>
-              <dd>{{ address.line2 }}</dd>
-            </div>
-            <div>
-              <dt>Ciudad, estado y código postal</dt>
-              <dd>{{ address.city }}, {{ address.state }} {{ address.postal_code }}</dd>
-            </div>
-            <div>
-              <dt>País</dt>
-              <dd>{{ address.country }}</dd>
-            </div>
-          </dl>
-          <button class="button" (click)="copy(addressText(address))">Copiar dirección</button>
-        </section>
-      } @empty {
-        <p class="alert">
-          Tu código ya está asignado. La dirección de recepción aún no está disponible; vuelve a
-          consultar antes de realizar tu compra.
-        </p>
-        <button class="button" (click)="load()">Volver a consultar</button>
-      }
-      @if (copied()) {
-        <p role="status" class="copy-status">{{ copied() }}</p>
-      }
-      <p class="fine-print">
-        Incluye tu código de casillero en los datos de envío para identificar correctamente tus
-        paquetes. Guarda estos datos antes de tu primera compra.
-      </p>
+        <div class="locker-destinations">
+          <h2 class="addresses-title">Dirección para tus compras</h2>
+          @for (address of customer.locker_addresses; track address.warehouse_code) {
+            <section class="surface surface-body locker-address">
+              <h3>Almacén {{ address.warehouse_code }}</h3>
+              <dl>
+                <div>
+                  <dt>Nombre del destinatario</dt>
+                  <dd>{{ address.recipient }}</dd>
+                </div>
+                <div>
+                  <dt>Dirección</dt>
+                  <dd>{{ address.line1 }}</dd>
+                  <dd>{{ address.line2 }}</dd>
+                </div>
+                <div>
+                  <dt>Ciudad, estado y código postal</dt>
+                  <dd>{{ address.city }}, {{ address.state }} {{ address.postal_code }}</dd>
+                </div>
+                <div>
+                  <dt>País</dt>
+                  <dd>{{ address.country }}</dd>
+                </div>
+              </dl>
+              <button class="button" (click)="copy(addressText(address))">Copiar dirección</button>
+            </section>
+          } @empty {
+            <p class="alert">
+              Tu código ya está asignado. La dirección de recepción aún no está disponible; vuelve a
+              consultar antes de realizar tu compra.
+            </p>
+            <button class="button" (click)="load()">Volver a consultar</button>
+          }
+        </div>
+      </div>
     }
   }
   @if (state() === 'link') {

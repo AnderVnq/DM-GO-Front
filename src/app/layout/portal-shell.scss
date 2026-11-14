@@ -1,85 +1,39 @@
 :host {
   display: block;
 }
-.portal-header,
-.portal-nav,
 .portal-content {
-  width: min(100% - 3rem, 75rem);
+  max-width: 90rem;
   margin-inline: auto;
+  padding: clamp(1.25rem, 2.5vw, 2.25rem);
+  outline: none;
 }
-.portal-header {
+.portal-brand {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 5.5rem;
-  gap: 1rem;
 }
-.portal-account {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
+.portal-sidebar .sidebar-profile > div {
+  flex: 1;
+  min-width: 0;
 }
-.portal-account > span {
-  color: var(--muted);
-  font-size: 0.875rem;
-  max-width: 15rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.portal-sidebar .sidebar-profile strong {
+  max-width: 100%;
 }
-.portal-nav {
-  display: flex;
-  gap: 0.2rem;
-  flex-wrap: wrap;
-  border: 1px solid var(--line-subtle);
-  background: var(--surface-inset);
-  border-radius: 0.75rem;
-  padding: 0.3rem;
+.portal-sidebar .sidebar-profile > .icon-button {
+  margin-left: auto;
+  flex-shrink: 0;
 }
-.portal-nav a {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 1rem 0.65rem;
-  text-decoration: none;
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-}
-.portal-nav a.active {
-  color: var(--accent);
-  background: var(--accent-surface);
-  font-weight: 600;
-}
-.portal-nav a:hover {
-  background: var(--surface);
-}
-.portal-content {
-  margin-block: 2rem 4rem;
+.portal-menu-close {
+  display: none;
 }
 @media (max-width: 700px) {
-  .portal-header,
-  .portal-nav,
   .portal-content {
-    width: calc(100% - 2rem);
+    padding: 1.25rem 1rem 3rem;
   }
-  .portal-account {
-    gap: 0.7rem;
+  .portal-menu-close {
+    display: inline-flex;
   }
-  .portal-account > span {
+  .portal-breadcrumb-label {
     display: none;
-  }
-  .portal-nav {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-  }
-  .portal-nav a {
-    padding: 0.8rem 0.5rem;
-    font-size: 0.85rem;
-  }
-  .portal-content {
-    margin-top: 1.5rem;
   }
 }

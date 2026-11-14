@@ -114,3 +114,40 @@ h1 span {
     margin-block: 1.5rem;
   }
 }
+
+.portal-page.portal-ready {
+  width: min(100%, 72rem);
+  margin-top: 0.5rem;
+}
+.portal-ready-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 2.5rem;
+  align-items: start;
+}
+.portal-ready h1 {
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  letter-spacing: -0.025em;
+}
+.portal-ready .locker-code {
+  flex-wrap: wrap;
+}
+.portal-ready .addresses-title {
+  margin: 0.5rem 0 1.25rem;
+}
+.locker-instructions {
+  margin-top: 1.25rem;
+  line-height: 1.7;
+}
+.locker-address dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.locker-address dl > div {
+  margin-top: 0;
+  min-width: 0;
+}
+.locker-address dl > div:nth-child(-n + 2) {
+  grid-column: 1/-1;
+}
