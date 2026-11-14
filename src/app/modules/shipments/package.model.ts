@@ -10,6 +10,12 @@ export interface Package {
   has_invoice: boolean;
   invoice_document_id?: string;
   created_at: string;
+  delivery_method?: string;
+  delivery_address_id?: string;
+  delivery_agency_id?: string;
+  delivery_agency_branch_id?: string;
+  failed_attempts?: number;
+  home_delivery_allowed?: boolean;
   receipt?: {
     number: string;
     weight_g: number;

@@ -1,0 +1,231 @@
+<div class="page-header">
+  <div>
+    <h1>Mis destinatarios</h1>
+    <p>Gestiona quién figurará como consignatario de tus importaciones.</p>
+  </div>
+  <button class="button" (click)="reload()" [disabled]="busy() || loading()">Actualizar</button>
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando tu libreta…</p>
+}
+@if (consent()) {
+  <details #createDetails class="surface surface-body consignee-create">
+    <summary>Añadir destinatario</summary>
+    <form #createForm="ngForm" (ngSubmit)="create(createForm)">
+      <fieldset class="form-grid" [disabled]="busy() || loading()">
+        <label class="field"
+          >Tipo de documento<select
+            name="doc_type"
+            [(ngModel)]="input.doc_type"
+            (ngModelChange)="input.doc_number = ''; input.name = ''"
+          >
+            <option value="dni">DNI</option>
+            <option value="ruc">RUC</option>
+            <option value="ce">Carné de extranjería</option>
+            <option value="passport">Pasaporte</option>
+          </select></label
+        >
+        <label class="field"
+          >Número de documento<input
+            name="doc_number"
+            [(ngModel)]="input.doc_number"
+            required
+            maxlength="30"
+            [pattern]="
+              input.doc_type === 'dni'
+                ? '[0-9]{8}'
+                : input.doc_type === 'ruc'
+                  ? '[0-9]{11}'
+                  : input.doc_type === 'ce'
+                    ? '[A-Za-z0-9]{9,12}'
+                    : '[A-Za-z0-9]{6,12}'
+            "
+            autocomplete="off"
+        /></label>
+        @if (needsName) {
+          <label class="field full"
+            >Nombre completo<input
+              name="name"
+              [(ngModel)]="input.name"
+              required
+              maxlength="200"
+              autocomplete="name"
+          /></label>
+        } @else {
+          <p class="fine-print full">
+            El nombre o razón social se obtiene al verificar el documento en el registro oficial.
+          </p>
+        }
+        <label class="field"
+          >Relación<select name="relationship" [(ngModel)]="input.relationship">
+            <option value="family">Familiar</option>
+            <option value="friend">Amistad</option>
+            <option value="other">Otro</option>
+          </select></label
+        >
+        <label class="field"
+          >Teléfono (opcional)<input
+            name="phone"
+            [(ngModel)]="input.phone"
+            type="tel"
+            pattern="[+]?[0-9 ]{6,20}"
+            autocomplete="tel"
+        /></label>
+        <label class="field full"
+          >Correo (opcional)<input
+            name="email"
+            [(ngModel)]="input.email"
+            type="email"
+            email
+            maxlength="254"
+            autocomplete="email"
+        /></label>
+        <label class="checkbox-field full"
+          ><input type="checkbox" name="consent" [(ngModel)]="input.consent" required />{{
+            consent()
+          }}</label
+        >
+        <div class="actions full">
+          <button
+            class="button primary"
+            type="submit"
+            [disabled]="createForm.invalid || !input.consent"
+          >
+            {{ busy() ? 'Guardando…' : 'Guardar destinatario' }}
+          </button>
+        </div>
+      </fieldset>
+    </form>
+  </details>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Destinatario</th>
+            <th>Documento</th>
+            <th>Relación</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of consignees(); track item.id) {
+            <tr [class.selected]="selected()?.id === item.id">
+              <td>
+                <button class="row-button" (click)="select(item)" [disabled]="busy()">
+                  {{ item.name
+                  }}<small>{{
+                    item.verified ? 'Documento verificado' : 'Documento sin verificar'
+                  }}</small>
+                </button>
+              </td>
+              <td>{{ item.doc_type.toUpperCase() }} {{ item.doc_number }}</td>
+              <td>{{ relationship(item.relationship) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!loading() && !error() && !consignees().length) {
+      <div class="empty-state">
+        <h2>Tu libreta está vacía</h2>
+        <p>Añade una persona que te haya autorizado a usar su documento.</p>
+      </div>
+    }
+  </section>
+  @if (selected(); as item) {
+    <aside class="inspector">
+      <h2>{{ item.name }}</h2>
+      <p>{{ item.doc_type.toUpperCase() }} {{ item.doc_number }}</p>
+      @if (item.phone) {
+        <p>{{ item.phone }}</p>
+      }
+      @if (item.email) {
+        <p>{{ item.email }}</p>
+      }
+      <section class="detail-section">
+        <h3>Uso del documento</h3>
+        @if (usageLoading()) {
+          <p role="status">Consultando importaciones…</p>
+        }
+        @if (usageError()) {
+          <p class="alert error" role="alert">{{ usageError() }}</p>
+          <button class="button compact" (click)="loadUsage()" [disabled]="busy()">
+            Reintentar consulta
+          </button>
+        }
+        @if (usage(); as count) {
+          <p>Período {{ count.year }}</p>
+          <dl class="detail-grid">
+            <div>
+              <dt>Declaradas</dt>
+              <dd>{{ count.locked }}</dd>
+            </div>
+            <div>
+              <dt>Pendientes</dt>
+              <dd>{{ count.pending }}</dd>
+            </div>
+            <div>
+              <dt>Límite registrado</dt>
+              <dd>{{ count.limit <= 0 ? 'Sin límite' : count.limit }}</dd>
+            </div>
+            <div>
+              <dt>Disponibles</dt>
+              <dd>{{ count.remaining < 0 ? 'Sin límite' : count.remaining }}</dd>
+            </div>
+          </dl>
+        }
+      </section>
+      <section class="detail-section">
+        <h3>Asignar a un paquete</h3>
+        <p class="fine-print">Una vez emitida la guía, el consignatario ya no puede cambiarse.</p>
+        <label class="field"
+          >Paquete para asignar<select [(ngModel)]="packageId" [disabled]="busy()">
+            <option value="">Selecciona tu paquete</option>
+            @for (pack of packages(); track pack.id) {
+              <option [value]="pack.id">
+                {{ pack.carrier_tracking || pack.receipt?.number || pack.id }} ·
+                {{ pack.description }}
+              </option>
+            }
+          </select></label
+        >
+        @if (!packages().length) {
+          <p class="muted">Aún no tienes paquetes para asignar.</p>
+        }
+        <button
+          class="button primary actions"
+          (click)="assign()"
+          [disabled]="busy() || !packageId || !usage() || usageLoading()"
+        >
+          Asignar destinatario
+        </button>
+      </section>
+      @if (item.relationship !== 'self') {
+        <section class="detail-section">
+          @if (removing()) {
+            <p>¿Quitar a {{ item.name }} de tu libreta? No podrás asignarlo a nuevos paquetes.</p>
+            <div class="actions">
+              <button class="button" (click)="removing.set(false)" [disabled]="busy()">
+                Cancelar</button
+              ><button class="button danger" (click)="remove()" [disabled]="busy()">
+                Confirmar baja
+              </button>
+            </div>
+          } @else {
+            <button class="text-button" (click)="removing.set(true)" [disabled]="busy()">
+              Quitar de mi libreta
+            </button>
+          }
+        </section>
+      }
+    </aside>
+  }
+</div>

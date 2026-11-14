@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { PortalShipmentsApi } from './portal-shipments-api';
 import type { Package, TrackingResponse } from './package.model';
@@ -22,7 +22,7 @@ import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-packages-page',
-  imports: [ReactiveFormsModule, Status, Icon],
+  imports: [ReactiveFormsModule, Status, Icon, RouterLink],
   templateUrl: './portal-packages-page.html',
 })
 export class PortalPackagesPage {

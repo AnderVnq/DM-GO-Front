@@ -56,6 +56,9 @@ src/app/
     ├── home/
     ├── portal/
     ├── invoices/
+    ├── delivery/
+    ├── consignees/
+    ├── notifications/
     ├── customers/
     ├── shipments/
     ├── billing/
@@ -65,7 +68,7 @@ src/app/
 
 Cada módulo reúne sus modelos, servicio, rutas, página y pruebas en archivos directos. Las rutas cargan módulos bajo demanda. Las dependencias entre módulos pasan por sus exportaciones públicas en `index.ts`; `core` y `shared` no dependen de módulos.
 
-La portada pública está en `/`, el alta y casillero propio en `/portal` y el panel del personal en `/internal`. Las operaciones adicionales del portal se incorporarán por separado.
+La portada pública está en `/`, el alta y casillero propio en `/portal` y el panel del personal en `/internal`. El portal reúne casillero, paquetes, entregas, destinatarios, pagos, comprobantes y avisos.
 
 ## Funcionalidad
 
@@ -134,3 +137,11 @@ social, RUC y domicilio fiscal. Completa `email`, `phone` y `hours` cuando esté
 definidos; los campos vacíos se omiten de la portada. No copies configuración
 privada a ese archivo. Mantén habilitado el registro público en Keycloak y registra
 los callbacks `/login` y `/portal` en las URLs permitidas de `dm48-web`.
+
+## Entregas, destinatarios y avisos
+
+- `/portal/delivery`: preferencia de recepción por paquete, direcciones registradas y agencias disponibles. El alta y edición de direcciones corresponden al personal; el portal solo las consulta. Las restricciones por estado e intentos fallidos se respetan al elegir destino.
+- `/portal/consignees`: libreta de destinatarios con autorización explícita, verificación del documento, uso anual, asignación a paquetes propios y baja confirmada. El consentimiento y los límites proceden de la API; una guía emitida impide cambiar al consignatario.
+- `/portal/notifications`: avisos de la cuenta, búsqueda y acceso a paquetes o notas relacionados. No hay estado de lectura en el contrato. Solo se convierten en navegación los enlaces conocidos del mismo origen.
+
+Los tres módulos usan exclusivamente endpoints `/portal/`. Playwright comprueba las dependencias entre agencia y sucursal, el consentimiento, la recuperación de conflictos de asignación y la navegación segura de avisos con respuestas simuladas.

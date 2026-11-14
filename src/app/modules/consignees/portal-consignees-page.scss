@@ -1,0 +1,24 @@
+.consignee-create {
+  margin-bottom: 1.5rem;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding-block: 0.25rem;
+}
+form {
+  margin-top: 1.25rem;
+}
+.checkbox-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  line-height: 1.6;
+  font-size: 0.875rem;
+}
+.checkbox-field input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}

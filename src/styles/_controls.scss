@@ -86,7 +86,14 @@ button:disabled {
   font-size: 0.85rem;
   color: var(--muted);
 }
-.field.full {
+fieldset.form-grid {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.field.full,
+.form-grid > .full {
   grid-column: 1 / -1;
 }
 .field input,

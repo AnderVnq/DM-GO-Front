@@ -1,0 +1,65 @@
+<div class="page-header">
+  <div>
+    <h1>Mis avisos</h1>
+    <p>Consulta las novedades de tus paquetes y pagos.</p>
+  </div>
+  <button class="button" (click)="reload()" [disabled]="loading()">Actualizar</button>
+</div>
+<div class="customer-strip search-bar">
+  <label class="field"
+    >Buscar aviso<input
+      placeholder="Asunto o contenido"
+      [value]="filter()"
+      (input)="filter.set($any($event.target).value)"
+  /></label>
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando tus avisos…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <ul class="notice-list" aria-label="Avisos recibidos">
+      @for (notice of filtered(); track notice.id) {
+        <li>
+          <button
+            class="notice-button"
+            [class.selected]="selected()?.id === notice.id"
+            [attr.aria-pressed]="selected()?.id === notice.id"
+            (click)="selected.set(notice)"
+          >
+            <strong>{{ notice.subject }}</strong><time [attr.datetime]="notice.created_at">{{
+              date(notice.created_at)
+            }}</time>
+          </button>
+        </li>
+      }
+    </ul>
+    @if (!loading() && !error() && !filtered().length) {
+      <div class="empty-state">
+        <h2>{{ notifications().length ? 'Sin coincidencias' : 'Todavía no tienes avisos' }}</h2>
+        <p>
+          {{
+            notifications().length
+              ? 'Prueba con otra palabra.'
+              : 'Aquí aparecerán las novedades de tus envíos.'
+          }}
+        </p>
+      </div>
+    }
+  </section>
+  @if (selected(); as notice) {
+    <aside class="inspector">
+      <h2>{{ notice.subject }}</h2>
+      <p class="fine-print">{{ date(notice.created_at) }}</p>
+      <p class="notice-body">{{ notice.body }}</p>
+      @if (target(); as link) {
+        <a class="button primary" [routerLink]="link.path" [queryParams]="link.params">{{
+          link.label
+        }}</a>
+      }
+    </aside>
+  }
+</div>

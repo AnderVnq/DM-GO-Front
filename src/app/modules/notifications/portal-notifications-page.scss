@@ -1,0 +1,43 @@
+.notice-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.notice-list li + li {
+  border-top: 1px solid var(--border);
+}
+.notice-button {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1.25rem;
+  border: 0;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+}
+.notice-button.selected {
+  background: var(--accent-surface);
+}
+.notice-button strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.notice-button time {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.notice-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  margin-block: 1.5rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .notice-button:hover {
+    background: var(--surface-hover);
+  }
+}

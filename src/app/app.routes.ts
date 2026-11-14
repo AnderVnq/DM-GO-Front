@@ -22,6 +22,26 @@ export const routes: Routes = [
           import('./modules/shipments/portal-packages-page').then((m) => m.PortalPackagesPage),
       },
       {
+        path: 'delivery',
+        title: 'Mis entregas · DM48',
+        loadComponent: () =>
+          import('./modules/delivery/portal-delivery-page').then((m) => m.PortalDeliveryPage),
+      },
+      {
+        path: 'consignees',
+        title: 'Mis destinatarios · DM48',
+        loadComponent: () =>
+          import('./modules/consignees/portal-consignees-page').then((m) => m.PortalConsigneesPage),
+      },
+      {
+        path: 'notifications',
+        title: 'Mis avisos · DM48',
+        loadComponent: () =>
+          import('./modules/notifications/portal-notifications-page').then(
+            (m) => m.PortalNotificationsPage,
+          ),
+      },
+      {
         path: 'payments',
         title: 'Mis pagos · DM48',
         loadComponent: () =>

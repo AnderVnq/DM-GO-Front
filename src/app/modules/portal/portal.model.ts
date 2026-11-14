@@ -6,6 +6,7 @@ export interface PortalProfile {
   phone: string;
   document: { type: 'dni' | 'ruc'; number: string; verified: boolean };
   locker_addresses?: LockerAddress[];
+  addresses?: DeliveryAddress[];
 }
 export interface LockerAddress {
   warehouse_code: string;
@@ -28,4 +29,12 @@ export interface LinkRequest {
   status: string;
   reason?: string;
   created_at: string;
+}
+
+export interface DeliveryAddress {
+  id: string;
+  ubigeo: string;
+  line: string;
+  reference: string;
+  primary: boolean;
 }

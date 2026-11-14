@@ -16,6 +16,9 @@ export class PortalShell {
     { path: '/portal', label: 'Mi casillero', icon: 'overview' },
     { path: '/portal/packages', label: 'Mis paquetes', icon: 'packages' },
     { path: '/portal/payments', label: 'Mis pagos', icon: 'billing' },
+    { path: '/portal/delivery', label: 'Mis entregas', icon: 'delivery' },
+    { path: '/portal/consignees', label: 'Mis destinatarios', icon: 'customers' },
+    { path: '/portal/notifications', label: 'Mis avisos', icon: 'bell' },
     { path: '/portal/invoices', label: 'Mis comprobantes', icon: 'attachment' },
   ];
 }

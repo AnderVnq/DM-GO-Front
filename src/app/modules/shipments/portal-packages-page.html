@@ -119,6 +119,23 @@
         }
       </section>
       <section class="detail-section">
+        <h3>Coordinar mi paquete</h3>
+        <div class="actions">
+          <a
+            class="button compact"
+            routerLink="/portal/delivery"
+            [queryParams]="{ package_id: item.id }"
+            >Elegir entrega</a
+          >
+          <a
+            class="button compact"
+            routerLink="/portal/consignees"
+            [queryParams]="{ package_id: item.id }"
+            >Elegir destinatario</a
+          >
+        </div>
+      </section>
+      <section class="detail-section">
         <h3>Seguimiento</h3>
         @if (trackingLoading()) {
           <p role="status">Cargando seguimiento…</p>
