@@ -22,6 +22,9 @@ export interface Package {
     weight_kg: string;
     received_at: string;
     dimensions_mm: number[];
+    condition?: string;
+    billable_lb?: number;
+    freight_cents?: number;
   };
 }
 export interface TrackingResponse {

@@ -1,0 +1,189 @@
+<div class="page-header">
+  <div>
+    <h1>Almacenes</h1>
+    <p>Consulta las sedes y sus direcciones de operación.</p>
+  </div>
+  <div class="actions">
+    <button class="button" (click)="reload()" [disabled]="loading() || busy()">Actualizar</button>
+    @if (admin()) {
+      <button class="button primary" (click)="startCreate()" [disabled]="loading() || busy()">
+        Nuevo almacén
+      </button>
+    }
+  </div>
+</div>
+@if (auth.manager()) {
+  <div class="actions">
+    <a class="button" routerLink="/internal/warehouses/receiving">Recibir paquete en USA</a
+    ><a class="button" routerLink="/internal/warehouses/unidentified">Paquetes sin identificar</a>
+  </div>
+}
+<div class="customer-strip search-bar">
+  <label class="field"
+    >Buscar almacén<input
+      [value]="filter()"
+      (input)="filter.set($any($event.target).value)"
+      placeholder="Código, nombre o ciudad" /></label
+  ><label class="checkbox-row"
+    ><input
+      type="checkbox"
+      [ngModel]="includeInactive()"
+      (ngModelChange)="includeInactive.set($event)"
+    />Incluir inactivos</label
+  >
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando almacenes…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Almacén</th>
+            <th>Ciudad</th>
+            <th>País</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (warehouse of filtered(); track warehouse.id) {
+            <tr [class.selected]="selected()?.id === warehouse.id">
+              <td>
+                <button class="row-button" (click)="select(warehouse)" [disabled]="busy()">
+                  {{ warehouse.code }}<small>{{ warehouse.name }}</small>
+                </button>
+              </td>
+              <td>{{ warehouse.address.city }}</td>
+              <td>{{ warehouse.country }}</td>
+              <td>{{ warehouse.active ? 'Activo' : 'Inactivo' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!loading() && !error() && !filtered().length) {
+      <div class="empty-state">
+        <h2>{{ warehouses().length ? 'Sin coincidencias' : 'Aún no hay almacenes' }}</h2>
+        <p>
+          {{
+            warehouses().length
+              ? 'Revisa la búsqueda o incluye los almacenes inactivos.'
+              : 'Administración puede registrar la primera sede.'
+          }}
+        </p>
+      </div>
+    }
+  </section>
+  @if (selected() || creating()) {
+    <aside class="inspector">
+      <h2>{{ creating() ? 'Nuevo almacén' : selected()?.name }}</h2>
+      @if (admin()) {
+        <form #warehouseForm="ngForm" (ngSubmit)="save(warehouseForm)">
+          <fieldset class="form-grid" [disabled]="busy()">
+            <legend class="sr-only">Datos del almacén</legend>
+            <label class="field"
+              >Código<input
+                name="code"
+                [(ngModel)]="input.code"
+                pattern="[A-Za-z]{3}-[0-9]{2}"
+                required
+                [disabled]="!creating()"
+                placeholder="USA-01"
+              /><span class="field-hint"
+                >Formato AAA-00. No se cambia después del alta.</span
+              ></label
+            >
+            <label class="field"
+              >País (ISO)<input
+                name="country"
+                [(ngModel)]="input.country"
+                pattern="[A-Za-z]{2}"
+                required
+                maxlength="2"
+                [disabled]="!creating()"
+              /><span class="field-hint">US para Estados Unidos; PE para Perú.</span></label
+            >
+            <label class="field full"
+              >Nombre<input name="name" [(ngModel)]="input.name" required
+            /></label>
+            <label class="field full"
+              >Dirección<input name="line1" [(ngModel)]="input.address.line1" required
+            /></label>
+            <label class="field full"
+              >Dirección adicional (opcional)<input name="line2" [(ngModel)]="input.address.line2"
+            /></label>
+            <label class="field"
+              >Ciudad<input name="city" [(ngModel)]="input.address.city" required
+            /></label>
+            <label class="field"
+              >Estado o región (opcional)<input name="state" [(ngModel)]="input.address.state"
+            /></label>
+            <label class="field"
+              >Código postal (opcional)<input
+                name="postal_code"
+                [(ngModel)]="input.address.postal_code"
+            /></label>
+            <label class="field full"
+              >Zona horaria<input
+                name="timezone"
+                [(ngModel)]="input.timezone"
+                required
+                placeholder="America/New_York"
+              /><span class="field-hint">Identificador IANA, por ejemplo America/Lima.</span></label
+            >
+            @if (!creating()) {
+              <label class="checkbox-row full"
+                ><input name="active" type="checkbox" [(ngModel)]="active" />Almacén activo</label
+              >
+              <p class="fine-print full">
+                Un almacén inactivo conserva su historial y deja de estar disponible para nuevas
+                recepciones.
+              </p>
+            }
+            <div class="actions full">
+              <button class="button primary" type="submit" [disabled]="warehouseForm.invalid">
+                {{ busy() ? 'Guardando…' : 'Guardar almacén' }}
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      } @else if (selected(); as item) {
+        <dl class="detail-grid">
+          <div>
+            <dt>Código</dt>
+            <dd>{{ item.code }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ item.active ? 'Activo' : 'Inactivo' }}</dd>
+          </div>
+          <div>
+            <dt>País</dt>
+            <dd>{{ item.country }}</dd>
+          </div>
+          <div>
+            <dt>Zona horaria</dt>
+            <dd>{{ item.timezone }}</dd>
+          </div>
+        </dl>
+        <section class="detail-section">
+          <h3>Dirección</h3>
+          <p>{{ item.address.line1 }}</p>
+          @if (item.address.line2) {
+            <p>{{ item.address.line2 }}</p>
+          }
+          <p>{{ item.address.city }} · {{ item.address.state }} {{ item.address.postal_code }}</p>
+        </section>
+        <p class="fine-print">Administración gestiona los cambios del catálogo.</p>
+      }
+    </aside>
+  }
+</div>

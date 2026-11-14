@@ -1,0 +1,251 @@
+<div class="page-header">
+  <div>
+    <h1>Recepción en USA</h1>
+    <p>Registra el paquete tal como llegó al almacén.</p>
+  </div>
+  <a class="button" routerLink="/internal/warehouses">Ver almacenes</a>
+</div>
+@if (catalogError()) {
+  <p class="alert error" role="alert">{{ catalogError() }}</p>
+  <button
+    class="button"
+    (click)="reloadWarehouses()"
+    [disabled]="loading() || busy() || uploading()"
+  >
+    Reintentar almacenes
+  </button>
+}
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando almacenes de USA…</p>
+}
+<div class="split-view">
+  <section class="surface surface-body">
+    <h2>Datos de llegada</h2>
+    <p class="fine-print">
+      El peso, las medidas y la evidencia quedan registrados en la nota de entrada y no se editan
+      después.
+    </p>
+    <form #receiptForm="ngForm" (ngSubmit)="receive(receiptForm)">
+      <fieldset class="form-grid" [disabled]="busy() || uploading() || loading() || !!result()">
+        <legend class="sr-only">Registrar recepción</legend>
+        <label class="field full"
+          >Almacén USA<select name="warehouse_code" [(ngModel)]="input.warehouse_code" required>
+            <option value="">Selecciona el almacén</option>
+            @for (warehouse of warehouses(); track warehouse.id) {
+              <option [value]="warehouse.code">{{ warehouse.code }} · {{ warehouse.name }}</option>
+            }
+          </select></label
+        >
+        @if (!loading() && !catalogError() && !warehouses().length) {
+          <p class="full muted">
+            No hay almacenes activos en Estados Unidos. Administración debe registrar o activar una
+            sede antes de recibir paquetes.
+          </p>
+        }
+        <label class="field"
+          >Tracking del transportista (opcional)<input
+            name="carrier_tracking"
+            [(ngModel)]="input.carrier_tracking"
+            pattern="[A-Za-z0-9-]{6,40}"
+            maxlength="40"
+            autocomplete="off"
+        /></label>
+        <label class="field"
+          >Casillero de la etiqueta (opcional)<input
+            name="locker_code"
+            [(ngModel)]="input.locker_code"
+            placeholder="PE00042"
+            autocomplete="off"
+          /><span class="field-hint">Ingresa el código del casillero, sin «Suite».</span></label
+        >
+        <label class="field full"
+          >Descripción del contenido<input
+            name="description"
+            [(ngModel)]="input.description"
+            required
+            maxlength="300"
+          /><span class="field-hint"
+            >Describe el contenido visible, especialmente si no hay prealerta.</span
+          ></label
+        >
+        <label class="field"
+          >Peso (g)<input
+            name="weight_g"
+            [(ngModel)]="input.weight_g"
+            type="number"
+            min="1"
+            max="500000"
+            step="1"
+            required
+          /><span class="field-hint">1 kg = 1000 g. Máximo 500000 g.</span></label
+        >
+        <label class="field"
+          >Largo (mm)<input
+            name="length_mm"
+            [(ngModel)]="input.length_mm"
+            type="number"
+            min="1"
+            max="3000"
+            step="1"
+            required
+        /></label>
+        <label class="field"
+          >Ancho (mm)<input
+            name="width_mm"
+            [(ngModel)]="input.width_mm"
+            type="number"
+            min="1"
+            max="3000"
+            step="1"
+            required
+        /></label>
+        <label class="field"
+          >Alto (mm)<input
+            name="height_mm"
+            [(ngModel)]="input.height_mm"
+            type="number"
+            min="1"
+            max="3000"
+            step="1"
+            required
+          /><span class="field-hint">1 cm = 10 mm. Máximo 3000 mm por lado.</span></label
+        >
+        <label class="field full"
+          >Condición del paquete<select name="condition" [(ngModel)]="input.condition">
+            <option value="good">En buen estado</option>
+            <option value="damaged">Dañado</option>
+            <option value="opened">Abierto</option>
+          </select></label
+        >
+        <label class="field full"
+          >Observaciones internas (opcional)<textarea
+            name="notes"
+            [(ngModel)]="input.notes"
+            maxlength="500"
+          ></textarea>
+        </label>
+        <label class="field full"
+          >Fotografías de llegada<input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            (change)="upload($event)"
+          /><span class="field-hint"
+            >Al menos una imagen JPEG, PNG o WEBP; máximo 15 MB por archivo.</span
+          ></label
+        >
+        @if (photos().length) {
+          <ul class="line-list full" aria-label="Fotografías adjuntas">
+            @for (photo of photos(); track photo.id) {
+              <li>
+                <span>{{ photo.original_name }}</span><button
+                  type="button"
+                  class="text-button"
+                  (click)="removePhoto(photo.id)"
+                  [attr.aria-label]="'Quitar foto ' + photo.original_name"
+                >
+                  Quitar
+                </button>
+              </li>
+            }
+          </ul>
+        }
+        <div class="actions full">
+          <button class="button primary" type="submit" [disabled]="receiptForm.invalid || !valid">
+            {{ busy() ? 'Registrando…' : 'Registrar recepción' }}
+          </button>
+        </div>
+      </fieldset>
+      @if (uploading()) {
+        <p role="status">Subiendo fotografías…</p>
+      }
+      @if (uploadError()) {
+        <p class="alert error" role="alert">{{ uploadError() }}</p>
+      }
+      @if (result()) {
+        <button class="button actions" type="button" (click)="startNew(receiptForm)">
+          Registrar otro paquete
+        </button>
+      }
+    </form>
+  </section>
+  <aside class="inspector">
+    @if (result(); as result) {
+      <h2>Recepción registrada</h2>
+      <p role="status">{{ matched(result.matched_by) }}</p>
+      <app-status [value]="result.package.status" />
+      <dl class="detail-grid">
+        <div>
+          <dt>Nota de entrada</dt>
+          <dd>{{ result.package.receipt?.number }}</dd>
+        </div>
+        <div>
+          <dt>Peso registrado</dt>
+          <dd>{{ weight(result.package.receipt?.weight_g) }}</dd>
+        </div>
+        <div>
+          <dt>Fecha de recepción</dt>
+          <dd>{{ date(result.package.receipt?.received_at || result.package.created_at) }}</dd>
+        </div>
+        <div>
+          <dt>Medidas (mm)</dt>
+          <dd>{{ result.package.receipt?.dimensions_mm?.join(' × ') || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Peso facturable (lb)</dt>
+          <dd>{{ result.package.receipt?.billable_lb ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Flete cotizado</dt>
+          <dd>{{ money(result.package.receipt?.freight_cents) }}</dd>
+        </div>
+        <div>
+          <dt>Tracking</dt>
+          <dd>{{ result.package.carrier_tracking || 'Sin tracking' }}</dd>
+        </div>
+      </dl>
+      <p>{{ result.package.description }}</p>
+      @if (result.package.customer_id) {
+        <a
+          class="button primary"
+          routerLink="/internal/packages"
+          [queryParams]="{ customer_id: result.package.customer_id, package_id: result.package.id }"
+          >Ver paquete del cliente</a
+        >
+      } @else {
+        <p class="muted">
+          No se encontró un cliente. El paquete permanece en la cola hasta identificar a su
+          propietario.
+        </p>
+        <a
+          class="button primary"
+          routerLink="/internal/warehouses/unidentified"
+          [queryParams]="{ package_id: result.package.id }"
+          >Identificar propietario</a
+        >
+      }
+    } @else {
+      <h2>Cómo se identifica el paquete</h2>
+      <ol class="timeline">
+        <li>
+          <strong>Tracking</strong>
+          <p>Se busca una prealerta que coincida con la etiqueta.</p>
+        </li>
+        <li>
+          <strong>Casillero</strong>
+          <p>Si no hay prealerta, se busca al cliente por su código de casillero.</p>
+        </li>
+        <li>
+          <strong>Pendiente de identificar</strong>
+          <p>Si no se reconoce al cliente, se conserva el paquete para asignarlo después.</p>
+        </li>
+      </ol>
+      <a class="button" routerLink="/internal/warehouses/unidentified"
+        >Ver paquetes sin identificar</a
+      >
+    }
+  </aside>
+</div>

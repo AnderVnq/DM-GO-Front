@@ -1,5 +1,6 @@
 import { type Routes } from '@angular/router';
 import { staffGuard } from './core/staff.guard';
+import { managerGuard } from './core/manager.guard';
 import { portalGuard } from './core/portal.guard';
 
 export const routes: Routes = [
@@ -92,6 +93,26 @@ export const routes: Routes = [
       {
         path: 'dispatch-notes',
         loadChildren: () => import('./modules/billing/routes').then((m) => m.routes),
+      },
+      {
+        path: 'warehouses/receiving',
+        title: 'Recepción en USA · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () =>
+          import('./modules/warehouses/receiving-page').then((m) => m.ReceivingPage),
+      },
+      {
+        path: 'warehouses/unidentified',
+        title: 'Paquetes sin identificar · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () =>
+          import('./modules/warehouses/unidentified-page').then((m) => m.UnidentifiedPage),
+      },
+      {
+        path: 'warehouses',
+        title: 'Almacenes · DM48',
+        loadComponent: () =>
+          import('./modules/warehouses/warehouses-page').then((m) => m.WarehousesPage),
       },
       {
         path: 'quotes',

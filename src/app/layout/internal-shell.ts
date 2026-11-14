@@ -53,6 +53,7 @@ export class InternalShell {
     { path: 'customers', label: 'Clientes', icon: 'customers' },
     { path: 'packages', label: 'Paquetes', icon: 'packages' },
     { path: 'dispatch-notes', label: 'Notas de salida', icon: 'billing' },
+    { path: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { path: 'quotes', label: 'Cotizaciones', icon: 'quotes' },
   ];
   private readonly url = toSignal(

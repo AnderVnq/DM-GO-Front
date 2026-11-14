@@ -59,6 +59,7 @@ src/app/
     ├── delivery/
     ├── consignees/
     ├── notifications/
+    ├── warehouses/
     ├── customers/
     ├── shipments/
     ├── billing/
@@ -145,3 +146,11 @@ los callbacks `/login` y `/portal` en las URLs permitidas de `dm48-web`.
 - `/portal/notifications`: avisos de la cuenta, búsqueda y acceso a paquetes o notas relacionados. No hay estado de lectura en el contrato. Solo se convierten en navegación los enlaces conocidos del mismo origen.
 
 Los tres módulos usan exclusivamente endpoints `/portal/`. Playwright comprueba las dependencias entre agencia y sucursal, el consentimiento, la recuperación de conflictos de asignación y la navegación segura de avisos con respuestas simuladas.
+
+## Almacenes y recepción
+
+- `/internal/warehouses`: catálogo consultable por todo el personal. Solo administración crea y actualiza sedes; el código y país se conservan después del alta. Los almacenes inactivos mantienen su historial.
+- `/internal/warehouses/receiving`: supervisión y administración registran llegadas en sedes activas de Estados Unidos. Peso en gramos, dimensiones en milímetros y al menos una foto JPEG, PNG o WEBP (15 MB por archivo). La nota de entrada, el peso facturable y el flete se muestran según la respuesta del backend; sus medidas son inmutables.
+- `/internal/warehouses/unidentified`: cola de paquetes sin propietario. La asignación requiere resolver un cliente por casillero; editar la búsqueda o cambiar de paquete descarta el cliente anterior.
+
+Las recepciones usan `POST /warehouse/receipts`; la cola usa `GET /warehouse/unidentified` y la asignación `POST /packages/:id/assign`. Las fotografías se suben al servicio de documentos antes de registrar la recepción y se conservan en el formulario tras errores recuperables. Los recorridos de navegador usan API simulada y no realizan escrituras reales.

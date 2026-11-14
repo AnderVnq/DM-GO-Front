@@ -1,0 +1,109 @@
+<div class="page-header">
+  <div>
+    <h1>Paquetes sin identificar</h1>
+    <p>Relaciona cada paquete recibido con el propietario de su casillero.</p>
+  </div>
+  <div class="actions">
+    <a class="button" routerLink="/internal/warehouses/receiving">Recibir paquete</a
+    ><button class="button" (click)="reload()" [disabled]="busy() || loading()">Actualizar</button>
+  </div>
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando paquetes sin identificar…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nota de entrada</th>
+            <th>Contenido</th>
+            <th>Peso</th>
+            <th>Recepción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of packages(); track item.id) {
+            <tr [class.selected]="selected()?.id === item.id">
+              <td>
+                <button class="row-button" (click)="select(item)" [disabled]="busy()">
+                  {{ item.receipt?.number || item.carrier_tracking || item.id
+                  }}<small>{{ item.carrier_tracking || 'Sin tracking' }}</small>
+                </button>
+              </td>
+              <td>{{ item.description }}</td>
+              <td>{{ weight(item.receipt?.weight_g) }}</td>
+              <td>{{ date(item.receipt?.received_at || item.created_at) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!loading() && !error() && !packages().length) {
+      <div class="empty-state">
+        <h2>No hay paquetes pendientes de identificar</h2>
+        <p>Los paquetes cuyo propietario no se reconozca aparecerán aquí.</p>
+      </div>
+    }
+  </section>
+  @if (selected(); as item) {
+    <aside class="inspector">
+      <h2>Identificar propietario</h2>
+      <p>{{ item.receipt?.number || item.carrier_tracking }}</p>
+      <p>{{ item.description }}</p>
+      <form (ngSubmit)="lookup()">
+        <fieldset class="form-grid" [disabled]="busy()">
+          <legend class="sr-only">Buscar propietario</legend>
+          <label class="field full"
+            >Casillero del cliente<input
+              name="locker"
+              [ngModel]="locker"
+              (ngModelChange)="changeLocker($event)"
+              placeholder="PE00042"
+              required
+              autocomplete="off"
+          /></label>
+          <div class="actions full">
+            <button class="button" type="submit" [disabled]="!locker.trim() || looking()">
+              Buscar cliente
+            </button>
+          </div>
+        </fieldset>
+      </form>
+      @if (looking()) {
+        <p role="status">Buscando cliente…</p>
+      }
+      @if (lookupError()) {
+        <p class="alert error" role="alert">{{ lookupError() }}</p>
+      }
+      @if (customer(); as owner) {
+        <section class="detail-section">
+          <h3>{{ owner.name }}</h3>
+          <dl class="detail-grid">
+            <div>
+              <dt>Casillero</dt>
+              <dd>{{ owner.locker_code }}</dd>
+            </div>
+            <div>
+              <dt>Documento</dt>
+              <dd>{{ owner.document.type.toUpperCase() }} {{ owner.document.number }}</dd>
+            </div>
+          </dl>
+          <p class="fine-print">
+            Verifica que los datos coincidan con la etiqueta del paquete antes de asignarlo.
+          </p>
+          <button class="button primary" (click)="assign()" [disabled]="busy() || looking()">
+            {{ busy() ? 'Asignando…' : 'Asignar paquete al cliente' }}
+          </button>
+        </section>
+      }
+    </aside>
+  }
+</div>
