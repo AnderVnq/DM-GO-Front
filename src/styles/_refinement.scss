@@ -140,7 +140,7 @@
 }
 .status[data-tone='danger'] {
   color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  background: var(--error-background);
 }
 .status-dot {
   width: 0.4rem;
