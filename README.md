@@ -164,3 +164,9 @@ Las recepciones usan `POST /warehouse/receipts`; la cola usa `GET /warehouse/uni
 El backend no ofrece listados generales de bultos ni consolidados. Guarda o copia el enlace de cada registro para retomarlo: `?bulk_id=<uuid>` o `?consolidation_id=<uuid>`. La búsqueda admite una referencia UUID o un enlace del mismo origen y ruta; no abre enlaces externos. Desde un paquete recibido se puede iniciar la preparación de su bulto.
 
 Estas vistas usan `/bulks` y `/consolidations`, con permisos de supervisión o administración. Los errores conservan las entradas recuperables; los detalles secundarios se reintentan sin perder las referencias canónicas. Las pruebas de navegador usan respuestas simuladas, sin operaciones reales sobre la API.
+
+## Apariencia e interacción
+
+Los temas claro y oscuro comparten una jerarquía de superficies para navegación, tablas, formularios y detalle. Los estados usan colores semánticos y el foco permanece visible. El cambio de tema conserva la preferencia y el barrido de esquina a esquina al usar el puntero.
+
+El movimiento explica acciones: trazado inicial USA–Perú en portada, respuesta breve al pulsar y transición de diálogos. La navegación y las tablas no añaden esperas. Con teclado o movimiento reducido se desactivan los desplazamientos de componentes; el cambio de tema por teclado es inmediato.

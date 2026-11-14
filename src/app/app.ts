@@ -1,10 +1,16 @@
+import { InteractionMode } from './core/interaction-mode';
 import { Component, inject } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 
-@Component({ selector: 'app-root', imports: [RouterOutlet], template: '<router-outlet />' })
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  hostDirectives: [InteractionMode],
+  template: '<router-outlet />',
+})
 export class App {
   constructor() {
     const meta = inject(Meta);

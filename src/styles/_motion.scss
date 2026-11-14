@@ -1,0 +1,58 @@
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-interaction='keyboard']) {
+    .button,
+    .icon-button,
+    .sidebar nav a,
+    .portal-nav a,
+    .field input,
+    .field select,
+    .field textarea {
+      transition:
+        background-color 140ms var(--ease-out),
+        border-color 140ms var(--ease-out),
+        color 140ms var(--ease-out),
+        transform 120ms var(--ease-out);
+    }
+    .button:active:not(:disabled),
+    .icon-button:active:not(:disabled) {
+      transform: scale(0.975);
+    }
+    dialog[open] {
+      opacity: 1;
+      transform: none;
+      transition:
+        opacity 180ms var(--ease-out),
+        transform 180ms var(--ease-out);
+    }
+    dialog[open]::backdrop {
+      opacity: 1;
+      transition: opacity 180ms var(--ease-out);
+    }
+    @starting-style {
+      dialog[open] {
+        opacity: 0;
+        transform: translateY(0.5rem) scale(0.985);
+      }
+      dialog[open]::backdrop {
+        opacity: 0;
+      }
+    }
+  }
+}
+:root[data-interaction='keyboard'] {
+  .button,
+  .icon-button,
+  .sidebar nav a,
+  .portal-nav a,
+  .field input,
+  .field select,
+  .field textarea,
+  dialog,
+  dialog::backdrop {
+    transition: none;
+    animation: none;
+  }
+  .button:active {
+    transform: none;
+  }
+}

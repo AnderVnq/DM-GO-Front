@@ -13,6 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'app-overview-page',
   imports: [RouterLink, Icon, Status],
   templateUrl: './overview-page.html',
+  styleUrl: './overview-page.scss',
 })
 export class OverviewPage {
   readonly auth = inject(AuthService);

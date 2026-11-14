@@ -31,7 +31,10 @@
   display: flex;
   gap: 0.2rem;
   flex-wrap: wrap;
-  border-block: 1px solid var(--border);
+  border: 1px solid var(--line-subtle);
+  background: var(--surface-inset);
+  border-radius: 0.75rem;
+  padding: 0.3rem;
 }
 .portal-nav a {
   display: flex;
@@ -42,16 +45,18 @@
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 500;
+  border-radius: 0.5rem;
 }
 .portal-nav a.active {
   color: var(--accent);
-  box-shadow: inset 0 -2px var(--accent);
+  background: var(--accent-surface);
+  font-weight: 600;
 }
 .portal-nav a:hover {
   background: var(--surface);
 }
 .portal-content {
-  margin-block: 2.5rem 4rem;
+  margin-block: 2rem 4rem;
 }
 @media (max-width: 700px) {
   .portal-header,

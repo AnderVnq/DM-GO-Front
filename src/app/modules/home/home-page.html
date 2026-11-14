@@ -34,8 +34,19 @@
     </div>
     <aside class="journey" aria-label="Así conecta tu casillero las compras y la entrega">
       <div class="journey-route">
-        <span>Estados Unidos<small>El origen de tus compras</small></span
-        ><app-icon name="plane" /><span>Perú<small>Donde las necesitas</small></span>
+        <span
+          ><b class="country-tag">US</b>Estados Unidos<small>El origen de tus compras</small></span
+        >
+        <span><b class="country-tag">PE</b>Perú<small>Donde las necesitas</small></span>
+      </div>
+      <div class="route-diagram" aria-hidden="true">
+        <svg viewBox="0 0 480 96" fill="none">
+          <path class="route-guide" d="M24 76C150 2 330 2 456 76" />
+          <path class="route-path" pathLength="1" d="M24 76C150 2 330 2 456 76" />
+          <circle cx="24" cy="76" r="5" />
+          <circle cx="456" cy="76" r="5" />
+        </svg>
+        <span class="route-aircraft"><app-icon name="plane" /></span>
       </div>
       <div class="locker-illustration">
         <app-icon name="packages" />

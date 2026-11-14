@@ -4,21 +4,52 @@
     <p>{{ auth.user()?.name || auth.user()?.username }}, continúa con las tareas de tu equipo.</p>
   </div>
 </div>
-<section class="surface surface-body">
-  <h2>¿Con qué cliente vas a trabajar?</h2>
-  <p class="muted">
-    Busca su casillero o documento para consultar paquetes, registrar una prealerta o revisar sus
-    datos.
-  </p>
-  <div class="quick-actions">
-    <a class="button primary" routerLink="/internal/customers"
-      ><app-icon name="search" />Buscar cliente</a
-    ><a class="button" routerLink="/internal/packages"
-      ><app-icon name="packages" />Consultar paquetes</a
-    >
+<section class="overview-workspace">
+  <div>
+    <h2>¿Con qué cliente vas a trabajar?</h2>
+    <p class="muted">
+      Busca su casillero o documento para consultar paquetes, registrar una prealerta o revisar sus
+      datos.
+    </p>
+    <div class="quick-actions">
+      <a class="button primary" routerLink="/internal/customers"
+        ><app-icon name="search" />Buscar cliente</a
+      ><a class="button" routerLink="/internal/packages"
+        ><app-icon name="packages" />Consultar paquetes</a
+      >
+    </div>
+  </div>
+  <div class="overview-shortcuts">
+    @if (auth.manager()) {
+      <a routerLink="/internal/warehouses/receiving"
+        ><app-icon name="warehouse" /><span
+          ><strong>Recibir paquetes</strong
+          ><small>Registra peso, medidas y evidencia de llegada.</small></span
+        ><app-icon name="arrow"
+      /></a>
+      <a routerLink="/internal/bulks"
+        ><app-icon name="plane" /><span
+          ><strong>Preparar bultos</strong
+          ><small>Agrupa paquetes y continúa con su despacho.</small></span
+        ><app-icon name="arrow"
+      /></a>
+    } @else {
+      <a routerLink="/internal/quotes"
+        ><app-icon name="quotes" /><span
+          ><strong>Preparar una cotización</strong
+          ><small>Organiza el producto y su estimación de costos.</small></span
+        ><app-icon name="arrow"
+      /></a>
+      <a routerLink="/internal/dispatch-notes"
+        ><app-icon name="billing" /><span
+          ><strong>Consultar notas de salida</strong
+          ><small>Revisa el detalle de cobros y pagos.</small></span
+        ><app-icon name="arrow"
+      /></a>
+    }
   </div>
 </section>
-<div class="content-stack actions">
+<div class="overview-grid">
   <section class="surface">
     <div class="section-heading">
       <h2>Notas de salida recientes</h2>

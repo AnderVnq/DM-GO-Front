@@ -43,6 +43,7 @@ export class ThemeService {
     this.stopTransition();
     if (
       typeof this.document.startViewTransition === 'function' &&
+      this.document.documentElement.dataset['interaction'] !== 'keyboard' &&
       !this.window?.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     ) {
       const request = this.transitionRequest;

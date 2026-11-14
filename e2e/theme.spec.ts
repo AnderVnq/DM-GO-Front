@@ -28,6 +28,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.screenshot({ path: testInfo.outputPath('login.png'), fullPage: true });
     await login(page);
     await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('overview.png'), fullPage: true });
     await navigate(page, 'Clientes', 'customers');
     await page.getByLabel('Casillero o documento', { exact: true }).fill('PE00042');
     await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
@@ -56,6 +57,7 @@ test('cambia con teclado y conserva la elección al recargar y entrar al panel',
   await toggle.press('Enter');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await page.evaluate(() => localStorage.getItem('dm48-theme'))).toBe('dark');
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   await page.reload();
   await expect(
     page.getByRole('button', { name: 'Cambiar a modo claro', exact: true }),
@@ -178,6 +180,10 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         if (animation) animation.currentTime = 100;
       });
       await page.screenshot({ path: testInfo.outputPath('corner-reveal.png') });
+      await page.evaluate(() => {
+        document.getAnimations().forEach((animation) => animation.finish());
+      });
+      await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
     } else {
       expect(
         await page.evaluate(
@@ -185,7 +191,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         ),
       ).toBe(0);
     }
-    await page.getByRole('button', { name: 'Cambiar a modo claro', exact: true }).press('Enter');
+    await page.getByRole('button', { name: 'Cambiar a modo claro', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     if (reducedMotion === 'no-preference') {
       await expect
