@@ -1,0 +1,200 @@
+<div class="page-header">
+  <div>
+    <h1>Mis pagos</h1>
+    <p>Consulta tus notas de salida, saldos y pagos enviados a revisión.</p>
+  </div>
+  <button class="button" (click)="reload()" [disabled]="busy() || loading()">Actualizar</button>
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando tus notas…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nota</th>
+            <th>Estado</th>
+            <th>Total</th>
+            <th>Saldo pendiente</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (note of notes(); track note.id) {
+            <tr [class.selected]="selected()?.id === note.id">
+              <td>
+                <button class="row-button" (click)="select(note)" [disabled]="busy()">
+                  {{ note.number }}<small>{{ date(note.created_at) }}</small>
+                </button>
+              </td>
+              <td><app-status [value]="note.status" /></td>
+              <td class="numeric">{{ money(note.total_cents) }}</td>
+              <td class="numeric">{{ money(note.balance_cents) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!loading() && !notes().length) {
+      <div class="empty-state">
+        <app-icon name="billing" />
+        <h2>No tienes notas de salida disponibles</h2>
+        <p>Cuando se prepare el despacho de tus compras, podrás consultar aquí sus importes.</p>
+      </div>
+    }
+  </section>
+  @if (selected(); as note) {
+    <aside class="inspector">
+      <h2>{{ note.number }}</h2>
+      <app-status [value]="note.status" />
+      <dl class="detail-grid">
+        <div>
+          <dt>Total</dt>
+          <dd>{{ money(note.total_cents) }}</dd>
+        </div>
+        <div>
+          <dt>Pagado y confirmado</dt>
+          <dd>{{ money(note.paid_cents) }}</dd>
+        </div>
+        <div>
+          <dt>Saldo pendiente</dt>
+          <dd>
+            <strong>{{ money(note.balance_cents) }}</strong>
+          </dd>
+        </div>
+        <div>
+          <dt>Liquidación</dt>
+          <dd>{{ note.liquidation_number || 'En preparación' }}</dd>
+        </div>
+      </dl>
+      @if (detailLoading()) {
+        <p role="status">Actualizando el detalle…</p>
+      }
+      <div class="actions">
+        <button class="button compact" (click)="download()" [disabled]="busy() || detailLoading()">
+          Ver PDF
+        </button>
+        @if (note.status === 'pending_payment') {
+          <button
+            class="button primary compact"
+            (click)="preparePayment()"
+            [disabled]="busy() || detailLoading()"
+          >
+            Reportar pago
+          </button>
+        }
+      </div>
+      <section class="detail-section">
+        <h3>Cargos de tu envío</h3>
+        <ul class="line-list">
+          @for (line of note.lines; track line.id) {
+            @if (line.applies) {
+              <li>
+                <span>{{ line.charge_name }}</span><strong>{{ money(line.amount_cents) }}</strong>
+              </li>
+            }
+          } @empty {
+            <li>El desglose aún no está disponible.</li>
+          }
+        </ul>
+      </section>
+      <section class="detail-section">
+        <h3>Pagos reportados</h3>
+        <ul class="line-list">
+          @for (payment of note.payments; track payment.id) {
+            <li>
+              <div>
+                <strong>{{ money(payment.amount_cents) }}</strong><small
+                  >{{ methods[payment.method] || payment.method }} ·
+                  {{ date(payment.paid_at) }}</small
+                ><app-status [value]="payment.status" />
+                @if (payment.reference) {
+                  <p class="fine-print">Referencia: {{ payment.reference }}</p>
+                }
+                @if (payment.reject_reason) {
+                  <p>{{ payment.reject_reason }}</p>
+                }
+              </div>
+            </li>
+          } @empty {
+            <li>No has reportado pagos para esta nota.</li>
+          }
+        </ul>
+        <p class="fine-print">
+          Los comprobantes enviados se revisan antes de confirmar el pago y actualizar el saldo.
+        </p>
+      </section>
+    </aside>
+  }
+</div>
+<dialog #paymentDialog aria-labelledby="portal-payment-title">
+  <div class="dialog-header">
+    <h2 id="portal-payment-title">Reportar pago</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar"
+      (click)="paymentDialog.close()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p class="muted">Saldo pendiente: {{ money(selected()?.balance_cents || 0) }}</p>
+  <form [formGroup]="payment" (ngSubmit)="report()">
+    <div class="form-grid">
+      <label class="field"
+        >Importe en USD<input
+          formControlName="amount"
+          inputmode="decimal"
+          [readonly]="busy()"
+          required /></label
+      ><label class="field"
+        >Método<select formControlName="method" [attr.disabled]="busy() ? true : null">
+          <option value="transfer">Transferencia</option>
+          <option value="yape">Yape</option>
+          <option value="plin">Plin</option>
+          <option value="cash">Efectivo</option>
+          <option value="card">Tarjeta</option>
+          <option value="other">Otro</option>
+        </select></label
+      ><label class="field"
+        >Origen<select formControlName="origin" [attr.disabled]="busy() ? true : null">
+          <option value="PERU">Perú</option>
+          <option value="USA">USA</option>
+        </select></label
+      ><label class="field"
+        >Referencia<input formControlName="reference" [readonly]="busy()" /></label
+      ><label class="field full"
+        >Comprobante de pago<input
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          (change)="attach($event)"
+          [disabled]="busy()"
+      /></label>
+    </div>
+    <p class="fine-print actions">
+      Adjunta un PDF o imagen de hasta 15 MB. El pago permanecerá pendiente hasta que el equipo lo
+      revise.
+    </p>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="paymentDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button
+        class="button primary"
+        [disabled]="payment.invalid || busy() || selected()?.status !== 'pending_payment'"
+      >
+        {{ busy() ? 'Enviando…' : 'Enviar comprobante' }}
+      </button>
+    </div>
+  </form>
+</dialog>

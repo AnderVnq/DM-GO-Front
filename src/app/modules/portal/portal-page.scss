@@ -1,24 +1,9 @@
 :host {
   display: block;
 }
-.portal-header {
-  width: min(100% - 3rem, 75rem);
-  margin: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 6rem;
-  border-bottom: 1px solid var(--border);
-  gap: 1rem;
-}
-.portal-header > div {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
 .portal-page {
-  width: min(100% - 3rem, 42rem);
-  margin: 4rem auto;
+  width: min(100%, 42rem);
+  margin: 1rem auto 3rem;
 }
 .portal-intro {
   margin-bottom: 2rem;
@@ -124,18 +109,8 @@ h1 span {
   margin-top: 1rem;
 }
 @media (max-width: 700px) {
-  .portal-header {
-    width: calc(100% - 2rem);
-    min-height: 5rem;
-  }
-  .portal-header > div {
-    gap: 0.7rem;
-  }
   .portal-page {
-    width: calc(100% - 2rem);
-    margin-block: 2.5rem;
-  }
-  .locker-code {
-    flex-wrap: wrap;
+    width: 100%;
+    margin-block: 1.5rem;
   }
 }

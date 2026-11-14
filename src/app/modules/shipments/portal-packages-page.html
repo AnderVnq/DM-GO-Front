@@ -1,0 +1,191 @@
+<div class="page-header">
+  <div>
+    <h1>Mis paquetes</h1>
+    <p>Prealerta tus compras y consulta su recorrido hasta Perú.</p>
+  </div>
+  <button class="button primary" (click)="openCreate()" [disabled]="busy()">
+    <app-icon name="plus" />Nueva prealerta
+  </button>
+</div>
+<div class="customer-strip search-bar">
+  <label class="field"
+    >Filtrar mis paquetes<input
+      [value]="filter()"
+      (input)="filter.set($any($event.target).value)"
+      placeholder="Tienda, contenido o tracking" /></label
+  ><button class="button" (click)="reload()" [disabled]="loading() || busy()">Actualizar</button>
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando tus paquetes…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Compra</th>
+            <th>Tracking</th>
+            <th>Estado</th>
+            <th>Valor declarado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of filtered(); track item.id) {
+            <tr [class.selected]="selected()?.id === item.id">
+              <td>
+                <button class="row-button" (click)="select(item)" [disabled]="busy()">
+                  {{ item.store || 'Sin tienda' }}<small>{{ item.description }}</small>
+                </button>
+              </td>
+              <td>{{ item.carrier_tracking }}</td>
+              <td><app-status [value]="item.status" /></td>
+              <td class="numeric">{{ money(item.declared_value_cents) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!loading() && !filtered().length) {
+      <div class="empty-state">
+        <app-icon name="packages" />
+        <h2>{{ packages().length ? 'Sin coincidencias' : 'Aún no tienes paquetes' }}</h2>
+        <p>
+          {{
+            packages().length
+              ? 'Prueba otro filtro.'
+              : 'Registra tu primera prealerta cuando hagas una compra.'
+          }}
+        </p>
+      </div>
+    }
+    <div class="table-footer">{{ filtered().length }} paquetes de tu cuenta</div>
+  </section>
+  @if (selected(); as item) {
+    <aside class="inspector">
+      <h2>{{ item.description }}</h2>
+      <app-status [value]="item.status" />
+      <dl class="detail-grid">
+        <div>
+          <dt>Tracking</dt>
+          <dd>{{ item.carrier_tracking }}</dd>
+        </div>
+        <div>
+          <dt>Tienda</dt>
+          <dd>{{ item.store || 'Sin tienda' }}</dd>
+        </div>
+        <div>
+          <dt>Valor declarado</dt>
+          <dd>{{ money(item.declared_value_cents) }}</dd>
+        </div>
+        <div>
+          <dt>Peso recibido</dt>
+          <dd>{{ item.receipt ? weight(item.receipt.weight_g) : 'Pendiente de recepción' }}</dd>
+        </div>
+      </dl>
+      <section class="detail-section">
+        <h3>Factura de tu compra</h3>
+        <p class="fine-print">
+          {{
+            item.has_invoice
+              ? 'Factura recibida y asociada a tu paquete.'
+              : 'Adjunta la factura o comprobante de la tienda.'
+          }}
+        </p>
+        @if (detailError()) {
+          <p class="alert error" role="alert">{{ detailError() }}</p>
+        }
+        <button
+          class="button compact"
+          (click)="invoiceInput.click()"
+          [disabled]="busy() || !editable(item.status)"
+        >
+          {{ item.has_invoice ? 'Cambiar factura' : 'Adjuntar factura' }}</button><input
+          #invoiceInput
+          type="file"
+          class="sr-only"
+          tabindex="-1"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          [disabled]="busy() || !editable(item.status)"
+          (change)="attach($event)"
+        />
+        @if (!editable(item.status)) {
+          <p class="fine-print actions">
+            La factura solo puede cambiarse antes de consolidar el paquete.
+          </p>
+        }
+      </section>
+      <section class="detail-section">
+        <h3>Seguimiento</h3>
+        @if (trackingLoading()) {
+          <p role="status">Cargando seguimiento…</p>
+        }
+        @if (trackingError()) {
+          <p class="alert error" role="alert">{{ trackingError() }}</p>
+          <button class="button compact" (click)="loadTracking()" [disabled]="busy()">
+            Reintentar seguimiento
+          </button>
+        }
+        <ol class="timeline">
+          @for (event of timeline()?.events; track $index) {
+            <li>
+              <strong>{{ event.title }}</strong><small>{{ date(event.at) }}</small>
+              @if (event.location) {
+                <small>{{ event.location }}</small>
+              }
+            </li>
+          }
+        </ol>
+        @if (timeline() && !timeline()?.events?.length) {
+          <p class="muted">Aún no hay movimientos registrados.</p>
+        }
+      </section>
+    </aside>
+  }
+</div>
+<dialog #createDialog aria-labelledby="portal-prealert-title">
+  <div class="dialog-header">
+    <h2 id="portal-prealert-title">Nueva prealerta</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar"
+      (click)="createDialog.close()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <form [formGroup]="form" (ngSubmit)="create()">
+    <div class="form-grid">
+      <label class="field"
+        >Modalidad<select formControlName="mode">
+          <option value="courier">Courier</option>
+          <option value="traveler">Viajero</option>
+        </select></label
+      ><label class="field">Tienda<input formControlName="store" required /></label
+      ><label class="field full"
+        >Tracking del transportista<input formControlName="carrier_tracking" required /></label
+      ><label class="field full"
+        >Contenido del paquete<input formControlName="description" required /></label
+      ><label class="field"
+        >Valor declarado en USD<input formControlName="amount" inputmode="decimal" required
+      /></label>
+    </div>
+    <p class="fine-print actions">
+      Indica el valor de tu compra, hasta USD 100 000, con máximo dos decimales.
+    </p>
+    @if (formError()) {
+      <p class="alert error" role="alert">{{ formError() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="button" (click)="createDialog.close()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="form.invalid || busy()">
+        {{ busy() ? 'Registrando…' : 'Registrar prealerta' }}
+      </button>
+    </div>
+  </form>
+</dialog>

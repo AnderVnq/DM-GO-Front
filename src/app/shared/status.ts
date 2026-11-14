@@ -25,6 +25,9 @@ const labels: Record<string, string> = {
   accepted: 'Aceptado',
   rejected: 'Rechazado',
   expired: 'Vencido',
+  pending_send: 'Pendiente de envío',
+  sent: 'Enviado',
+  exception: 'Descartado',
 };
 export function statusLabel(value: string): string {
   return labels[value] ?? value.replaceAll('_', ' ').toLowerCase();

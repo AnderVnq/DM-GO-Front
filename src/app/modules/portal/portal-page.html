@@ -1,13 +1,4 @@
-<a class="skip-link" href="#portal-content">Saltar al contenido</a>
-<header class="portal-header">
-  <a class="wordmark" routerLink="/" aria-label="DM48, inicio"
-    >DM48<span class="brand-dot"></span
-  ></a>
-  <div>
-    <app-theme-toggle /><button class="text-button" (click)="auth.logout()">Cerrar sesión</button>
-  </div>
-</header>
-<main id="portal-content" class="portal-page" tabindex="-1">
+<section class="portal-page">
   @if (state() === 'loading') {
     <p role="status">Consultando tu casillero…</p>
   }
@@ -155,4 +146,4 @@
     <button class="button primary" (click)="load()">Volver a consultar</button>
   }
   <a class="back-home" routerLink="/">Volver al inicio</a>
-</main>
+</section>

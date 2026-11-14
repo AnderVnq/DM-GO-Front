@@ -31,3 +31,14 @@ export function requestMessage(error: unknown): string {
   }
   return problemMessage({ status: 500 });
 }
+
+export function requestCode(error: unknown): string {
+  if (!error || typeof error !== 'object' || !('error' in error)) return '';
+  const problem = error.error;
+  return problem &&
+    typeof problem === 'object' &&
+    'code' in problem &&
+    typeof problem.code === 'string'
+    ? problem.code
+    : '';
+}

@@ -4,26 +4,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
-import { requestMessage } from '../../core/api-problem';
+import { requestMessage, requestCode } from '../../core/api-problem';
 import { Icon } from '../../shared/icon';
-import { ThemeToggle } from '../../shared/theme-toggle';
 import { PortalApi } from './portal-api';
 import type { LockerAddress, PortalProfile } from './portal.model';
 
-function problemCode(error: unknown): string {
-  if (!error || typeof error !== 'object' || !('error' in error)) return '';
-  const problem = error.error;
-  return problem &&
-    typeof problem === 'object' &&
-    'code' in problem &&
-    typeof problem.code === 'string'
-    ? problem.code
-    : '';
-}
-
 @Component({
   selector: 'app-portal-page',
-  imports: [RouterLink, ReactiveFormsModule, ThemeToggle, Icon],
+  imports: [RouterLink, ReactiveFormsModule, Icon],
   templateUrl: './portal-page.html',
   styleUrl: './portal-page.scss',
 })
@@ -58,7 +46,7 @@ export class PortalPage {
     this.reading = this.api.me().subscribe({
       next: (profile) => this.showProfile(profile),
       error: (error: unknown) => {
-        if (problemCode(error) === 'onboarding_required') this.checkLink();
+        if (requestCode(error) === 'onboarding_required') this.checkLink();
         else {
           this.error.set(requestMessage(error));
           this.state.set('error');
@@ -83,7 +71,7 @@ export class PortalPage {
         }
       },
       error: (error: unknown) => {
-        if (problemCode(error) === 'link_request_not_found') this.state.set('onboarding');
+        if (requestCode(error) === 'link_request_not_found') this.state.set('onboarding');
         else {
           this.error.set(requestMessage(error));
           this.state.set('error');
@@ -114,7 +102,7 @@ export class PortalPage {
         },
         error: (error: unknown) => {
           this.busy.set(false);
-          if (['link_requested', 'already_onboarded'].includes(problemCode(error))) {
+          if (['link_requested', 'already_onboarded'].includes(requestCode(error))) {
             this.load();
             return;
           }

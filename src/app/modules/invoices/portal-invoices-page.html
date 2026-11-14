@@ -1,0 +1,142 @@
+<div class="page-header">
+  <div>
+    <h1>Mis comprobantes</h1>
+    <p>Consulta tus boletas, facturas y notas de crédito emitidas.</p>
+  </div>
+  <button class="button" (click)="reload()" [disabled]="loading() || busy()">Actualizar</button>
+</div>
+<div class="customer-strip search-bar">
+  <label class="field"
+    >Buscar comprobante<input
+      placeholder="Número de comprobante o nota"
+      [value]="filter()"
+      (input)="filter.set($any($event.target).value)"
+  /></label>
+</div>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando tus comprobantes…</p>
+}
+<div class="split-view">
+  <section class="surface">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Comprobante</th>
+            <th>Emisión</th>
+            <th>Estado</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (invoice of filtered(); track invoice.id) {
+            <tr [class.selected]="selected()?.id === invoice.id">
+              <td>
+                <button class="row-button" (click)="select(invoice)" [disabled]="busy()">
+                  {{ invoice.code
+                  }}<small>{{ type(invoice.type) }} · {{ invoice.note_number }}</small>
+                </button>
+              </td>
+              <td>{{ date(invoice.issued_at) }}</td>
+              <td><app-status [value]="invoice.status" /></td>
+              <td class="numeric">{{ money(invoice.total_cents) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!loading() && !filtered().length) {
+      <div class="empty-state">
+        <app-icon name="attachment" />
+        <h2>{{ invoices().length ? 'Sin coincidencias' : 'Aún no tienes comprobantes' }}</h2>
+        <p>
+          {{
+            invoices().length
+              ? 'Prueba otro número.'
+              : 'Tus comprobantes aparecerán aquí cuando se emitan.'
+          }}
+        </p>
+      </div>
+    }
+  </section>
+  @if (selected(); as invoice) {
+    <aside class="inspector">
+      <h2>{{ invoice.code }}</h2>
+      <p>{{ type(invoice.type) }}</p>
+      <app-status [value]="invoice.status" />
+      <dl class="detail-grid">
+        <div>
+          <dt>Titular</dt>
+          <dd>{{ invoice.customer_name }}</dd>
+        </div>
+        <div>
+          <dt>Nota de salida</dt>
+          <dd>{{ invoice.note_number }}</dd>
+        </div>
+        <div>
+          <dt>Total</dt>
+          <dd>
+            <strong>{{ money(invoice.total_cents) }}</strong>
+          </dd>
+        </div>
+        <div>
+          <dt>IGV incluido</dt>
+          <dd>{{ money(invoice.igv_cents) }}</dd>
+        </div>
+      </dl>
+      <section class="detail-section">
+        <h3>Detalle del comprobante</h3>
+        <ul class="line-list">
+          @for (line of invoice.lines; track $index) {
+            <li>
+              <span>{{ line.description }}</span><strong>{{ money(line.total_cents) }}</strong>
+            </li>
+          }
+        </ul>
+      </section>
+      @if (invoice.observations) {
+        <p>{{ invoice.observations }}</p>
+      }
+      @if (invoice.ref_code) {
+        <p>Comprobante relacionado: {{ invoice.ref_code }}</p>
+      }
+      @if (invoice.reason) {
+        <p>Motivo: {{ invoice.reason }}</p>
+      }
+      @if (invoice.credited) {
+        <p class="fine-print">Este comprobante tiene una nota de crédito asociada.</p>
+      }
+      <section class="detail-section">
+        <h3>Archivos disponibles</h3>
+        <div class="actions">
+          <button
+            class="button primary compact"
+            (click)="download('pdf')"
+            [disabled]="busy() || !invoice.has_pdf"
+          >
+            Descargar PDF</button
+          ><button
+            class="button compact"
+            (click)="download('xml')"
+            [disabled]="busy() || !invoice.has_xml"
+          >
+            Descargar XML</button
+          ><button
+            class="button compact"
+            (click)="download('cdr')"
+            [disabled]="busy() || !invoice.has_cdr"
+          >
+            Descargar CDR
+          </button>
+        </div>
+        <p class="fine-print actions">
+          Los archivos se habilitan cuando están disponibles. El CDR es la constancia de respuesta
+          de SUNAT.
+        </p>
+      </section>
+    </aside>
+  }
+</div>

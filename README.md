@@ -55,6 +55,7 @@ src/app/
 └── modules/
     ├── home/
     ├── portal/
+    ├── invoices/
     ├── customers/
     ├── shipments/
     ├── billing/
@@ -115,7 +116,18 @@ El área inicial de clientes permite completar DNI/RUC, nombre y teléfono, y
 consultar el código y direcciones reales del casillero. Usa `GET /portal/me`,
 `POST /portal/onboarding` y `GET /portal/link-request`. Si el documento requiere
 vinculación, muestra el estado de revisión sin revelar el casillero existente.
-Los paquetes, pagos y demás recorridos del portal se desarrollarán por separado.
+El portal también incluye `/portal/packages` (paquetes, prealertas, seguimiento y
+factura adjunta), `/portal/payments` (notas, saldos, PDF y reporte de pagos con
+comprobante obligatorio) y `/portal/invoices` (boletas, facturas, notas de crédito y
+archivos PDF/XML/CDR disponibles). Los pagos enviados por el cliente quedan
+pendientes de revisión; no se descuentan del saldo hasta su confirmación. La evidencia
+se sube con un permiso temporal de `/documents/uploads`, un PUT sin credenciales
+de sesión a la URL firmada y la confirmación `/documents/uploads/:id/complete`.
+
+El portal usa las rutas propias de la cuenta autenticada, sin seleccionar un
+`customer_id`. El módulo del personal mantiene sus rutas y permisos independientes.
+La factura comercial del paquete puede adjuntarse o reemplazarse antes de consolidar;
+la API del portal no expone su identificador para previsualizarla.
 
 Los datos públicos de la empresa están en `public/business-info.json`: razón
 social, RUC y domicilio fiscal. Completa `email`, `phone` y `hours` cuando estén

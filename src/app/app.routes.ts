@@ -5,9 +5,35 @@ import { portalGuard } from './core/portal.guard';
 export const routes: Routes = [
   {
     path: 'portal',
-    title: 'Mi casillero · DM48',
     canActivate: [portalGuard],
-    loadComponent: () => import('./modules/portal/portal-page').then((m) => m.PortalPage),
+    canActivateChild: [portalGuard],
+    loadComponent: () => import('./layout/portal-shell').then((m) => m.PortalShell),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        title: 'Mi casillero · DM48',
+        loadComponent: () => import('./modules/portal/portal-page').then((m) => m.PortalPage),
+      },
+      {
+        path: 'packages',
+        title: 'Mis paquetes · DM48',
+        loadComponent: () =>
+          import('./modules/shipments/portal-packages-page').then((m) => m.PortalPackagesPage),
+      },
+      {
+        path: 'payments',
+        title: 'Mis pagos · DM48',
+        loadComponent: () =>
+          import('./modules/billing/portal-payments-page').then((m) => m.PortalPaymentsPage),
+      },
+      {
+        path: 'invoices',
+        title: 'Mis comprobantes · DM48',
+        loadComponent: () =>
+          import('./modules/invoices/portal-invoices-page').then((m) => m.PortalInvoicesPage),
+      },
+    ],
   },
   {
     path: '',

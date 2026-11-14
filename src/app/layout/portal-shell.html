@@ -1,0 +1,26 @@
+<a class="skip-link" href="#portal-content">Saltar al contenido</a>
+<header class="portal-header">
+  <a class="wordmark" routerLink="/" aria-label="DM48, inicio"
+    >DM48<span class="brand-dot"></span
+  ></a>
+  <div class="portal-account">
+    <span>{{ auth.user()?.name || auth.user()?.username }}</span><app-theme-toggle /><button
+      class="text-button"
+      (click)="auth.logout()"
+    >
+      Cerrar sesión
+    </button>
+  </div>
+</header>
+<nav class="portal-nav" aria-label="Mi cuenta">
+  @for (link of links; track link.path) {
+    <a
+      [routerLink]="link.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: link.path === '/portal' }"
+      ariaCurrentWhenActive="page"
+      ><app-icon [name]="link.icon" />{{ link.label }}</a
+    >
+  }
+</nav>
+<main id="portal-content" class="portal-content" tabindex="-1"><router-outlet /></main>
