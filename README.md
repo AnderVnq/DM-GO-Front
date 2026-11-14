@@ -170,3 +170,5 @@ Estas vistas usan `/bulks` y `/consolidations`, con permisos de supervisión o a
 Los temas claro y oscuro comparten una jerarquía de superficies para navegación, tablas, formularios y detalle. Los estados usan colores semánticos y el foco permanece visible. El cambio de tema conserva la preferencia y el barrido de esquina a esquina al usar el puntero.
 
 El movimiento explica acciones: trazado inicial USA–Perú en portada, respuesta breve al pulsar y transición de diálogos. La navegación y las tablas no añaden esperas. Con teclado o movimiento reducido se desactivan los desplazamientos de componentes; el cambio de tema por teclado es inmediato.
+
+La navegación de la portada desplaza suavemente entre secciones al usar el puntero; con teclado o movimiento reducido mantiene el salto nativo inmediato. El cierre y el footer agrupan creación de casillero, contacto, domicilio fiscal, ayuda y datos legales. Correo, teléfono y horarios se muestran solo cuando están configurados en `public/business-info.json`.

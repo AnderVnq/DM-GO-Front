@@ -162,3 +162,9 @@ small {
     --muted: #e2e8f0;
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:has(app-home-page):not([data-interaction='keyboard']) {
+    scroll-behavior: smooth;
+  }
+}

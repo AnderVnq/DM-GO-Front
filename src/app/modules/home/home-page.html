@@ -214,38 +214,71 @@
       </details>
     </div>
   </section>
-  <section class="closing public-width">
-    <h2>Tu próxima compra<br />empieza con tu casillero.</h2>
-    <div>
-      <p>Crea tu cuenta y ten a mano los datos que necesitas para recibir tus compras en USA.</p>
+  <section class="closing" aria-labelledby="closing-title">
+    <svg class="closing-route" viewBox="0 0 1200 400" fill="none" aria-hidden="true">
+      <path d="M-80 350C160 350 170 70 350 70S530 350 780 350 1030 80 1280 80" />
+      <circle cx="350" cy="70" r="7" />
+      <circle cx="780" cy="350" r="7" />
+    </svg>
+    <div class="closing-content public-width">
+      <h2 id="closing-title">Crea tu casillero.<br />Acerca tu próxima compra.</h2>
+      <p>Crea tu cuenta y obtén los datos para recibir tus compras en Estados Unidos.</p>
       <button class="button primary" [disabled]="busy()" (click)="createLocker()">
         {{ busy() ? 'Abriendo registro…' : 'Crear mi casillero' }}<app-icon name="arrow" />
       </button>
     </div>
   </section>
 </main>
-<footer class="public-footer public-width">
-  <div class="footer-brand">
-    <a class="wordmark" routerLink="/">DM48<span class="brand-dot"></span></a>
-    <p>Estados Unidos → Perú<br />Courier internacional</p>
-  </div>
-  <div class="business-details">
-    @if (business(); as company) {
-      <strong>{{ company.legalName }}</strong>
-      <p>RUC {{ company.taxId }}</p>
-      <p>Domicilio fiscal: {{ company.fiscalAddress }}</p>
-      @if (company.email) {
-        <a [href]="'mailto:' + company.email">{{ company.email }}</a>
-      }
-      @if (company.phone) {
-        <p>{{ company.phone }}</p>
-      }
-      @if (company.hours) {
-        <p>{{ company.hours }}</p>
-      }
-    }
-  </div>
-  <div class="footer-end">
-    <span>© {{ year }} DM48</span><a routerLink="/login">Acceder a mi cuenta</a>
+<footer class="public-footer">
+  <div class="public-width">
+    <div class="footer-columns">
+      <div class="footer-brand">
+        <a class="wordmark" routerLink="/" aria-label="DM48, inicio"
+          >DM48<span class="brand-dot"></span
+        ></a>
+        <p>Estados Unidos → Perú<br />Courier internacional</p>
+        <a class="footer-route-link" href="#about">Conoce DM48<app-icon name="arrow" /></a>
+      </div>
+      <div id="contact" class="footer-column">
+        <h2>Contacto</h2>
+        @if (business(); as company) {
+          @if (company.email) {
+            <a [href]="'mailto:' + company.email">{{ company.email }}</a>
+          }
+          @if (company.phone) {
+            <p>{{ company.phone }}</p>
+          }
+          @if (company.hours) {
+            <p>{{ company.hours }}</p>
+          }
+          @if (!company.email && !company.phone) {
+            <p>¿Es tu primera compra? Conoce el recorrido antes de empezar.</p>
+          }
+        }
+        <a href="#how-it-works">Cómo funciona</a>
+      </div>
+      <div class="footer-column footer-office">
+        <h2>Oficina</h2>
+        @if (business(); as company) {
+          <p class="footer-field-label">Domicilio fiscal</p>
+          <p>{{ company.fiscalAddress }}</p>
+        }
+      </div>
+      <nav class="footer-column" aria-label="Ayuda">
+        <h2>Ayuda</h2>
+        <a href="#questions">Preguntas frecuentes</a>
+        <a href="#services">Nuestros servicios</a>
+        <a routerLink="/login">Acceder a mi cuenta</a>
+      </nav>
+    </div>
+    <div class="footer-end">
+      <div class="footer-legal">
+        @if (business(); as company) {
+          <span>{{ company.legalName }}</span>
+          <span>RUC {{ company.taxId }}</span>
+        }
+      </div>
+      <span>© {{ year }} DM48</span>
+    </div>
   </div>
 </footer>

@@ -336,50 +336,131 @@ h3 {
   line-height: 1.75;
 }
 .closing {
-  border-top: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5rem;
-  align-items: center;
-  padding-block: 4rem 5rem;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--accent-surface);
+  padding-block: 6rem;
+  text-align: center;
+}
+.closing-content {
+  position: relative;
+  z-index: 1;
 }
 .closing h2 {
+  font-size: clamp(2.2rem, 4.3vw, 3.6rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
   margin: 0;
 }
 .closing p {
+  max-width: 48ch;
   color: var(--muted);
   line-height: 1.75;
-  margin: 0 0 1.5rem;
+  margin: 1.4rem auto 1.8rem;
+}
+.closing-route {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 70rem;
+  pointer-events: none;
+  color: var(--accent);
+  opacity: 0.12;
+}
+.closing-route path {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 8;
+}
+.closing-route circle {
+  fill: currentColor;
 }
 .public-footer {
+  background: var(--surface-inset);
+  padding-block: 4rem 1.5rem;
+  font-size: 0.875rem;
+}
+.footer-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem 5rem;
-  border-top: 1px solid var(--border);
-  padding-block: 3rem 1.5rem;
-  font-size: 0.8rem;
+  grid-template-columns: 1.1fr 1fr 1.2fr 1fr;
+  gap: 3rem;
 }
 .public-footer p {
   color: var(--muted);
-  line-height: 1.7;
+  line-height: 1.75;
+  margin: 0;
 }
-.business-details {
+.footer-brand .wordmark {
+  padding: 0;
+  margin-bottom: 1.3rem;
+  font-size: 2rem;
+}
+.footer-brand > p {
+  margin-bottom: 1.3rem;
+}
+.footer-route-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.footer-route-link app-icon {
+  width: 1rem;
+  height: 1rem;
+}
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
-.business-details strong {
-  font-weight: 600;
+.footer-column h2 {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  letter-spacing: 0;
+  font-weight: 650;
+  margin: 0 0 0.5rem;
 }
-.business-details p {
-  margin: 0.5rem 0;
+.footer-column .footer-field-label {
+  font-size: 0.75rem;
+  margin-bottom: -0.5rem;
+}
+.footer-office > p:last-child {
+  font-size: 0.8rem;
+  line-height: 1.8;
+}
+.public-footer a:not(.wordmark) {
+  line-height: 1.6;
+  text-decoration: none;
+  text-underline-offset: 0.25em;
+}
+@media (hover: hover) and (pointer: fine) {
+  .public-footer a:not(.wordmark):hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
 }
 .footer-end {
-  grid-column: 1/-1;
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
+  gap: 1rem 2rem;
   color: var(--muted);
-  border-top: 1px solid var(--border);
-  padding-top: 1.3rem;
-  margin-top: 1rem;
+  border-top: 1px solid var(--line-subtle);
+  padding-top: 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
 }
 @media (max-width: 1000px) {
   .public-header nav {
@@ -398,9 +479,12 @@ h3 {
   }
   .about,
   .trust-layout,
-  .faq,
-  .closing {
+  .faq {
     gap: 2.5rem;
+  }
+  .footer-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.5rem 3rem;
   }
 }
 @media (max-width: 700px) {
@@ -441,9 +525,7 @@ h3 {
   .about,
   .trust-layout,
   .faq,
-  .closing,
-  .service-list,
-  .public-footer {
+  .service-list {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
@@ -474,11 +556,27 @@ h3 {
     width: 1px;
   }
   .closing {
-    padding-block: 3rem;
+    padding-block: 4rem;
+  }
+  .public-footer {
+    padding-top: 3rem;
+  }
+  .footer-columns {
+    grid-template-columns: 1fr;
+    gap: 2.25rem;
+  }
+  .footer-column {
+    gap: 0.65rem;
+  }
+  .footer-end,
+  .footer-legal {
+    flex-direction: column;
+    gap: 0.5rem;
   }
   .footer-end {
+    align-items: flex-start;
+    margin-top: 2.5rem;
     gap: 1rem;
-    font-size: 0.75rem;
   }
 }
 
@@ -582,4 +680,9 @@ h3 {
     padding: 1.4rem;
     margin-inline: 0;
   }
+}
+
+section[id],
+#contact {
+  scroll-margin-top: 2rem;
 }
