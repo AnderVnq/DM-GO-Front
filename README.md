@@ -60,6 +60,7 @@ src/app/
     ├── consignees/
     ├── notifications/
     ├── warehouses/
+    ├── consolidation/
     ├── customers/
     ├── shipments/
     ├── billing/
@@ -154,3 +155,12 @@ Los tres módulos usan exclusivamente endpoints `/portal/`. Playwright comprueba
 - `/internal/warehouses/unidentified`: cola de paquetes sin propietario. La asignación requiere resolver un cliente por casillero; editar la búsqueda o cambiar de paquete descarta el cliente anterior.
 
 Las recepciones usan `POST /warehouse/receipts`; la cola usa `GET /warehouse/unidentified` y la asignación `POST /packages/:id/assign`. Las fotografías se suben al servicio de documentos antes de registrar la recepción y se conservan en el formulario tras errores recuperables. Los recorridos de navegador usan API simulada y no realizan escrituras reales.
+
+## Bultos y consolidados
+
+- `/internal/bulks`: supervisión y administración crean un bulto en un almacén activo de USA. La búsqueda por casillero permite seleccionar paquetes courier recibidos, identificados y con factura. El retiro exige un motivo. El cierre requiere precinto y medidas finales (g/mm), con confirmación; después no se modifica el contenido. La etiqueta PDF procede del backend.
+- `/internal/consolidations`: crea o abre un consolidado, consulta un bulto cerrado y disponible del mismo almacén y lo añade. El cierre confirmado emite las guías HAWB y fija los consignatarios según las reglas del backend. Las guías solo aparecen tras la respuesta confirmada.
+
+El backend no ofrece listados generales de bultos ni consolidados. Guarda o copia el enlace de cada registro para retomarlo: `?bulk_id=<uuid>` o `?consolidation_id=<uuid>`. La búsqueda admite una referencia UUID o un enlace del mismo origen y ruta; no abre enlaces externos. Desde un paquete recibido se puede iniciar la preparación de su bulto.
+
+Estas vistas usan `/bulks` y `/consolidations`, con permisos de supervisión o administración. Los errores conservan las entradas recuperables; los detalles secundarios se reintentan sin perder las referencias canónicas. Las pruebas de navegador usan respuestas simuladas, sin operaciones reales sobre la API.

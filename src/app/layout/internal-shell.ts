@@ -48,14 +48,24 @@ export class InternalShell {
     this.mobileOpen.set(false);
     this.menuToggle().nativeElement.focus();
   }
-  readonly navigation: { path: string; label: string; icon: IconName }[] = [
+  private readonly navigationItems: {
+    path: string;
+    label: string;
+    icon: IconName;
+    managerOnly?: boolean;
+  }[] = [
     { path: 'overview', label: 'Resumen', icon: 'overview' },
     { path: 'customers', label: 'Clientes', icon: 'customers' },
     { path: 'packages', label: 'Paquetes', icon: 'packages' },
     { path: 'dispatch-notes', label: 'Notas de salida', icon: 'billing' },
     { path: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
+    { path: 'bulks', label: 'Bultos', icon: 'packages', managerOnly: true },
+    { path: 'consolidations', label: 'Consolidados', icon: 'plane', managerOnly: true },
     { path: 'quotes', label: 'Cotizaciones', icon: 'quotes' },
   ];
+  get navigation() {
+    return this.navigationItems.filter((item) => !item.managerOnly || this.auth.manager());
+  }
   private readonly url = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),

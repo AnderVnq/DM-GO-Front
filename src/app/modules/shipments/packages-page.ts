@@ -8,7 +8,7 @@ import {
   type ElementRef,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 import { ShipmentsApi } from './shipments-api';
 import { type Package, type TrackingResponse } from './package.model';
@@ -17,16 +17,18 @@ import { CustomersApi, type Customer } from '../customers';
 import { Icon } from '../../shared/icon';
 import { Status } from '../../shared/status';
 import { formatDate, formatUsd, formatWeight, parseAmountToCents } from '../../shared/amount';
+import { AuthService } from '../../core/auth.service';
 import { DocumentsApi } from '../../core/documents-api';
 import { requestMessage } from '../../core/api-problem';
 import { fileError, openDownload } from '../../shared/download';
 
 @Component({
   selector: 'app-packages-page',
-  imports: [ReactiveFormsModule, Icon, Status],
+  imports: [ReactiveFormsModule, Icon, Status, RouterLink],
   templateUrl: './packages-page.html',
 })
 export class PackagesPage {
+  readonly auth = inject(AuthService);
   private readonly api = inject(ShipmentsApi);
   private readonly customers = inject(CustomersApi);
   private readonly documents = inject(DocumentsApi);

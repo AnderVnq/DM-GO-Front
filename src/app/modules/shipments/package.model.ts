@@ -18,6 +18,7 @@ export interface Package {
   home_delivery_allowed?: boolean;
   receipt?: {
     number: string;
+    warehouse_id?: string;
     weight_g: number;
     weight_kg: string;
     received_at: string;

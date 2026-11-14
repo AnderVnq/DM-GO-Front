@@ -1,0 +1,377 @@
+<div class="page-header">
+  <div>
+    <h1>Bultos</h1>
+    <p>Agrupa paquetes recibidos en una caja o saco de salida.</p>
+  </div>
+  <div class="actions">
+    <a class="button" routerLink="/internal/consolidations">Consolidados</a
+    ><button class="button" (click)="newBulk()" [disabled]="busy() || loading()">
+      Nuevo bulto
+    </button>
+  </div>
+</div>
+<form class="customer-strip search-bar" (ngSubmit)="open()">
+  <label class="field"
+    >Referencia o enlace del bulto<input
+      name="bulk_reference"
+      [ngModel]="reference"
+      (ngModelChange)="changeReference($event)"
+      [disabled]="busy() || loading()"
+      placeholder="Pega la referencia UUID o el enlace guardado" /></label
+  ><button class="button" type="submit" [disabled]="!reference.trim() || busy() || loading()">
+    Abrir bulto
+  </button>
+</form>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando bulto…</p>
+}
+@if (bulk(); as bulk) {
+  <div class="page-header">
+    <div>
+      <h2>{{ bulk.code }}</h2>
+      <p>{{ bulk.warehouse_code }} · {{ date(bulk.created_at) }}</p>
+    </div>
+    <div class="actions">
+      <app-status [value]="bulk.status" /><button
+        class="button compact"
+        (click)="open()"
+        [disabled]="busy() || loading()"
+      >
+        Actualizar bulto</button
+      ><button class="button compact" (click)="copyLink()" [disabled]="busy()">Copiar enlace</button
+      ><button
+        class="button compact"
+        (click)="label()"
+        [disabled]="busy() || !bulk.package_ids.length"
+      >
+        Descargar etiqueta PDF
+      </button>
+    </div>
+  </div>
+  <div class="split-view">
+    <section class="surface">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Paquete</th>
+              <th>Contenido</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (id of bulk.package_ids; track id) {
+              <tr>
+                <td>
+                  @if (contents()[id]; as item) {
+                    <a
+                      class="row-button"
+                      routerLink="/internal/packages"
+                      [queryParams]="{ customer_id: item.customer_id, package_id: item.id }"
+                      >{{ item.receipt?.number || item.carrier_tracking || item.id }}</a
+                    >
+                  } @else {
+                    <span>{{ id }}</span>
+                  }
+                </td>
+                <td>{{ contents()[id]?.description || 'Detalle no disponible' }}</td>
+                <td>
+                  @if (bulk.status === 'open') {
+                    <button class="text-button" (click)="beginRemove(id)" [disabled]="busy()">
+                      Retirar paquete
+                    </button>
+                  }
+                </td>
+              </tr>
+              @if (removing() === id) {
+                <tr>
+                  <td colspan="3">
+                    <form (ngSubmit)="remove()">
+                      <label class="field"
+                        >Motivo del retiro<input
+                          name="reason"
+                          [(ngModel)]="reason"
+                          required
+                          maxlength="500"
+                          [disabled]="busy()"
+                      /></label>
+                      <div class="actions">
+                        <button
+                          class="button"
+                          type="button"
+                          (click)="removing.set('')"
+                          [disabled]="busy()"
+                        >
+                          Cancelar retiro</button
+                        ><button
+                          class="button danger"
+                          type="submit"
+                          [disabled]="!reason.trim() || busy()"
+                        >
+                          Confirmar retiro
+                        </button>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (!bulk.package_ids.length) {
+        <div class="empty-state">
+          <h3>Este bulto todavía está vacío</h3>
+          <p>Busca al cliente por casillero y añade sus paquetes disponibles.</p>
+        </div>
+      }
+      <div class="table-footer">{{ bulk.package_ids.length }} paquetes en el bulto</div>
+      @if (detailLoading()) {
+        <p class="surface-body" role="status">Cargando detalle de los paquetes…</p>
+      }
+      @if (detailError()) {
+        <div class="surface-body">
+          <p class="alert error" role="alert">{{ detailError() }}</p>
+          <button
+            class="button compact"
+            (click)="loadContents()"
+            [disabled]="busy() || detailLoading()"
+          >
+            Reintentar detalles
+          </button>
+        </div>
+      }
+    </section>
+    <aside class="inspector">
+      @if (bulk.status === 'open') {
+        <h2>Añadir paquetes</h2>
+        <form (ngSubmit)="lookup()">
+          <fieldset class="form-grid" [disabled]="busy()">
+            <legend class="sr-only">Buscar cliente</legend>
+            <label class="field full"
+              >Casillero del cliente<input
+                name="locker"
+                [ngModel]="locker"
+                (ngModelChange)="changeLocker($event)"
+                required
+                placeholder="PE00042"
+            /></label>
+            <div class="actions full">
+              <button class="button" type="submit" [disabled]="looking() || !locker.trim()">
+                Buscar cliente
+              </button>
+            </div>
+          </fieldset>
+        </form>
+        @if (looking()) {
+          <p role="status">Buscando paquetes del cliente…</p>
+        }
+        @if (lookupError()) {
+          <p class="alert error" role="alert">{{ lookupError() }}</p>
+        }
+        @if (customer(); as customer) {
+          <section class="detail-section">
+            <h3>{{ customer.name }}</h3>
+            <p>{{ customer.locker_code }}</p>
+            <label class="field"
+              >Paquete para añadir<select
+                [(ngModel)]="candidateId"
+                [disabled]="busy() || looking()"
+              >
+                <option value="">Selecciona un paquete</option>
+                @for (item of candidates(); track item.id) {
+                  <option [value]="item.id" [disabled]="!!exclusion(item)">
+                    {{ item.receipt?.number || item.carrier_tracking || item.id }} ·
+                    {{ item.description }}{{ exclusion(item) ? ' · ' + exclusion(item) : '' }}
+                  </option>
+                }
+              </select></label
+            ><button
+              class="button primary actions"
+              (click)="add()"
+              [disabled]="!candidateId || busy() || looking()"
+            >
+              Añadir al bulto
+            </button>
+            @if (!looking() && !candidates().length) {
+              <p class="muted">Este cliente no tiene paquetes registrados.</p>
+            }
+          </section>
+        }
+        <section class="detail-section">
+          <h3>Cerrar bulto</h3>
+          <p class="fine-print">
+            Verifica el contenido y registra el precinto, peso y medidas finales. Después del cierre
+            no se pueden retirar ni añadir paquetes.
+          </p>
+          <form #closeForm="ngForm" (ngSubmit)="reviewClose(closeForm)">
+            <fieldset class="form-grid" [disabled]="busy()">
+              <legend class="sr-only">Medidas finales del bulto</legend>
+              <label class="field full"
+                >Número de precinto<input name="seal" [(ngModel)]="closure.seal" required /></label
+              ><label class="field"
+                >Peso final (g)<input
+                  name="weight_g"
+                  [(ngModel)]="closure.weight_g"
+                  type="number"
+                  required
+                  min="1"
+                  max="500000"
+                  step="1" /></label
+              ><label class="field"
+                >Largo final (mm)<input
+                  name="length_mm"
+                  [(ngModel)]="closure.length_mm"
+                  type="number"
+                  required
+                  min="1"
+                  max="3000"
+                  step="1" /></label
+              ><label class="field"
+                >Ancho final (mm)<input
+                  name="width_mm"
+                  [(ngModel)]="closure.width_mm"
+                  type="number"
+                  required
+                  min="1"
+                  max="3000"
+                  step="1" /></label
+              ><label class="field"
+                >Alto final (mm)<input
+                  name="height_mm"
+                  [(ngModel)]="closure.height_mm"
+                  type="number"
+                  required
+                  min="1"
+                  max="3000"
+                  step="1"
+              /></label>
+              <div class="actions full">
+                <button
+                  class="button primary"
+                  type="submit"
+                  [disabled]="closeForm.invalid || !canClose || !bulk.package_ids.length"
+                >
+                  Revisar cierre del bulto
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        </section>
+      } @else {
+        <h2>Bulto cerrado</h2>
+        <dl class="detail-grid">
+          <div>
+            <dt>Precinto</dt>
+            <dd>{{ bulk.seal }}</dd>
+          </div>
+          <div>
+            <dt>Peso final</dt>
+            <dd>{{ weight(bulk.weight_g) }}</dd>
+          </div>
+          <div>
+            <dt>Medidas (mm)</dt>
+            <dd>{{ bulk.dimensions_mm?.join(' × ') }}</dd>
+          </div>
+          <div>
+            <dt>Cierre</dt>
+            <dd>{{ date(bulk.closed_at) }}</dd>
+          </div>
+        </dl>
+        @if (bulk.consolidation_id) {
+          <a
+            class="button primary"
+            routerLink="/internal/consolidations"
+            [queryParams]="{ consolidation_id: bulk.consolidation_id }"
+            >Ver consolidado</a
+          >
+        } @else {
+          <a
+            class="button primary"
+            routerLink="/internal/consolidations"
+            [queryParams]="{ bulk_id: bulk.id }"
+            >Preparar consolidado</a
+          >
+        }
+      }
+    </aside>
+  </div>
+} @else if (!loading()) {
+  <section class="surface surface-body">
+    <h2>Crear bulto</h2>
+    <p>Selecciona la sede donde se encuentran físicamente los paquetes.</p>
+    @if (catalogLoading()) {
+      <p role="status">Cargando almacenes…</p>
+    }
+    @if (catalogError()) {
+      <p class="alert error" role="alert">{{ catalogError() }}</p>
+      <button class="button" (click)="loadWarehouses()" [disabled]="busy() || catalogLoading()">
+        Reintentar almacenes
+      </button>
+    }
+    <form (ngSubmit)="create()">
+      <label class="field"
+        >Almacén de origen<select
+          name="warehouse"
+          [(ngModel)]="warehouseCode"
+          [disabled]="busy() || catalogLoading()"
+        >
+          <option value="">Selecciona un almacén activo en USA</option>
+          @for (warehouse of warehouses(); track warehouse.id) {
+            <option [value]="warehouse.code">{{ warehouse.code }} · {{ warehouse.name }}</option>
+          }
+        </select></label
+      ><button
+        class="button primary actions"
+        type="submit"
+        [disabled]="!warehouseCode || busy() || catalogLoading()"
+      >
+        Crear bulto
+      </button>
+    </form>
+    @if (!catalogLoading() && !catalogError() && !warehouses().length) {
+      <p class="muted actions">
+        No hay almacenes activos en USA. Administración debe registrar o activar una sede.
+      </p>
+    }
+    <p class="fine-print actions">
+      Para retomar un bulto existente, abre su enlace guardado o pega su referencia en la búsqueda
+      superior.
+    </p>
+  </section>
+}
+<dialog
+  #closeDialog
+  aria-labelledby="bulk-close-title"
+  (cancel)="busy() && $event.preventDefault()"
+>
+  <div class="dialog-header">
+    <h2 id="bulk-close-title">Confirmar cierre del bulto</h2>
+    <button class="text-button" (click)="closeDialog.close()" [disabled]="busy()">Cancelar</button>
+  </div>
+  <p>Se cerrará {{ bulk()?.code }} con {{ bulk()?.package_ids?.length }} paquetes.</p>
+  <dl class="detail-grid">
+    <div>
+      <dt>Precinto</dt>
+      <dd>{{ closure.seal }}</dd>
+    </div>
+    <div>
+      <dt>Peso</dt>
+      <dd>{{ weight(closure.weight_g) }}</dd>
+    </div>
+    <div>
+      <dt>Medidas (mm)</dt>
+      <dd>{{ closure.length_mm }} × {{ closure.width_mm }} × {{ closure.height_mm }}</dd>
+    </div>
+  </dl>
+  <p>El contenido y las medidas quedarán fijados.</p>
+  <button class="button primary" (click)="close()" [disabled]="busy()">
+    {{ busy() ? 'Cerrando…' : 'Confirmar cierre del bulto' }}
+  </button>
+</dialog>

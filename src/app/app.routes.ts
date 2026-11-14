@@ -95,6 +95,19 @@ export const routes: Routes = [
         loadChildren: () => import('./modules/billing/routes').then((m) => m.routes),
       },
       {
+        path: 'bulks',
+        title: 'Bultos · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () => import('./modules/consolidation/bulks-page').then((m) => m.BulksPage),
+      },
+      {
+        path: 'consolidations',
+        title: 'Consolidados · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () =>
+          import('./modules/consolidation/consolidations-page').then((m) => m.ConsolidationsPage),
+      },
+      {
         path: 'warehouses/receiving',
         title: 'Recepción en USA · DM48',
         canActivate: [managerGuard],

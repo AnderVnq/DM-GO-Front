@@ -109,6 +109,16 @@
             <h3>{{ item.store }}</h3>
             <p>{{ item.description }}</p>
             <app-status [value]="item.status" />
+            @if (auth.manager() && item.status === 'RECEIVED_USA' && item.mode === 'courier') {
+              <div class="actions">
+                <a
+                  class="button compact"
+                  routerLink="/internal/bulks"
+                  [queryParams]="{ customer_id: item.customer_id, package_id: item.id }"
+                  >Preparar bulto</a
+                >
+              </div>
+            }
           </div>
         </div>
         <dl class="detail-grid">

@@ -1,0 +1,238 @@
+<div class="page-header">
+  <div>
+    <h1>Consolidados</h1>
+    <p>Reúne bultos cerrados y emite las guías de cada paquete.</p>
+  </div>
+  <div class="actions">
+    <a class="button" routerLink="/internal/bulks">Bultos</a
+    ><button class="button" (click)="newConsolidation()" [disabled]="busy() || loading()">
+      Nuevo consolidado
+    </button>
+  </div>
+</div>
+<form class="customer-strip search-bar" (ngSubmit)="open()">
+  <label class="field"
+    >Referencia o enlace del consolidado<input
+      name="consolidation_reference"
+      [ngModel]="reference"
+      (ngModelChange)="changeReference($event)"
+      placeholder="Pega la referencia UUID o el enlace guardado"
+      [disabled]="busy() || loading()" /></label
+  ><button class="button" type="submit" [disabled]="!reference.trim() || busy() || loading()">
+    Abrir consolidado
+  </button>
+</form>
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status">Cargando consolidado…</p>
+}
+<div class="split-view">
+  <section class="surface surface-body">
+    @if (consolidation(); as item) {
+      <div class="page-header">
+        <div>
+          <h2>{{ item.code }}</h2>
+          <p>{{ item.warehouse_code }} · {{ date(item.created_at) }}</p>
+        </div>
+        <app-status [value]="item.status" />
+      </div>
+      <div class="actions">
+        <button class="button compact" (click)="open()" [disabled]="busy() || loading()">
+          Actualizar consolidado</button
+        ><button class="button compact" (click)="copyLink()" [disabled]="busy()">
+          Copiar enlace
+        </button>
+      </div>
+      <h3 class="detail-section">Bultos incluidos</h3>
+      <ul class="line-list">
+        @for (id of item.bulk_ids; track id) {
+          <li>
+            <a routerLink="/internal/bulks" [queryParams]="{ bulk_id: id }">{{
+              contents()[id]?.code || id
+            }}</a><span>{{
+              contents()[id] ? weight(contents()[id].weight_g) : 'Detalle no disponible'
+            }}</span>
+          </li>
+        } @empty {
+          <li>Este consolidado todavía no tiene bultos.</li>
+        }
+      </ul>
+      @if (detailLoading()) {
+        <p role="status">Cargando detalle de bultos…</p>
+      }
+      @if (detailError()) {
+        <p class="alert error" role="alert">{{ detailError() }}</p>
+        <button
+          class="button compact"
+          (click)="loadContents()"
+          [disabled]="busy() || detailLoading()"
+        >
+          Reintentar detalles
+        </button>
+      }
+      @if (item.status === 'open') {
+        <div class="actions">
+          <button
+            class="button primary"
+            (click)="reviewClose()"
+            [disabled]="busy() || !item.bulk_ids.length"
+          >
+            Revisar cierre y generar guías
+          </button>
+        </div>
+      } @else {
+        <section class="detail-section">
+          <h3>Guías HAWB emitidas</h3>
+          <p>Cierre: {{ date(item.closed_at) }}</p>
+          <ul class="line-list">
+            @for (guide of item.hawbs; track guide.id) {
+              <li>
+                <strong>{{ guide.number }}</strong><span
+                  >{{ guide.package_ids.length }} paquete(s)</span
+                ><a
+                  class="text-button"
+                  routerLink="/internal/packages"
+                  [queryParams]="{
+                    customer_id: guide.customer_id,
+                    package_id: guide.package_ids[0],
+                  }"
+                  >Ver paquete</a
+                >
+              </li>
+            } @empty {
+              <li>
+                La consulta no devolvió guías. Actualiza el consolidado para comprobar su detalle.
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    } @else if (!loading()) {
+      <h2>Crear consolidado</h2>
+      <p>Selecciona el almacén de origen de los bultos que vas a despachar.</p>
+      @if (catalogLoading()) {
+        <p role="status">Cargando almacenes…</p>
+      }
+      @if (catalogError()) {
+        <p class="alert error" role="alert">{{ catalogError() }}</p>
+        <button class="button" (click)="loadWarehouses()" [disabled]="busy() || catalogLoading()">
+          Reintentar almacenes
+        </button>
+      }
+      <form (ngSubmit)="create()">
+        <label class="field"
+          >Almacén de origen<select
+            name="warehouse"
+            [(ngModel)]="warehouseCode"
+            [disabled]="busy() || catalogLoading()"
+          >
+            <option value="">Selecciona un almacén activo en USA</option>
+            @for (warehouse of warehouses(); track warehouse.id) {
+              <option [value]="warehouse.code">{{ warehouse.code }} · {{ warehouse.name }}</option>
+            }
+          </select></label
+        ><button
+          class="button primary actions"
+          type="submit"
+          [disabled]="!warehouseCode || busy() || loading() || catalogLoading()"
+        >
+          Crear consolidado
+        </button>
+      </form>
+      @if (!catalogLoading() && !catalogError() && !warehouses().length) {
+        <p class="muted actions">
+          No hay almacenes activos en USA. Administración debe registrar o activar una sede.
+        </p>
+      }
+      <p class="fine-print actions">
+        Conserva el enlace del consolidado para retomarlo desde la búsqueda superior.
+      </p>
+    }
+  </section>
+  @if (consolidation()?.status !== 'closed') {
+    <aside class="inspector">
+      <h2>Consultar bulto para añadir</h2>
+      <form (ngSubmit)="lookupBulk()">
+        <label class="field"
+          >Referencia o enlace del bulto<input
+            name="bulk_reference"
+            [ngModel]="bulkReference"
+            (ngModelChange)="changeBulkReference($event)"
+            [disabled]="busy()" /></label
+        ><button
+          class="button actions"
+          type="submit"
+          [disabled]="busy() || looking() || !bulkReference.trim()"
+        >
+          Consultar bulto
+        </button>
+      </form>
+      @if (looking()) {
+        <p role="status">Consultando bulto…</p>
+      }
+      @if (previewError()) {
+        <p class="alert error" role="alert">{{ previewError() }}</p>
+      }
+      @if (preview(); as bulk) {
+        <section class="detail-section">
+          <h3>{{ bulk.code }}</h3>
+          <app-status [value]="bulk.status" />
+          <dl class="detail-grid">
+            <div>
+              <dt>Almacén</dt>
+              <dd>{{ bulk.warehouse_code }}</dd>
+            </div>
+            <div>
+              <dt>Paquetes</dt>
+              <dd>{{ bulk.package_ids.length }}</dd>
+            </div>
+            <div>
+              <dt>Precinto</dt>
+              <dd>{{ bulk.seal || 'Sin cerrar' }}</dd>
+            </div>
+            <div>
+              <dt>Peso</dt>
+              <dd>{{ weight(bulk.weight_g) }}</dd>
+            </div>
+          </dl>
+          @if (unavailable) {
+            <p class="muted">{{ unavailable }}</p>
+          }
+          <button
+            class="button primary"
+            (click)="add()"
+            [disabled]="busy() || looking() || loading() || !!unavailable || !consolidation()"
+          >
+            Añadir bulto al consolidado
+          </button>
+          @if (!consolidation()) {
+            <p class="fine-print actions">Crea o abre un consolidado para añadir este bulto.</p>
+          }
+        </section>
+      }
+    </aside>
+  }
+</div>
+<dialog
+  #closeDialog
+  aria-labelledby="consolidation-close-title"
+  (cancel)="busy() && $event.preventDefault()"
+>
+  <div class="dialog-header">
+    <h2 id="consolidation-close-title">Confirmar cierre del consolidado</h2>
+    <button class="text-button" (click)="closeDialog.close()" [disabled]="busy()">Cancelar</button>
+  </div>
+  <p>Se cerrará {{ consolidation()?.code }} con {{ consolidation()?.bulk_ids?.length }} bultos.</p>
+  <p>
+    Se emitirán las guías HAWB y se fijará el consignatario de cada paquete. Después del cierre no
+    podrás añadir bultos.
+  </p>
+  <button class="button primary" (click)="close()" [disabled]="busy()">
+    {{ busy() ? 'Generando guías…' : 'Cerrar y generar guías HAWB' }}
+  </button>
+</dialog>

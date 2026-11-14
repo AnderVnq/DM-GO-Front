@@ -1,6 +1,8 @@
 import { Component, computed, input } from '@angular/core';
 
 const labels: Record<string, string> = {
+  open: 'Abierto',
+  closed: 'Cerrado',
   PREALERTED: 'Prealertado',
   RECEIVED_USA: 'Recibido en USA',
   CONSOLIDATED: 'Consolidado',
