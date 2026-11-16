@@ -13,6 +13,12 @@
     <p class="sidebar-subtitle">Panel interno</p>
     <nav>
       @for (item of navigation; track item.path) {
+        @if (item.path === 'customers') {
+          <p class="sidebar-group">Gestión comercial</p>
+        }
+        @if (item.path === 'packages') {
+          <p class="sidebar-group">Operación logística</p>
+        }
         <a
           [routerLink]="['/internal', item.path]"
           routerLinkActive="active"

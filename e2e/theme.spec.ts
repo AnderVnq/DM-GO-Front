@@ -36,12 +36,12 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByText('Liberado por aduana', { exact: true })).toBeVisible();
     expect(
       await page.locator('.inspector').evaluate((el) => getComputedStyle(el).backgroundColor),
-    ).toBe(theme === 'light' ? 'rgb(226, 232, 240)' : 'rgb(23, 32, 51)');
+    ).toBe(theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(19, 30, 49)');
     await page.screenshot({ path: testInfo.outputPath('packages.png'), fullPage: true });
     await assertTextContrast(page);
     await navigate(page, 'Cotizaciones', 'quotes');
     await page.getByRole('button', { name: 'Nueva cotización', exact: true }).click();
-    await page.screenshot({ path: testInfo.outputPath('quote-dialog.png'), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('quote-workbench.png'), fullPage: true });
     await assertTextContrast(page);
   });
 }

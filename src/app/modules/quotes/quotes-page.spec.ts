@@ -42,7 +42,8 @@ function setup(list: Subject<Quote[]>, detail = new Subject<Quote>()) {
   });
   const fixture = TestBed.createComponent(QuotesPage);
   fixture.detectChanges();
-  fixture.nativeElement.querySelector('dialog').close = vi.fn();
+  fixture.componentInstance.creating.set(true);
+  fixture.detectChanges();
   const page = fixture.componentInstance;
   page.form.patchValue({
     prospect_name: 'Nuevo cliente',
@@ -90,6 +91,7 @@ it('conserva la selección manual cuando llega un listado anterior', () => {
   const pending = new Subject<Quote[]>();
   const { fixture, page } = setup(pending);
   page.quotes.set([previous, created]);
+  page.closeCreate();
   page.select(created);
   pending.next([previous]);
   fixture.detectChanges();
@@ -177,13 +179,15 @@ it('rechaza un prospecto sin contacto, tarifas inválidas y servicios duplicados
   expect(api.create).not.toHaveBeenCalled();
 });
 
-it('bloquea el cierre por Escape mientras está guardando', () => {
+it('conserva el formulario visible cuando se intenta volver mientras está guardando', () => {
   const { page, fixture } = setup(new Subject<Quote[]>());
   page.busy.set(true);
   const cancel = new Event('cancel', { cancelable: true });
   page.closeCreate(cancel);
   expect(cancel.defaultPrevented).toBe(true);
-  expect(fixture.nativeElement.querySelector('dialog').close).not.toHaveBeenCalled();
+  expect(page.creating()).toBe(true);
+  fixture.detectChanges();
+  expect(fixture.nativeElement.querySelector('.quote-workbench')).not.toBeNull();
 });
 
 it('omite el precio automático del extra para respetar la tarifa vigente del cliente', () => {
@@ -217,4 +221,20 @@ it('buscar cliente con Enter no envía el formulario de cotización', () => {
   expect(enter.defaultPrevented).toBe(true);
   expect(customersApi.findByLocker).toHaveBeenCalledWith('PE00042');
   expect(api.create).not.toHaveBeenCalled();
+});
+
+it('conserva el borrador al consultar el historial y lo limpia después de crear', () => {
+  const { page, fixture } = setup(new Subject<Quote[]>());
+  TestBed.inject(QuotesApi).chargeTypes = vi.fn(() => of([]));
+  page.closeCreate();
+  fixture.detectChanges();
+  expect(page.creating()).toBe(false);
+  expect(fixture.nativeElement.querySelector('.quote-workbench')).toBeNull();
+  page.openCreate();
+  fixture.detectChanges();
+  expect(page.form.controls.product_name.value).toBe('Nuevo producto');
+  expect(fixture.nativeElement.querySelector('dialog')).toBeNull();
+  page.create();
+  expect(page.creating()).toBe(false);
+  expect(page.form.controls.product_name.value).toBe('');
 });

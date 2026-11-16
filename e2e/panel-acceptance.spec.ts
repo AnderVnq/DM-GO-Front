@@ -23,23 +23,20 @@ test('permite usar la navegación con teclado y cerrar el menú móvil con Escap
   await expect(page.getByRole('navigation')).not.toBeVisible();
 });
 
-test('el diálogo de cotización protege el foco y lo devuelve al cerrar con Escape', async ({
+test('la cotización conserva la navegación y el borrador al consultar el historial', async ({
   page,
 }) => {
   await mockPanel(page);
   await login(page);
   await navigate(page, 'Cotizaciones', 'quotes');
-  const trigger = page.getByRole('button', { name: 'Nueva cotización', exact: true });
-  await trigger.focus();
-  await page.keyboard.press('Enter');
-  const dialog = page.getByRole('dialog', { name: 'Nueva cotización', exact: true });
-  await expect(dialog).toBeVisible();
-  expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
-  await page.keyboard.press('Shift+Tab');
-  expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
-  await page.keyboard.press('Escape');
-  await expect(dialog).not.toBeVisible();
-  await expect(trigger).toBeFocused();
+  await page.getByRole('button', { name: 'Nueva cotización', exact: true }).press('Enter');
+  await expect(page.getByRole('heading', { name: 'Nueva cotización', exact: true })).toBeFocused();
+  await page.getByLabel('Producto', { exact: true }).fill('Compra pendiente');
+  await page.getByRole('button', { name: 'Ver historial', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Cotizaciones', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Nueva cotización', exact: true }).click();
+  await expect(page.getByLabel('Producto', { exact: true })).toHaveValue('Compra pendiente');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('mantiene los cinco módulos utilizables sin desbordamiento y registra ambos temas', async ({

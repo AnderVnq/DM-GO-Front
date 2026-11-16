@@ -4,13 +4,22 @@
 .portal-content {
   max-width: 90rem;
   margin-inline: auto;
-  padding: clamp(1.25rem, 2.5vw, 2.25rem);
+  padding: 2rem 2.5rem 3rem;
   outline: none;
 }
 .portal-brand {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 0.25rem;
+}
+.portal-sidebar .sidebar-subtitle {
+  margin-bottom: 1.75rem;
+}
+.portal-sidebar nav a {
+  gap: 0.75rem;
+  min-height: 2.85rem;
+  font-size: 0.84rem;
 }
 .portal-sidebar .sidebar-profile > div {
   flex: 1;
@@ -26,9 +35,23 @@
 .portal-menu-close {
   display: none;
 }
+.portal-shell .topbar {
+  padding-inline: 2.5rem;
+}
+@media (max-width: 1100px) {
+  .portal-content {
+    padding-inline: 1.75rem;
+  }
+  .portal-shell .topbar {
+    padding-inline: 1.75rem;
+  }
+}
 @media (max-width: 700px) {
   .portal-content {
     padding: 1.25rem 1rem 3rem;
+  }
+  .portal-shell .topbar {
+    padding-inline: 1rem;
   }
   .portal-menu-close {
     display: inline-flex;

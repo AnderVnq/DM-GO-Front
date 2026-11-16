@@ -1,5 +1,13 @@
 import { normalizeWeightKg, weightKgHint } from '../../shared/weight';
-import { Component, DestroyRef, inject, signal, viewChild, type ElementRef } from '@angular/core';
+import {
+  afterRenderEffect,
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  viewChild,
+  type ElementRef,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -56,7 +64,8 @@ export class QuotesPage {
   readonly weightError = signal('');
   readonly weightHint = weightKgHint;
   readonly concept = (value: string) => concepts[value] ?? value.replaceAll('_', ' ');
-  readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('createDialog');
+  readonly creating = signal(false);
+  readonly pageHeading = viewChild<ElementRef<HTMLHeadingElement>>('pageHeading');
   private request?: Subscription;
   private detailRequest?: Subscription;
   readonly filters = this.fb.nonNullable.group({ status: [''] });
@@ -92,6 +101,7 @@ export class QuotesPage {
   });
 
   constructor() {
+    afterRenderEffect(() => this.pageHeading()?.nativeElement.focus());
     this.reload();
     inject(DestroyRef).onDestroy(() => {
       this.request?.unsubscribe();
@@ -101,7 +111,7 @@ export class QuotesPage {
   }
   openCreate() {
     if (this.busy()) return;
-    this.dialog().nativeElement.showModal();
+    this.creating.set(true);
     this.loadCharges();
   }
   closeCreate(event?: Event) {
@@ -109,7 +119,7 @@ export class QuotesPage {
       event?.preventDefault();
       return;
     }
-    this.dialog().nativeElement.close();
+    this.creating.set(false);
   }
   loadCharges() {
     this.catalogRequest?.unsubscribe();
@@ -239,7 +249,9 @@ export class QuotesPage {
       {
         label: 'Descuento',
         cents:
-          parseAmountToCents(value.discount) === null ? null : -parseAmountToCents(value.discount)!,
+          parseAmountToCents(value.discount) === null
+            ? null
+            : -(parseAmountToCents(value.discount) || 0) || 0,
       },
     ];
   }
@@ -338,7 +350,7 @@ export class QuotesPage {
           this.quotes.update((quotes) => [quote, ...quotes]);
           this.selected.set(quote);
           this.busy.set(false);
-          this.dialog().nativeElement.close();
+          this.creating.set(false);
           this.extras.clear();
           this.form.reset();
           this.customer.set(null);

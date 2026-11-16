@@ -8,30 +8,42 @@ import { Icon } from '../shared/icon';
 @Component({
   selector: 'app-login-page',
   imports: [Icon, RouterLink, ThemeToggle],
+  styleUrl: './login-page.scss',
   template: `
     <main class="login-page">
       <app-theme-toggle class="login-theme" />
       <section class="login-brand">
         <a class="wordmark" routerLink="/">DM48<span class="brand-dot"></span></a>
         <div>
-          <h1>Bienvenido<br />a DM48.</h1>
-          <p>Ingresa a tu cuenta para continuar con tus compras o gestionar la operación.</p>
+          <h1>Tus envíos.<br />Siempre a la vista.</h1>
+          <p>
+            Desde tu casillero en Estados Unidos hasta la entrega en Perú. Accede al espacio que
+            conecta tus compras y tu operación.
+          </p>
+        </div>
+        <div class="login-journey" aria-label="Proceso del servicio">
+          <div><app-icon name="warehouse" /><span>Recepción en USA</span></div>
+          <app-icon name="arrow" />
+          <div><app-icon name="plane" /><span>Traslado internacional</span></div>
+          <app-icon name="arrow" />
+          <div><app-icon name="delivery" /><span>Entrega en Perú</span></div>
         </div>
         <p class="muted">USA <span aria-hidden="true">→</span> Perú · Courier internacional</p>
       </section>
       <section class="login-form inspector">
-        <app-icon name="packages" />
+        <span class="login-access-icon"><app-icon name="overview" /></span>
         <h2>Iniciar sesión</h2>
-        <p>Usa tu cuenta de cliente o de personal.</p>
+        <p>
+          Continúa con tu cuenta de cliente o de personal. Te llevaremos a tu espacio de trabajo.
+        </p>
         @if (auth.error() || error()) {
           <p class="alert" role="alert">{{ error() || auth.error() }}</p>
         }
         <button class="button primary" (click)="login()" [disabled]="busy() || initializing()">
           {{ busy() ? 'Conectando…' : 'Iniciar sesión' }}<app-icon name="arrow" />
         </button>
-        <p class="fine-print">
-          Tu cuenta y tus datos se gestionan mediante el acceso seguro de DM48.
-        </p>
+        <p class="fine-print">Tu sesión se valida en el servicio de acceso de DM48.</p>
+        <a class="login-back" routerLink="/"><app-icon name="back" />Volver al inicio</a>
       </section>
     </main>
   `,

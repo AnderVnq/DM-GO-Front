@@ -1,0 +1,144 @@
+:host {
+  display: block;
+}
+.login-page {
+  max-width: 86rem;
+  min-height: 100dvh;
+  padding: 4rem 3rem;
+  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
+  gap: 5rem;
+}
+.login-brand {
+  min-height: 34rem;
+  padding: 2.5rem 0;
+}
+.login-brand .wordmark {
+  font-size: 2rem;
+}
+.login-brand h1 {
+  font-size: 3.5rem;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  max-width: 16ch;
+  margin-block: 3rem 1.5rem;
+}
+.login-brand p {
+  line-height: 1.8;
+  max-width: 43ch;
+  font-size: 0.9375rem;
+}
+.login-brand > p {
+  font-size: 0.75rem;
+  margin: 2rem 0 0;
+}
+.login-journey {
+  display: flex;
+  align-items: start;
+  gap: 1rem;
+  padding-top: 2rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--line-subtle);
+}
+.login-journey > div {
+  display: grid;
+  gap: 0.875rem;
+  flex: 1;
+}
+.login-journey > div app-icon {
+  color: var(--accent);
+}
+.login-journey span {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.login-journey > app-icon {
+  width: 1rem;
+  color: var(--muted);
+  margin-top: 0.125rem;
+}
+.login-form {
+  border: 0;
+  box-shadow: var(--shadow-float);
+  padding: 2.5rem;
+}
+.login-access-icon {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  background: var(--accent-surface);
+  color: var(--accent);
+  border-radius: 0.875rem;
+  margin-bottom: 2rem;
+}
+.login-form h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+.login-form p {
+  line-height: 1.75;
+}
+.login-form .button {
+  margin-block: 1.5rem;
+}
+.login-form .fine-print {
+  font-size: 0.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line-subtle);
+}
+.login-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.login-back app-icon {
+  width: 0.875rem;
+}
+@media (max-width: 1000px) {
+  .login-page {
+    gap: 2.5rem;
+    padding: 4rem 2rem;
+  }
+  .login-brand h1 {
+    font-size: 2.75rem;
+  }
+  .login-journey {
+    gap: 0.5rem;
+  }
+  .login-form {
+    padding: 2rem;
+  }
+}
+@media (max-width: 700px) {
+  .login-page {
+    display: block;
+    padding: 5rem 1.25rem 2rem;
+  }
+  .login-brand {
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+  }
+  .login-brand .wordmark {
+    font-size: 1.75rem;
+  }
+  .login-brand h1 {
+    font-size: 2.5rem;
+    margin-block: 2.5rem 1rem;
+  }
+  .login-brand p {
+    font-size: 0.875rem;
+  }
+  .login-journey {
+    display: none;
+  }
+  .login-form {
+    padding: 1.75rem;
+    margin-top: 2rem;
+  }
+}

@@ -56,12 +56,12 @@ export class InternalShell {
   }[] = [
     { path: 'overview', label: 'Resumen', icon: 'overview' },
     { path: 'customers', label: 'Clientes', icon: 'customers' },
-    { path: 'packages', label: 'Paquetes', icon: 'packages' },
+    { path: 'quotes', label: 'Cotizaciones', icon: 'quotes' },
     { path: 'dispatch-notes', label: 'Notas de salida', icon: 'billing' },
+    { path: 'packages', label: 'Paquetes', icon: 'packages' },
     { path: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { path: 'bulks', label: 'Bultos', icon: 'packages', managerOnly: true },
     { path: 'consolidations', label: 'Consolidados', icon: 'plane', managerOnly: true },
-    { path: 'quotes', label: 'Cotizaciones', icon: 'quotes' },
   ];
   get navigation() {
     return this.navigationItems.filter((item) => !item.managerOnly || this.auth.manager());

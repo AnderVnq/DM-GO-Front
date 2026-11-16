@@ -10,8 +10,13 @@ test('presenta la empresa y el recorrido sin depender del proveedor de acceso', 
     return route.abort();
   });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Tus compras en Estados Unidos/ })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Quiénes somos', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Tus compras en USA/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Hacemos que comprar lejos se sienta más cerca.',
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'De tu primera compra a tu puerta', exact: true }),
   ).toBeVisible();
@@ -48,7 +53,12 @@ for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: theme });
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.getByRole('heading', { name: 'Quiénes somos', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Hacemos que comprar lejos se sienta más cerca.',
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: /Tú eliges cómo comprar/ })).toBeVisible();
     const question = page.getByText('¿Qué necesito para crear mi casillero?', { exact: true });
     await question.focus();
