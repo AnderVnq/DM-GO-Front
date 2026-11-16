@@ -58,7 +58,7 @@ h1 {
   text-wrap: balance;
 }
 h1 span {
-  color: var(--accent);
+  color: var(--brand-secondary);
 }
 .hero-copy > p {
   max-width: 43ch;
@@ -91,7 +91,8 @@ h1 span {
   font-size: 0.8rem;
 }
 .journey {
-  background: var(--surface-inset);
+  --muted: var(--feature-muted);
+  background: var(--feature-inset);
   border-radius: 1rem;
   padding: 2rem;
 }
@@ -136,10 +137,10 @@ h1 span {
   stroke: var(--line-subtle);
 }
 .route-path {
-  stroke: var(--accent);
+  stroke: var(--brand-secondary);
 }
 .route-diagram circle {
-  fill: var(--accent);
+  fill: var(--brand-secondary);
   stroke: var(--surface-inset);
   stroke-width: 5;
 }
@@ -151,8 +152,8 @@ h1 span {
   place-items: center;
   width: 2.2rem;
   height: 2.2rem;
-  background: var(--surface-inset);
-  color: var(--accent);
+  background: var(--feature-inset);
+  color: var(--brand-secondary);
 }
 .locker-illustration {
   padding-top: 1.6rem;
@@ -386,7 +387,8 @@ h3 {
   font-size: 0.95rem;
 }
 .closing {
-  background: var(--accent-surface);
+  --muted: var(--feature-muted);
+  background: var(--feature-strong);
   padding-block: 5.5rem;
 }
 .closing-content {

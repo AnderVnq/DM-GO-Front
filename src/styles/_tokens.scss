@@ -13,6 +13,13 @@
   --accent-hover: #1e40af;
   --on-accent: #ffffff;
   --accent-surface: #dbeafe;
+  --brand-secondary: var(--accent);
+  --feature-inset: var(--surface-inset);
+  --feature-raised: var(--surface-raised);
+  --feature-strong: var(--accent-surface);
+  --feature-border: var(--border);
+  --feature-muted: var(--muted);
+  --feature-value: var(--text);
   --selection: #dbeafe;
   --field-background: #ffffff;
   --success: #166534;
@@ -52,6 +59,13 @@
   --accent-hover: #93c5fd;
   --on-accent: #0b1120;
   --accent-surface: #1e3a5f;
+  --brand-secondary: #63d9c5;
+  --feature-inset: #102b30;
+  --feature-raised: #112a2e;
+  --feature-strong: #153c40;
+  --feature-border: #386964;
+  --feature-muted: #b8d4cf;
+  --feature-value: var(--brand-secondary);
   --selection: #1e3a5f;
   --field-background: #0b1120;
   --success: #86efac;

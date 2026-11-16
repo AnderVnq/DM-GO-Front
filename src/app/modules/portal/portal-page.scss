@@ -110,12 +110,13 @@ h1 span {
   align-items: start;
 }
 .locker-code {
+  --muted: var(--feature-muted);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 1.5rem;
   align-items: center;
-  background: var(--surface-inset);
+  background: var(--feature-inset);
   border: 0;
   padding: 1.75rem;
   box-shadow: none;
@@ -131,7 +132,7 @@ h1 span {
   font-size: 2rem;
   letter-spacing: 0.025em;
   font-variant-numeric: tabular-nums;
-  color: var(--text);
+  color: var(--feature-value);
   overflow-wrap: anywhere;
 }
 .locker-code > div {

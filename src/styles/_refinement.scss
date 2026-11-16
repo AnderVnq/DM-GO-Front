@@ -368,3 +368,11 @@ dialog {
     box-shadow: none;
   }
 }
+
+// Acento de marca secundario; las acciones y el foco conservan el azul.
+.brand-dot {
+  background: var(--brand-secondary);
+}
+.route-context app-icon {
+  color: var(--brand-secondary);
+}

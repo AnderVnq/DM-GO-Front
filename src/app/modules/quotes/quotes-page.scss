@@ -104,12 +104,13 @@
   border-top: 1px solid var(--border);
 }
 .quote-summary {
+  --muted: var(--feature-muted);
   position: sticky;
   top: 1.5rem;
   padding: 1.5rem;
   border-radius: var(--radius);
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
+  background: var(--feature-raised);
+  border: 1px solid var(--feature-border);
 }
 .summary-heading {
   display: flex;
@@ -182,7 +183,7 @@
   font-size: 0.875rem;
 }
 .summary-subtotal strong {
-  color: var(--accent);
+  color: var(--brand-secondary);
   font-size: 1.625rem;
   letter-spacing: -0.025em;
 }
