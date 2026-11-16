@@ -1,7 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseAmountToCents, formatUsd } from '../../src/app/shared/amount.ts';
-import { canManage, isStaff, safeReturnUrl, isApiRequest } from '../../src/app/core/access.ts';
+import {
+  canManage,
+  isStaff,
+  isPortalUser,
+  safeReturnUrl,
+  isApiRequest,
+} from '../../src/app/core/access.ts';
 import { validateAppConfig } from '../../src/app/core/app-config.ts';
 import { problemMessage } from '../../src/app/core/api-problem.ts';
 
@@ -83,4 +89,15 @@ test('normaliza errores y conserva el identificador de soporte', () => {
   );
   assert.match(problemMessage({ status: 0 }), /conexión/i);
   assert.match(problemMessage({ status: 403 }), /permiso/i);
+});
+
+test('el portal excluye personal y repartidores incluso si también son clientes', () => {
+  assert.equal(isPortalUser(['customer']), true);
+  assert.equal(isPortalUser([]), true);
+  for (const role of ['admin', 'supervisor', 'seller', 'driver']) {
+    assert.equal(isPortalUser([role]), false);
+    assert.equal(isPortalUser(['customer', role]), false);
+  }
+  assert.equal(isStaff(['driver']), false);
+  assert.equal(isStaff(['driver', 'admin']), true);
 });

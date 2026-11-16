@@ -6,6 +6,11 @@ export function isStaff(roles: readonly string[]): boolean {
   return roles.some((role) => ['admin', 'supervisor', 'seller'].includes(role));
 }
 
+/** El panel comercial y la elegibilidad del portal tienen permisos distintos. */
+export function isPortalUser(roles: readonly string[]): boolean {
+  return !roles.some((role) => ['admin', 'supervisor', 'seller', 'driver'].includes(role));
+}
+
 export function canManage(roles: readonly string[]): boolean {
   return roles.some((role) => ['admin', 'supervisor'].includes(role));
 }

@@ -52,7 +52,9 @@ export class LoginPage {
           ? safeReturnUrl(requested)
           : this.auth.staff()
             ? '/internal/overview'
-            : '/portal';
+            : this.auth.portalUser()
+              ? '/portal'
+              : '/forbidden';
         void router.navigateByUrl(target);
       }
     });

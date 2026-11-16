@@ -8,5 +8,6 @@ export const portalGuard: CanActivateFn = async (_route, state) => {
   await auth.ensureInitialized();
   if (!auth.user())
     return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
-  return !auth.staff() || router.createUrlTree(['/internal/overview']);
+  if (auth.staff()) return router.createUrlTree(['/internal/overview']);
+  return auth.portalUser() || router.createUrlTree(['/forbidden']);
 };
