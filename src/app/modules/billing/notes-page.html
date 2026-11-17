@@ -82,10 +82,50 @@
           </dd>
         </div>
         <div>
+          <dt>Destino</dt>
+          <dd>{{ destinationMethods[note.method] || note.method }}</dd>
+        </div>
+        @if (['home', 'agency_home'].includes(note.method)) {
+          <div>
+            <dt>Dirección</dt>
+            <dd>
+              {{
+                destinationDetails()?.address ||
+                  (destinationReadError() ? 'No disponible' : 'Consultando dirección…')
+              }}
+            </dd>
+          </div>
+        }
+        @if (note.method.startsWith('agency')) {
+          <div>
+            <dt>Agencia</dt>
+            <dd>
+              {{
+                destinationDetails()?.agency ||
+                  (destinationReadError() ? 'No disponible' : 'Consultando agencia…')
+              }}
+            </dd>
+          </div>
+        }
+        @if (note.method === 'agency_pickup') {
+          <div>
+            <dt>Sucursal</dt>
+            <dd>
+              {{
+                destinationDetails()?.branch ||
+                  (destinationReadError() ? 'No disponible' : 'Consultando sucursal…')
+              }}
+            </dd>
+          </div>
+        }
+        <div>
           <dt>Liquidación</dt>
           <dd>{{ note.liquidation_number || 'Sin liquidar' }}</dd>
         </div>
       </dl>
+      @if (destinationReadError()) {
+        <p class="alert error" role="alert">{{ destinationReadError() }}</p>
+      }
       <div class="actions">
         <button class="button compact" (click)="download()" [disabled]="busy()">Ver PDF</button>
         @if (auth.manager() && note.status === 'draft') {
@@ -133,6 +173,10 @@
             <li>
               <div>
                 {{ line.charge_name }}
+                <small>
+                  · Tarifa:
+                  {{ line.rate_cents === null ? 'Sin definir' : money(line.rate_cents) }}</small
+                >
                 @if (!line.applies) {
                   <small> · No aplica</small>
                 }
@@ -148,7 +192,7 @@
                       (click)="prepareRate(line.id, line.rate_cents)"
                       [disabled]="busy()"
                     >
-                      Tarifa
+                      <app-icon name="edit" />Editar tarifa
                     </button>
                     @if (line.manual) {
                       <button
@@ -171,7 +215,7 @@
             <button class="button compact" (click)="openCharge()" [disabled]="busy()">
               Añadir cargo</button
             ><button class="button compact" (click)="prepareDestination()" [disabled]="busy()">
-              Cambiar destino
+              <app-icon name="edit" />Editar destino
             </button>
           </div>
         }
@@ -474,27 +518,35 @@
     <button class="button" (click)="packageDialog.close()" [disabled]="busy()">Cerrar</button>
   </div>
 </dialog>
-<dialog #rateDialog aria-labelledby="billing-rate-title">
-  <h2 id="billing-rate-title">Cambiar tarifa del cargo</h2>
-  <label class="field">Tarifa en USD<input [formControl]="rate" inputmode="decimal" /></label>
+<dialog
+  #rateDialog
+  aria-labelledby="billing-rate-title"
+  (cancel)="cancelRate($event)"
+  [attr.aria-busy]="busy()"
+>
+  <h2 id="billing-rate-title">Editar tarifa del cargo</h2>
+  <label class="field"
+    >Tarifa en USD<input [formControl]="rate" inputmode="decimal" autofocus [readonly]="busy()"
+  /></label>
   @if (formError()) {
     <p class="alert error" role="alert">{{ formError() }}</p>
   }
   <div class="actions">
-    <button class="button" (click)="rateDialog.close()" [disabled]="busy()">Cancelar</button
-    ><button
-      class="button primary"
-      (click)="saveRate()"
-      [disabled]="busy() || selected()?.status !== 'draft'"
-    >
-      Guardar tarifa
+    <button class="button" (click)="cancelRate()" [disabled]="busy()">Cancelar</button
+    ><button class="button primary" (click)="saveRate()" [disabled]="!canSaveRate()">
+      {{ busy() ? 'Guardando…' : 'Guardar cambios' }}
     </button>
   </div>
 </dialog>
-<dialog #destinationDialog aria-labelledby="billing-destination-title">
-  <h2 id="billing-destination-title">Cambiar destino</h2>
+<dialog
+  #destinationDialog
+  aria-labelledby="billing-destination-title"
+  (cancel)="cancelDestination($event)"
+  [attr.aria-busy]="busy()"
+>
+  <h2 id="billing-destination-title">Editar destino</h2>
   <form [formGroup]="creation" (ngSubmit)="saveDestination()">
-    <div class="form-grid">
+    <fieldset class="form-grid" [disabled]="busy()">
       <label class="field full"
         >Modalidad<select formControlName="method">
           <option value="pickup">Recojo en almacén</option>
@@ -542,15 +594,15 @@
           </select></label
         >
       }
-    </div>
+    </fieldset>
     @if (formError()) {
       <p class="alert error" role="alert">{{ formError() }}</p>
     }
     <div class="actions">
-      <button type="button" class="button" (click)="destinationDialog.close()" [disabled]="busy()">
+      <button type="button" class="button" (click)="cancelDestination()" [disabled]="busy()">
         Cancelar</button
-      ><button class="button primary" [disabled]="busy() || selected()?.status !== 'draft'">
-        Guardar destino
+      ><button class="button primary" [disabled]="!canSaveDestination()">
+        {{ busy() ? 'Guardando…' : 'Guardar cambios' }}
       </button>
     </div>
   </form>

@@ -266,7 +266,7 @@ test('anula una nota solo tras confirmar con motivo y la deja en solo lectura', 
     'Liquidar nota',
     'Registrar pago',
     'Añadir cargo',
-    'Cambiar destino',
+    'Editar destino',
     'Anular nota de salida',
   ]) {
     await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
@@ -289,7 +289,7 @@ test('una nota pagada permanece en solo lectura incluso para administración', a
     'Registrar pago',
     'Añadir cargo',
     'Añadir paquetes',
-    'Cambiar destino',
+    'Editar destino',
     'Anular nota de salida',
   ]) {
     await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);

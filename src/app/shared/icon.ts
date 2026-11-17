@@ -11,6 +11,7 @@ const paths = {
   quotes: 'M20 13 11 22 2 13V3h10l8 8ZM7 7h.01',
   search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
   plus: 'M12 5v14M5 12h14',
+  edit: 'm16 3 5 5L9 20l-6 1 1-6ZM14 5l5 5',
   arrow: 'm9 5 7 7-7 7',
   back: 'm14 5-7 7 7 7',
   close: 'm6 6 12 12M6 18 18 6',

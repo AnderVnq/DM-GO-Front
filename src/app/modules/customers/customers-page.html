@@ -52,41 +52,27 @@
           </dd>
         </div>
       </dl>
-      <form [formGroup]="contact" (ngSubmit)="saveContact()">
-        <div class="form-grid">
-          <div class="field">
-            <label for="contact-email">Correo electrónico</label>
-            <input
-              id="contact-email"
-              formControlName="email"
-              type="email"
-              required
-              [attr.aria-invalid]="contactFields()['email'] ? 'true' : null"
-              [attr.aria-describedby]="contactFields()['email'] ? 'contact-email-error' : null"
-            />
-            @if (contactFields()['email']; as message) {
-              <span id="contact-email-error" class="field-error">{{ message }}</span>
-            }
-          </div>
-          <div class="field">
-            <label for="contact-phone">Teléfono</label>
-            <input
-              id="contact-phone"
-              formControlName="phone"
-              type="tel"
-              required
-              [attr.aria-invalid]="contactFields()['phone'] ? 'true' : null"
-              [attr.aria-describedby]="contactFields()['phone'] ? 'contact-phone-error' : null"
-            />
-            @if (contactFields()['phone']; as message) {
-              <span id="contact-phone-error" class="field-error">{{ message }}</span>
-            }
-          </div>
-        </div>
-        <button class="button actions" [disabled]="contact.invalid || saving()">
-          {{ saving() ? 'Guardando…' : 'Guardar contacto' }}
+      <div class="page-header">
+        <h3>Datos de contacto</h3>
+        <button
+          type="button"
+          class="button compact"
+          (click)="editContact()"
+          [disabled]="saving() || loading()"
+        >
+          <app-icon name="edit" />Editar contacto
         </button>
-      </form>
+      </div>
+      <dl class="detail-grid">
+        <div>
+          <dt class="muted">Correo electrónico</dt>
+          <dd>{{ item.email }}</dd>
+        </div>
+        <div>
+          <dt class="muted">Teléfono</dt>
+          <dd>{{ item.phone }}</dd>
+        </div>
+      </dl>
       <div class="actions">
         <a
           class="button primary"
@@ -228,6 +214,69 @@
         Cancelar</button
       ><button class="button primary" [disabled]="form.invalid || saving()">
         {{ saving() ? 'Registrando…' : 'Registrar cliente' }}
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<dialog #contactDialog aria-labelledby="contact-edit-title" (cancel)="cancelContact($event)">
+  <div class="dialog-header">
+    <div>
+      <h2 id="contact-edit-title">Editar contacto</h2>
+      <p class="muted">{{ customer()?.name }}</p>
+    </div>
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Cerrar edición de contacto"
+      (click)="cancelContact()"
+      [disabled]="saving()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (contactError()) {
+    <p class="alert error" role="alert">{{ contactError() }}</p>
+  }
+  <form [formGroup]="contact" (ngSubmit)="saveContact()">
+    <fieldset class="form-grid" [disabled]="saving()">
+      <legend class="sr-only">Datos de contacto</legend>
+      <div class="field">
+        <label for="contact-email">Correo electrónico</label>
+        <input
+          id="contact-email"
+          formControlName="email"
+          type="email"
+          required
+          [attr.aria-invalid]="contactFields()['email'] ? 'true' : null"
+          [attr.aria-describedby]="contactFields()['email'] ? 'contact-email-error' : null"
+        />
+        @if (contactFields()['email']; as message) {
+          <span id="contact-email-error" class="field-error">{{ message }}</span>
+        }
+      </div>
+      <div class="field">
+        <label for="contact-phone">Teléfono</label>
+        <input
+          id="contact-phone"
+          formControlName="phone"
+          type="tel"
+          required
+          [attr.aria-invalid]="contactFields()['phone'] ? 'true' : null"
+          [attr.aria-describedby]="contactFields()['phone'] ? 'contact-phone-error' : null"
+        />
+        @if (contactFields()['phone']; as message) {
+          <span id="contact-phone-error" class="field-error">{{ message }}</span>
+        }
+      </div>
+    </fieldset>
+    <p class="fine-print">Guardar se habilita cuando modificas algún dato.</p>
+    <div class="actions">
+      <button type="button" class="button" (click)="cancelContact()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button class="button primary" [disabled]="!contactValid() || !contactChanged() || saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
       </button>
     </div>
   </form>

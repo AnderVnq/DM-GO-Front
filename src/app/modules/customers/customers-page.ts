@@ -26,6 +26,9 @@ export class CustomersPage {
   readonly formError = signal('');
   readonly formFields = signal<Record<string, string>>({});
   readonly contactFields = signal<Record<string, string>>({});
+  readonly contactError = signal('');
+  readonly contactDialog = viewChild.required<ElementRef<HTMLDialogElement>>('contactDialog');
+  private editingContact = false;
   readonly success = signal('');
   readonly formatDate = formatDate;
   readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('createDialog');
@@ -141,24 +144,77 @@ export class CustomersPage {
     });
   }
 
+  editContact() {
+    const customer = this.customer();
+    if (!customer || this.saving() || this.loading()) return;
+    this.contact.reset({ email: customer.email, phone: customer.phone });
+    this.contactFields.set({});
+    this.contactError.set('');
+    this.editingContact = true;
+    this.contactDialog().nativeElement.showModal();
+  }
+
+  cancelContact(event?: Event) {
+    event?.preventDefault();
+    if (this.saving()) return;
+    this.editingContact = false;
+    const customer = this.customer();
+    if (customer) this.contact.reset({ email: customer.email, phone: customer.phone });
+    this.contactFields.set({});
+    this.contactError.set('');
+    this.contactDialog().nativeElement.close();
+  }
+
+  private normalizedContact(value: { email: string; phone: string }) {
+    return {
+      email: value.email.trim().toLowerCase(),
+      phone: value.phone.trim().replace(/[ ()-]/g, ''),
+    };
+  }
+
+  contactValid() {
+    const value = this.normalizedContact(this.contact.getRawValue());
+    return this.contact.valid && !!value.email && !!value.phone;
+  }
+
+  contactChanged() {
+    const customer = this.customer();
+    if (!customer) return false;
+    const current = this.normalizedContact(customer);
+    const draft = this.normalizedContact(this.contact.getRawValue());
+    return current.email !== draft.email || current.phone !== draft.phone;
+  }
+
   saveContact() {
     const customer = this.customer();
-    if (!customer || this.contact.invalid || this.saving()) return;
+    if (
+      !customer ||
+      !this.editingContact ||
+      !this.contactChanged() ||
+      !this.contactValid() ||
+      this.saving()
+    )
+      return;
     this.saving.set(true);
     this.error.set('');
     this.success.set('');
     this.contactFields.set({});
-    this.api.updateContact(customer.id, this.contact.getRawValue()).subscribe({
-      next: (updated) => {
-        this.setCustomer(updated);
-        this.saving.set(false);
-        this.success.set('Datos de contacto actualizados.');
-      },
-      error: (error: unknown) => {
-        this.error.set(requestMessage(error));
-        this.contactFields.set(customerFieldErrors(error));
-        this.saving.set(false);
-      },
-    });
+    this.contactError.set('');
+    this.api
+      .updateContact(customer.id, this.normalizedContact(this.contact.getRawValue()))
+      .subscribe({
+        next: (updated) => {
+          this.setCustomer(updated);
+          this.saving.set(false);
+          this.editingContact = false;
+          this.contactDialog().nativeElement.close();
+          this.success.set('Datos de contacto actualizados.');
+        },
+        error: (error: unknown) => {
+          this.contactError.set(requestMessage(error));
+          this.contactFields.set(customerFieldErrors(error));
+          this.saving.set(false);
+        },
+      });
   }
 }

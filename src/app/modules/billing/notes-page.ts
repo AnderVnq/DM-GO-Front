@@ -1,4 +1,13 @@
-import { Component, DestroyRef, inject, signal, viewChild, type ElementRef } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+  type ElementRef,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { type Observable, Subscription, forkJoin, of, switchMap } from 'rxjs';
@@ -7,6 +16,7 @@ import {
   type Agency,
   type ChargeType,
   type DispatchNote,
+  type Destination,
   type NotePayment,
 } from './dispatch-note.model';
 import { canCancelNote, canEditNote, paymentIssue } from './billing-rules';
@@ -34,6 +44,23 @@ export class NotesPage {
   readonly auth = inject(AuthService);
   readonly notes = signal<DispatchNote[]>([]);
   readonly selected = signal<DispatchNote | null>(null);
+  readonly destinationDetails = signal<{ address: string; agency: string; branch: string } | null>(
+    null,
+  );
+  readonly destinationReadError = signal('');
+  private readonly destinationReadKey = computed(() => {
+    const note = this.selected();
+    return note
+      ? JSON.stringify({
+          id: note.id,
+          customer_id: note.customer_id,
+          method: note.method,
+          address_id: note.address_id,
+          agency_id: note.agency_id,
+          branch_id: note.branch_id,
+        })
+      : '';
+  });
   readonly customer = signal<Customer | null>(null);
   readonly packages = signal<Package[]>([]);
   readonly agencies = signal<Agency[]>([]);
@@ -67,11 +94,20 @@ export class NotesPage {
     viewChild.required<ElementRef<HTMLDialogElement>>('destinationDialog');
   readonly rate = this.fb.nonNullable.control('');
   private rateLineId = '';
+  private editingNoteId = '';
+  readonly destinationMethods: Record<string, string> = {
+    pickup: 'Recojo en almacén',
+    home: 'Domicilio',
+    agency_pickup: 'Recojo en agencia',
+    agency_home: 'Agencia a domicilio',
+  };
   private readonly customerId =
     inject(ActivatedRoute).snapshot.queryParamMap.get('customer_id') ?? '';
   private listRequest?: Subscription;
   private detailRequest?: Subscription;
   private customerRequest?: Subscription;
+  private destinationRequest?: Subscription;
+  private destinationReadRequest?: Subscription;
   private evidence: File | null = null;
   private confirmation: (() => Observable<DispatchNote>) | null = null;
   readonly confirmTitle = signal('');
@@ -109,6 +145,7 @@ export class NotesPage {
 
   constructor() {
     this.reload();
+    effect(() => this.readDestination(this.destinationReadKey()));
     const lookupChanges = this.creation.controls.locker.valueChanges.subscribe(() => {
       this.customer.set(null);
       this.packages.set([]);
@@ -119,6 +156,8 @@ export class NotesPage {
       this.listRequest?.unsubscribe();
       this.detailRequest?.unsubscribe();
       this.customerRequest?.unsubscribe();
+      this.destinationRequest?.unsubscribe();
+      this.destinationReadRequest?.unsubscribe();
       lookupChanges.unsubscribe();
     });
   }
@@ -149,10 +188,46 @@ export class NotesPage {
     if (this.busy()) return;
     this.detailRequest?.unsubscribe();
     this.selected.set(note);
+    if (this.destinationReadError()) this.readDestination(this.destinationReadKey());
     this.error.set('');
     this.detailRequest = this.api.get(note.id).subscribe({
       next: (data) => this.selected.set(data),
       error: (error: unknown) => this.error.set(requestMessage(error)),
+    });
+  }
+
+  private readDestination(key: string) {
+    this.destinationReadRequest?.unsubscribe();
+    this.destinationDetails.set(null);
+    this.destinationReadError.set('');
+    if (!key) return;
+    const destination = JSON.parse(key) as Destination & { customer_id: string };
+    const needsAddress = ['home', 'agency_home'].includes(destination.method);
+    const needsAgency = destination.method.startsWith('agency');
+    if (!needsAddress && !needsAgency) return;
+    this.destinationReadRequest = forkJoin({
+      customer: needsAddress ? this.customers.get(destination.customer_id) : of(null),
+      agencies: needsAgency ? this.api.agencies() : of([]),
+    }).subscribe({
+      next: ({ customer, agencies }) => {
+        if (key !== this.destinationReadKey()) return;
+        const agency = agencies.find((item) => item.id === destination.agency_id);
+        this.destinationDetails.set({
+          address:
+            customer?.addresses.find((item) => item.id === destination.address_id)?.line ??
+            'Dirección no disponible',
+          agency: agency?.name ?? 'Agencia no disponible',
+          branch:
+            agency?.branches.find((item) => item.id === destination.branch_id)?.name ??
+            'Sucursal no disponible',
+        });
+      },
+      error: () => {
+        if (key !== this.destinationReadKey()) return;
+        this.destinationReadError.set(
+          'No se pudo consultar el destino. Vuelve a seleccionar la nota para reintentar.',
+        );
+      },
     });
   }
 
@@ -442,10 +517,37 @@ export class NotesPage {
     });
   }
   prepareRate(lineId: string, cents: number | null) {
+    const note = this.selected();
+    if (!note || !canEditNote(note.status) || this.busy()) return;
+    if (!note.lines.some((line) => line.id === lineId)) return;
+    this.editingNoteId = note.id;
     this.rateLineId = lineId;
     this.rate.setValue(cents === null ? '' : (cents / 100).toFixed(2));
     this.formError.set('');
     this.rateDialog().nativeElement.showModal();
+  }
+  canSaveRate() {
+    const note = this.selected();
+    const line = note?.lines.find((item) => item.id === this.rateLineId);
+    const cents = parseAmountToCents(this.rate.value);
+    return (
+      !!note &&
+      note.id === this.editingNoteId &&
+      canEditNote(note.status) &&
+      !this.busy() &&
+      !!line &&
+      cents !== null &&
+      cents !== line.rate_cents
+    );
+  }
+  cancelRate(event?: Event) {
+    event?.preventDefault();
+    if (this.busy()) return;
+    this.rate.reset();
+    this.rateLineId = '';
+    this.editingNoteId = '';
+    this.formError.set('');
+    this.rateDialog().nativeElement.close();
   }
   saveRate() {
     const note = this.selected();
@@ -455,20 +557,22 @@ export class NotesPage {
       this.formError.set('Indica una tarifa válida.');
       return;
     }
+    if (!this.canSaveRate()) return;
     this.busy.set(true);
     this.formError.set('');
     this.api.updateCharge(note.id, this.rateLineId, { rate_cents: cents }).subscribe({
       next: (updated) => {
         this.apply(updated);
         this.busy.set(false);
-        this.rateDialog().nativeElement.close();
+        this.cancelRate();
       },
       error: (error: unknown) => this.handleMutationError(error),
     });
   }
   prepareDestination() {
     const note = this.selected();
-    if (!note || !canEditNote(note.status)) return;
+    if (!note || !canEditNote(note.status) || this.busy()) return;
+    this.editingNoteId = note.id;
     this.customer.set(null);
     this.formError.set('');
     this.creation.patchValue({
@@ -478,7 +582,8 @@ export class NotesPage {
       branch_id: note.branch_id ?? '',
     });
     this.destinationDialog().nativeElement.showModal();
-    forkJoin({
+    this.destinationRequest?.unsubscribe();
+    this.destinationRequest = forkJoin({
       customer: this.customers.get(note.customer_id),
       agencies: this.api.agencies(),
     }).subscribe({
@@ -489,25 +594,71 @@ export class NotesPage {
       error: (error: unknown) => this.formError.set(requestMessage(error)),
     });
   }
+  private normalizedDestination(value: Destination) {
+    const method = value.method.trim();
+    return {
+      method,
+      address_id: ['home', 'agency_home'].includes(method) ? (value.address_id ?? '').trim() : '',
+      agency_id: method.startsWith('agency') ? (value.agency_id ?? '').trim() : '',
+      branch_id: method === 'agency_pickup' ? (value.branch_id ?? '').trim() : '',
+    };
+  }
+  canSaveDestination() {
+    const note = this.selected();
+    if (!note || note.id !== this.editingNoteId || !canEditNote(note.status) || this.busy())
+      return false;
+    const input = this.normalizedDestination(this.creation.getRawValue());
+    return (
+      this.validDestination(input) &&
+      JSON.stringify(input) !== JSON.stringify(this.normalizedDestination(note))
+    );
+  }
+  private validDestination(input: Required<Destination>) {
+    if (!Object.hasOwn(this.destinationMethods, input.method)) return false;
+    if (
+      ['home', 'agency_home'].includes(input.method) &&
+      !this.customer()?.addresses.some((address) => address.id === input.address_id)
+    )
+      return false;
+    if (!input.method.startsWith('agency')) return true;
+    const agency = this.agencies().find((item) => item.id === input.agency_id && item.active);
+    return (
+      !!agency &&
+      (input.method !== 'agency_pickup' ||
+        agency.branches.some((branch) => branch.id === input.branch_id && branch.active))
+    );
+  }
+  cancelDestination(event?: Event) {
+    event?.preventDefault();
+    if (this.busy()) return;
+    this.destinationRequest?.unsubscribe();
+    this.creation.reset({
+      locker: '',
+      method: 'pickup',
+      address_id: '',
+      agency_id: '',
+      branch_id: '',
+    });
+    this.editingNoteId = '';
+    this.formError.set('');
+    this.destinationDialog().nativeElement.close();
+  }
   saveDestination() {
     const note = this.selected();
     if (!note || !canEditNote(note.status) || this.busy()) return;
-    const { method, address_id, agency_id, branch_id } = this.creation.getRawValue();
-    if (
-      (['home', 'agency_home'].includes(method) && !address_id) ||
-      (method.startsWith('agency') && !agency_id) ||
-      (method === 'agency_pickup' && !branch_id)
-    ) {
+    const input = this.normalizedDestination(this.creation.getRawValue());
+    if (!this.validDestination(input)) {
       this.formError.set('Completa los datos del destino.');
       return;
     }
+    if (!this.canSaveDestination()) return;
     this.busy.set(true);
     this.formError.set('');
-    this.api.setDestination(note.id, { method, address_id, agency_id, branch_id }).subscribe({
+    this.api.setDestination(note.id, input).subscribe({
       next: (updated) => {
         this.apply(updated);
         this.busy.set(false);
-        this.destinationDialog().nativeElement.close();
+        this.cancelDestination();
       },
       error: (error: unknown) => this.handleMutationError(error),
     });

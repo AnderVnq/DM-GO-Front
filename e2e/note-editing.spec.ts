@@ -31,26 +31,27 @@ const agencies = [
   },
 ];
 
-test('conserva la dirección existente al abrir y guardar el destino', async ({ page }) => {
+test('conserva la dirección y descarta el destino sin enviar cambios', async ({ page }) => {
   const fixture = await mockPanel(page, 'supervisor', {
     customer: { addresses },
     note: { method: 'home', address_id: 'address-test' },
   });
   await openNotes(page);
-  await page.getByRole('button', { name: 'Cambiar destino', exact: true }).click();
+  await page.getByRole('button', { name: 'Editar destino', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('combobox', { name: 'Dirección', exact: true })).toHaveValue(
     'address-test',
   );
-  await dialog.getByRole('button', { name: 'Guardar destino', exact: true }).click();
-  await expect(dialog).not.toBeVisible();
-  expect(fixture.requests.filter((r) => r.path.endsWith('/destination'))).toEqual([
-    {
-      path: '/dispatch-notes/note-test/destination',
-      method: 'PUT',
-      body: { method: 'home', address_id: 'address-test', agency_id: '', branch_id: '' },
-    },
-  ]);
+  await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
+  await dialog.getByRole('combobox', { name: 'Modalidad', exact: true }).selectOption('pickup');
+  await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  expect(fixture.requests.filter((r) => r.path.endsWith('/destination'))).toHaveLength(0);
+  await page.getByRole('button', { name: 'Editar destino', exact: true }).click();
+  await expect(dialog.getByRole('combobox', { name: 'Dirección', exact: true })).toHaveValue(
+    'address-test',
+  );
+  await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
 });
 
 test('conserva agencia y sucursal y exige elegir otra sucursal al cambiar de agencia', async ({
@@ -61,7 +62,7 @@ test('conserva agencia y sucursal y exige elegir otra sucursal al cambiar de age
     note: { method: 'agency_pickup', agency_id: 'agency-test', branch_id: 'branch-test' },
   });
   await openNotes(page);
-  await page.getByRole('button', { name: 'Cambiar destino', exact: true }).click();
+  await page.getByRole('button', { name: 'Editar destino', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('combobox', { name: 'Agencia', exact: true })).toHaveValue(
     'agency-test',
@@ -71,13 +72,12 @@ test('conserva agencia y sucursal y exige elegir otra sucursal al cambiar de age
   );
   await dialog.getByRole('combobox', { name: 'Agencia', exact: true }).selectOption('agency-other');
   await expect(dialog.getByRole('combobox', { name: 'Sucursal', exact: true })).toHaveValue('');
-  await dialog.getByRole('button', { name: 'Guardar destino', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toContainText('Completa los datos del destino.');
+  await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
   expect(fixture.requests.filter((r) => r.path.endsWith('/destination'))).toHaveLength(0);
   await dialog
     .getByRole('combobox', { name: 'Sucursal', exact: true })
     .selectOption('branch-other');
-  await dialog.getByRole('button', { name: 'Guardar destino', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   expect(fixture.requests.find((r) => r.path.endsWith('/destination'))?.body).toMatchObject({
     agency_id: 'agency-other',
@@ -132,11 +132,14 @@ test('actualiza la tarifa y muestra los importes devueltos por el servidor', asy
     },
   });
   await openNotes(page);
-  await page.getByRole('button', { name: 'Tarifa', exact: true }).click();
+  await page.getByRole('button', { name: 'Editar tarifa', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Tarifa en USD', { exact: true })).toHaveValue('1.25');
+  await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
+  await dialog.getByLabel('Tarifa en USD', { exact: true }).fill(' 1,25 ');
+  await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
   await dialog.getByLabel('Tarifa en USD', { exact: true }).fill('3.50');
-  await dialog.getByRole('button', { name: 'Guardar tarifa', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.inspector')).toContainText('USD 7.00');
   expect(fixture.requests.find((r) => r.path.endsWith('/charges/line-test'))).toEqual({

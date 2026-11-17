@@ -134,11 +134,15 @@ test('administración crea y edita almacenes sin cambiar código ni país', asyn
     name: 'Segunda sede',
     address: { line1: '200 Test Street', city: 'Miami' },
   });
-  await expect(page.getByLabel(/^Código\s*Formato/)).toBeDisabled();
-  await expect(page.getByLabel(/^País \(ISO\)/)).toBeDisabled();
+  await expect(page.getByLabel('Nombre', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Editar almacén', exact: true });
+  await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
+  await expect(dialog).toContainText('USA-02 · US');
   await page.getByLabel('Nombre', { exact: true }).fill('Sede actualizada');
   await page.getByLabel('Almacén activo', { exact: true }).uncheck();
-  await page.getByRole('button', { name: 'Guardar almacén' }).click();
+  await dialog.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('status')).toContainText('Almacén actualizado');
   expect(writes.at(-1)?.body).toMatchObject({ name: 'Sede actualizada', active: false });
   expect(writes.at(-1)?.body).not.toHaveProperty('code');
@@ -156,7 +160,7 @@ test('ventas consulta almacenes sin acceso a recepción ni administración', asy
   await navigate(page, 'Almacenes', 'warehouses');
   await expect(page.getByRole('heading', { name: 'Miami', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Nuevo almacén' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Guardar almacén' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Editar', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Recibir paquete en USA' })).toHaveCount(0);
   await page.goto('/internal/warehouses/receiving');
   await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();

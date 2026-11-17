@@ -172,11 +172,13 @@ test('entrega propia: dirección, cambio de agencia y restricción de intentos',
   const { writes } = await coordination(page);
   await loginPortal(page);
   await navigatePortal(page, 'Mis entregas');
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
   await page.getByLabel('Forma de entrega').selectOption('home');
   await page
     .getByRole('combobox', { name: 'Dirección de entrega', exact: true })
     .selectOption('own-address');
-  await page.getByRole('button', { name: 'Guardar preferencia' }).click();
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(page.getByRole('status')).toContainText('Preferencia de entrega guardada');
   expect(writes.at(-1)?.body).toEqual({
     method: 'home',
@@ -184,14 +186,15 @@ test('entrega propia: dirección, cambio de agencia y restricción de intentos',
     agency_id: '',
     branch_id: '',
   });
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
   await page.getByLabel('Forma de entrega').selectOption('agency_pickup');
   await page.getByRole('combobox', { name: 'Agencia', exact: true }).selectOption('agency-a');
   await page.getByLabel('Sucursal de destino').selectOption('branch-a');
   await page.getByRole('combobox', { name: 'Agencia', exact: true }).selectOption('agency-b');
   await expect(page.getByLabel('Sucursal de destino')).toHaveValue('');
-  await expect(page.getByRole('button', { name: 'Guardar preferencia' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
   await page.getByLabel('Sucursal de destino').selectOption('branch-b');
-  await page.getByRole('button', { name: 'Guardar preferencia' }).click();
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(page.getByRole('status')).toContainText('Preferencia de entrega guardada');
   expect(writes.at(-1)?.body).toEqual({
     method: 'agency_pickup',
@@ -209,6 +212,7 @@ test('entrega propia: dirección, cambio de agencia y restricción de intentos',
     animations: 'disabled',
   });
   await page.getByRole('combobox', { name: 'Paquete', exact: true }).selectOption('exhausted');
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
   await expect(
     page.getByRole('option', { name: 'Entrega a domicilio', exact: true }),
   ).toBeDisabled();

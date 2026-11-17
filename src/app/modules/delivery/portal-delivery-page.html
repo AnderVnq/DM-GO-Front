@@ -3,7 +3,9 @@
     <h1>Mis entregas</h1>
     <p>Elige cómo recibir cada paquete en Perú.</p>
   </div>
-  <button class="button" (click)="reload()" [disabled]="loading() || busy()">Actualizar</button>
+  <button class="button" (click)="reload()" [disabled]="loading() || busy() || editing()">
+    Actualizar
+  </button>
 </div>
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
@@ -18,122 +20,63 @@
   <section class="surface surface-body">
     <h2>Preferencia por paquete</h2>
     @if (packages().length) {
-      <form (ngSubmit)="save()">
-        <fieldset [disabled]="busy() || loading()" class="form-grid">
-          <label class="field full"
-            >Paquete<select
-              name="package"
-              [ngModel]="selected()?.id"
-              (ngModelChange)="select($event)"
-            >
-              @for (item of packages(); track item.id) {
-                <option [value]="item.id">
-                  {{ item.receipt?.number || item.carrier_tracking || item.id }} ·
-                  {{ item.description }}
-                </option>
-              }
-            </select></label
-          >
-          @if (selected(); as item) {
-            <div class="full"><app-status [value]="item.status" /></div>
-            @if (locked(item.status)) {
-              <p class="full muted">
-                La entrega ya no puede cambiarse en el estado actual del paquete.
-              </p>
-            }
-            @if (exhausted) {
-              <p class="full muted">
-                Se agotaron los intentos de entrega. Solo está disponible el recojo en oficina.
-              </p>
-            }
-            <label class="field full"
-              >Forma de entrega<select
-                name="method"
-                [ngModel]="preference.method"
-                (ngModelChange)="changeMethod($event)"
-                [disabled]="locked(item.status)"
-              >
-                @for (method of methods; track method.value) {
-                  <option
-                    [value]="method.value"
-                    [disabled]="exhausted && method.value !== 'pickup'"
-                  >
-                    {{ method.label }}
-                  </option>
-                }
-              </select></label
-            >
-            @if (needsAddress) {
-              <label class="field full"
-                >Dirección de entrega<select
-                  name="address"
-                  [(ngModel)]="preference.address_id"
-                  required
-                  [disabled]="locked(item.status)"
-                >
-                  <option value="">Selecciona una dirección</option>
-                  @for (address of addresses(); track address.id) {
-                    <option [value]="address.id">{{ address.line }}</option>
-                  }
-                </select></label
-              >
-              @if (!addresses().length) {
-                <p class="full muted">
-                  No tienes direcciones registradas. Solicita al equipo de atención que registre tu
-                  dirección o elige recojo.
-                </p>
-              }
-            }
-            @if (needsAgency) {
-              <label class="field full"
-                >Agencia<select
-                  name="agency"
-                  [ngModel]="preference.agency_id"
-                  (ngModelChange)="changeAgency($event)"
-                  required
-                  [disabled]="locked(item.status)"
-                >
-                  <option value="">Selecciona una agencia</option>
-                  @for (agency of agencies(); track agency.id) {
-                    <option [value]="agency.id">{{ agency.name }}</option>
-                  }
-                </select></label
-              >
-              @if (!agencies().length) {
-                <p class="full muted">
-                  No hay agencias disponibles en este momento. Puedes elegir recojo en oficina.
-                </p>
-              }
-            }
-            @if (preference.method === 'agency_pickup') {
-              <label class="field full"
-                >Sucursal de destino<select
-                  name="branch"
-                  [(ngModel)]="preference.branch_id"
-                  required
-                  [disabled]="locked(item.status) || !preference.agency_id"
-                >
-                  <option value="">Selecciona una sucursal</option>
-                  @for (branch of branches; track branch.id) {
-                    <option [value]="branch.id">{{ branch.name }} · {{ branch.address }}</option>
-                  }
-                </select></label
-              >
-              @if (preference.agency_id && !branches.length) {
-                <p class="full muted">
-                  Esta agencia no tiene sucursales disponibles. Elige otra agencia o forma de
-                  entrega.
-                </p>
-              }
-            }
-            <div class="actions full">
-              <button class="button primary" type="submit" [disabled]="!valid">
-                {{ busy() ? 'Guardando…' : 'Guardar preferencia' }}
-              </button>
+      <label class="field"
+        >Paquete
+        <select
+          name="package"
+          [ngModel]="selected()?.id"
+          (ngModelChange)="select($event)"
+          [disabled]="loading() || busy() || editing()"
+        >
+          @for (item of packages(); track item.id) {
+            <option [value]="item.id">
+              {{ item.receipt?.number || item.carrier_tracking || item.id }} ·
+              {{ item.description }}
+            </option>
+          }
+        </select>
+      </label>
+      @if (selected(); as item) {
+        <div class="actions"><app-status [value]="item.status" /></div>
+        <dl class="detail-grid">
+          <div>
+            <dt>Forma de entrega</dt>
+            <dd>{{ savedMethodLabel }}</dd>
+          </div>
+          @if (item.delivery_method === 'home' || item.delivery_method === 'agency_home') {
+            <div>
+              <dt>Dirección de entrega</dt>
+              <dd>{{ savedAddress || 'Dirección no disponible' }}</dd>
             </div>
           }
-        </fieldset>
-      </form>
+          @if (item.delivery_method === 'agency_pickup' || item.delivery_method === 'agency_home') {
+            <div>
+              <dt>Agencia</dt>
+              <dd>{{ savedAgency?.name || 'Agencia no disponible' }}</dd>
+            </div>
+          }
+          @if (item.delivery_method === 'agency_pickup') {
+            <div>
+              <dt>Sucursal de destino</dt>
+              <dd>{{ savedBranch?.name || 'Sucursal no disponible' }}</dd>
+            </div>
+          }
+        </dl>
+        @if (locked(item.status)) {
+          <p class="muted">La entrega ya no puede cambiarse en el estado actual del paquete.</p>
+        } @else {
+          <div class="actions">
+            <button
+              class="button"
+              type="button"
+              (click)="openEdit()"
+              [disabled]="loading() || busy()"
+            >
+              <app-icon name="edit" />Editar
+            </button>
+          </div>
+        }
+      }
     } @else if (!loading() && !error()) {
       <div class="empty-state">
         <h3>Aún no tienes paquetes</h3>
@@ -164,3 +107,118 @@
     </p>
   </aside>
 </div>
+
+<dialog #editDialog aria-labelledby="delivery-edit-title" (cancel)="cancelEdit($event)">
+  <div class="dialog-header">
+    <h2 id="delivery-edit-title">Editar preferencia de entrega</h2>
+    <button
+      class="icon-button"
+      type="button"
+      aria-label="Cerrar"
+      (click)="cancelEdit()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>Elige cómo recibir este paquete. Los cambios se aplicarán al guardar.</p>
+  @if (editError()) {
+    <p class="alert error" role="alert">{{ editError() }}</p>
+  }
+  @if (selected(); as item) {
+    <form (ngSubmit)="save()">
+      <fieldset class="form-grid" [disabled]="busy()">
+        @if (exhausted) {
+          <p class="full muted">
+            Se agotaron los intentos de entrega. Solo está disponible el recojo en oficina.
+          </p>
+        }
+        <label class="field full"
+          >Forma de entrega<select
+            name="method"
+            [ngModel]="preference.method"
+            (ngModelChange)="changeMethod($event)"
+            [disabled]="locked(item.status)"
+          >
+            @for (method of methods; track method.value) {
+              <option [value]="method.value" [disabled]="exhausted && method.value !== 'pickup'">
+                {{ method.label }}
+              </option>
+            }
+          </select></label
+        >
+        @if (needsAddress) {
+          <label class="field full"
+            >Dirección de entrega<select
+              name="address"
+              [(ngModel)]="preference.address_id"
+              required
+              [disabled]="locked(item.status)"
+            >
+              <option value="">Selecciona una dirección</option>
+              @for (address of addresses(); track address.id) {
+                <option [value]="address.id">{{ address.line }}</option>
+              }
+            </select></label
+          >
+          @if (!addresses().length) {
+            <p class="full muted">
+              No tienes direcciones registradas. Solicita al equipo de atención que registre tu
+              dirección o elige recojo.
+            </p>
+          }
+        }
+        @if (needsAgency) {
+          <label class="field full"
+            >Agencia<select
+              name="agency"
+              [ngModel]="preference.agency_id"
+              (ngModelChange)="changeAgency($event)"
+              required
+              [disabled]="locked(item.status)"
+            >
+              <option value="">Selecciona una agencia</option>
+              @for (agency of agencies(); track agency.id) {
+                <option [value]="agency.id">{{ agency.name }}</option>
+              }
+            </select></label
+          >
+          @if (!agencies().length) {
+            <p class="full muted">
+              No hay agencias disponibles en este momento. Puedes elegir recojo en oficina.
+            </p>
+          }
+        }
+        @if (preference.method === 'agency_pickup') {
+          <label class="field full"
+            >Sucursal de destino<select
+              name="branch"
+              [(ngModel)]="preference.branch_id"
+              required
+              [disabled]="locked(item.status) || !preference.agency_id"
+            >
+              <option value="">Selecciona una sucursal</option>
+              @for (branch of branches; track branch.id) {
+                <option [value]="branch.id">{{ branch.name }} · {{ branch.address }}</option>
+              }
+            </select></label
+          >
+          @if (preference.agency_id && !branches.length) {
+            <p class="full muted">
+              Esta agencia no tiene sucursales disponibles. Elige otra agencia o forma de entrega.
+            </p>
+          }
+        }
+
+        <div class="actions full">
+          <button class="button" type="button" (click)="cancelEdit()" [disabled]="busy()">
+            Cancelar
+          </button>
+          <button class="button primary" type="submit" [disabled]="busy() || !changed || !valid">
+            {{ busy() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </fieldset>
+    </form>
+  }
+</dialog>

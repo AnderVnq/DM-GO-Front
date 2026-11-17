@@ -62,15 +62,17 @@ test('actualiza el contacto sin cambiar de cliente ni de casillero', async ({ pa
   const fixture = await mockPanel(page);
   await openCustomers(page);
   await findCustomer(page);
+  await page.getByRole('button', { name: 'Editar contacto', exact: true }).click();
   await page
     .getByRole('textbox', { name: 'Correo electrónico', exact: true })
     .fill('actualizado@example.test');
   await page.getByRole('textbox', { name: 'Teléfono', exact: true }).fill('999000044');
-  await page.getByRole('button', { name: 'Guardar contacto', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Datos de contacto actualizados.');
-  await expect(page.getByRole('textbox', { name: 'Correo electrónico', exact: true })).toHaveValue(
-    'actualizado@example.test',
-  );
+  await expect(
+    page.getByRole('dialog', { name: 'Editar contacto', exact: true }),
+  ).not.toBeVisible();
+  await expect(page.getByText('actualizado@example.test', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Ver paquetes', exact: true })).toHaveAttribute(
     'href',
     '/internal/packages?customer_id=customer-test',
@@ -129,9 +131,10 @@ test('muestra el error de teléfono junto al contacto y conserva las entradas', 
   );
   await openCustomers(page);
   await findCustomer(page);
+  await page.getByRole('button', { name: 'Editar contacto', exact: true }).click();
   const phone = page.getByRole('textbox', { name: 'Teléfono', exact: true });
   await phone.fill('123');
-  await page.getByRole('button', { name: 'Guardar contacto', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
   await expect(phone).toHaveAccessibleDescription('Entre 7 y 15 dígitos.');
   await expect(phone).toHaveValue('123');
   await expect(page.getByRole('status')).toHaveCount(0);
@@ -163,7 +166,12 @@ test('una búsqueda fallida no conserva el éxito de una edición anterior', asy
   await mockPanel(page);
   await openCustomers(page);
   await findCustomer(page);
-  await page.getByRole('button', { name: 'Guardar contacto', exact: true }).click();
+  await page.getByRole('button', { name: 'Editar contacto', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Editar contacto', exact: true })
+    .getByLabel('Teléfono', { exact: true })
+    .fill('999000044');
+  await page.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Datos de contacto actualizados.');
   await page.route('**/api/v1/customers?**', (route) =>
     route.fulfill({ status: 404, json: { detail: 'El cliente no existe' } }),
@@ -172,4 +180,48 @@ test('una búsqueda fallida no conserva el éxito de una edición anterior', asy
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('El cliente no existe');
   await expect(page.getByText('Datos de contacto actualizados.', { exact: true })).toHaveCount(0);
+});
+
+test('edita por intención, descarta al cancelar y evita guardar datos equivalentes', async ({
+  page,
+}, testInfo) => {
+  const fixture = await mockPanel(page);
+  await openCustomers(page);
+  await findCustomer(page);
+  await expect(page.getByRole('textbox', { name: 'Teléfono', exact: true })).toHaveCount(0);
+  const opener = page.getByRole('button', { name: 'Editar contacto', exact: true });
+  await opener.click();
+  const dialog = page.getByRole('dialog', { name: 'Editar contacto', exact: true });
+  const save = dialog.getByRole('button', { name: 'Guardar cambios', exact: true });
+  const phone = dialog.getByLabel('Teléfono', { exact: true });
+  await expect(save).toBeDisabled();
+  await phone.fill('(999) 000-042');
+  await expect(save).toBeDisabled();
+  await phone.fill(' ()- ');
+  await expect(save).toBeDisabled();
+  await phone.fill('999000043');
+  await expect(save).toBeEnabled();
+  await page.screenshot({
+    path: testInfo.outputPath('contact-edit-modal.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await expect(phone).toHaveValue('999000042');
+  await expect(save).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  expect(fixture.requests.filter((request) => request.path.endsWith('/contact'))).toHaveLength(0);
+  await page.screenshot({ path: testInfo.outputPath('customer-readonly.png'), fullPage: true });
+  await page.getByRole('button', { name: /Cambiar a modo oscuro/ }).click();
+  await opener.click();
+  await page.screenshot({
+    path: testInfo.outputPath('contact-edit-dark.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

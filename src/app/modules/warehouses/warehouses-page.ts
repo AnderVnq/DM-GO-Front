@@ -1,7 +1,17 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, type NgForm } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Icon } from '../../shared/icon';
 import { AuthService } from '../../core/auth.service';
 import { WarehousesApi } from './warehouses-api';
 import { emptyWarehouse, type Warehouse, type WarehouseInput } from './warehouse.model';
@@ -9,17 +19,20 @@ import { warehouseError } from './warehouse-error';
 
 @Component({
   selector: 'app-warehouses-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, Icon],
   templateUrl: './warehouses-page.html',
 })
 export class WarehousesPage {
   readonly auth = inject(AuthService);
   private readonly api = inject(WarehousesApi);
+  private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   readonly admin = computed(() => this.auth.user()?.roles.includes('admin') ?? false);
   readonly warehouses = signal<Warehouse[]>([]);
   readonly selected = signal<Warehouse | null>(null);
   readonly creating = signal(false);
+  readonly editing = signal(false);
+  readonly editDialog = viewChild.required<ElementRef<HTMLDialogElement>>('editDialog');
   readonly loading = signal(false);
   readonly busy = signal(false);
   readonly error = signal('');
@@ -88,10 +101,54 @@ export class WarehousesPage {
     this.error.set('');
     this.success.set('');
   }
+  startEdit() {
+    const item = this.selected();
+    if (!item || !this.admin() || this.busy() || this.loading()) return;
+    this.select(item);
+    this.editing.set(true);
+    this.changeDetector.detectChanges();
+    this.editDialog().nativeElement.showModal();
+  }
+  cancelEdit(event?: Event) {
+    event?.preventDefault();
+    if (this.busy()) return;
+    this.editDialog().nativeElement.close();
+    this.editing.set(false);
+    const item = this.selected();
+    if (item) this.select(item);
+  }
+  private normalizedPatch(value: WarehouseInput, active: boolean) {
+    return {
+      name: value.name.trim(),
+      timezone: value.timezone.trim(),
+      address: {
+        line1: value.address.line1.trim(),
+        line2: value.address.line2?.trim() ?? '',
+        city: value.address.city.trim(),
+        state: value.address.state?.trim() ?? '',
+        postal_code: value.address.postal_code?.trim() ?? '',
+      },
+      active,
+    };
+  }
+  get hasChanges() {
+    const item = this.selected();
+    return (
+      !!item &&
+      JSON.stringify(this.normalizedPatch(this.input, this.active)) !==
+        JSON.stringify(this.normalizedPatch(item, item.active))
+    );
+  }
+  get validInput() {
+    const value = this.normalizedPatch(this.input, this.active);
+    return !!(value.name && value.timezone && value.address.line1 && value.address.city);
+  }
   save(form: NgForm) {
     if (
       !this.admin() ||
       form.invalid ||
+      !this.validInput ||
+      (!this.creating() && (!this.editing() || !this.hasChanges)) ||
       this.busy() ||
       this.loading() ||
       (!this.creating() && !this.selected())
@@ -108,10 +165,7 @@ export class WarehousesPage {
     const item = this.selected();
     const operation = item
       ? this.api.update(item.id, {
-          name: input.name,
-          address: input.address,
-          timezone: input.timezone,
-          active: this.active,
+          ...this.normalizedPatch(this.input, this.active),
         })
       : this.api.create(input);
     this.busy.set(true);
@@ -123,6 +177,10 @@ export class WarehousesPage {
           item ? items.map((w) => (w.id === updated.id ? updated : w)) : [...items, updated],
         );
         this.busy.set(false);
+        if (this.editing()) {
+          this.editDialog().nativeElement.close();
+          this.editing.set(false);
+        }
         this.select(updated);
         this.success.set(item ? 'Almacén actualizado.' : 'Almacén creado.');
       },

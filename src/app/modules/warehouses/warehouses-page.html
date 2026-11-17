@@ -32,7 +32,7 @@
     />Incluir inactivos</label
   >
 </div>
-@if (error()) {
+@if (error() && !editing()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
 @if (success()) {
@@ -84,8 +84,20 @@
   </section>
   @if (selected() || creating()) {
     <aside class="inspector">
-      <h2>{{ creating() ? 'Nuevo almacén' : selected()?.name }}</h2>
-      @if (admin()) {
+      <div class="dialog-header">
+        <h2>{{ creating() ? 'Nuevo almacén' : selected()?.name }}</h2>
+        @if (admin() && !creating()) {
+          <button
+            class="button"
+            type="button"
+            (click)="startEdit()"
+            [disabled]="busy() || loading()"
+          >
+            <app-icon name="edit" /> Editar
+          </button>
+        }
+      </div>
+      @if (creating() && admin()) {
         <form #warehouseForm="ngForm" (ngSubmit)="save(warehouseForm)">
           <fieldset class="form-grid" [disabled]="busy()">
             <legend class="sr-only">Datos del almacén</legend>
@@ -182,8 +194,85 @@
           }
           <p>{{ item.address.city }} · {{ item.address.state }} {{ item.address.postal_code }}</p>
         </section>
-        <p class="fine-print">Administración gestiona los cambios del catálogo.</p>
+        @if (!admin()) {
+          <p class="fine-print">Administración gestiona los cambios del catálogo.</p>
+        }
       }
     </aside>
   }
 </div>
+
+<dialog #editDialog aria-labelledby="warehouse-edit-title" (cancel)="cancelEdit($event)">
+  <div class="dialog-header">
+    <h2 id="warehouse-edit-title">Editar almacén</h2>
+    <button
+      class="icon-button"
+      type="button"
+      aria-label="Cerrar edición"
+      (click)="cancelEdit()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (editing()) {
+    <p>{{ selected()?.code }} · {{ selected()?.country }}</p>
+    @if (error()) {
+      <p class="alert error" role="alert">{{ error() }}</p>
+    }
+    <form #editForm="ngForm" (ngSubmit)="save(editForm)" [attr.aria-busy]="busy()">
+      <fieldset class="form-grid" [disabled]="busy()">
+        <legend class="sr-only">Datos del almacén</legend>
+        <label class="field full"
+          >Nombre<input name="name" [(ngModel)]="input.name" required autofocus
+        /></label>
+        <label class="field full"
+          >Dirección<input name="line1" [(ngModel)]="input.address.line1" required
+        /></label>
+        <label class="field full"
+          >Dirección adicional (opcional)<input name="line2" [(ngModel)]="input.address.line2"
+        /></label>
+        <label class="field"
+          >Ciudad<input name="city" [(ngModel)]="input.address.city" required
+        /></label>
+        <label class="field"
+          >Estado o región (opcional)<input name="state" [(ngModel)]="input.address.state"
+        /></label>
+        <label class="field"
+          >Código postal (opcional)<input
+            name="postal_code"
+            [(ngModel)]="input.address.postal_code"
+        /></label>
+        <label class="field full"
+          >Zona horaria<input
+            name="timezone"
+            [(ngModel)]="input.timezone"
+            required
+            placeholder="America/New_York"
+          /><span class="field-hint">Identificador IANA, por ejemplo America/Lima.</span></label
+        >
+        @if (editing()) {
+          <label class="checkbox-row full"
+            ><input name="active" type="checkbox" [(ngModel)]="active" />Almacén activo</label
+          >
+          <p class="fine-print full">
+            Un almacén inactivo conserva su historial y deja de estar disponible para nuevas
+            recepciones.
+          </p>
+        }
+        <div class="actions full">
+          <button class="button" type="button" (click)="cancelEdit()" [disabled]="busy()">
+            Cancelar
+          </button>
+          <button
+            class="button primary"
+            type="submit"
+            [disabled]="editForm.invalid || !validInput || !hasChanges || busy()"
+          >
+            {{ busy() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </fieldset>
+    </form>
+  }
+</dialog>
