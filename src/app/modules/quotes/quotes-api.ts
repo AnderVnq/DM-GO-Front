@@ -2,7 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import { RuntimeConfig } from '../../core/runtime-config';
-import { type Quote, type QuoteInput, type QuoteChargeType } from './quote.model';
+import {
+  type Quote,
+  type QuoteInput,
+  type QuoteChargeType,
+  type QuoteEmailResult,
+} from './quote.model';
 
 @Injectable({ providedIn: 'root' })
 export class QuotesApi {
@@ -26,6 +31,9 @@ export class QuotesApi {
   }
   create(input: QuoteInput) {
     return this.http.post<Quote>(this.base, input);
+  }
+  send(id: string) {
+    return this.http.post<QuoteEmailResult>(`${this.base}/${encodeURIComponent(id)}/send`, {});
   }
   chargeTypes() {
     return this.http

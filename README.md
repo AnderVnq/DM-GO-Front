@@ -174,3 +174,9 @@ El movimiento explica acciones: trazado inicial USA–Perú en portada, respuest
 La navegación de la portada desplaza suavemente entre secciones al usar el puntero; con teclado o movimiento reducido mantiene el salto nativo inmediato. El cierre y el footer agrupan creación de casillero, contacto, domicilio fiscal, ayuda y datos legales. Correo, teléfono y horarios se muestran solo cuando están configurados en `public/business-info.json`.
 
 El portal de clientes usa navegación lateral en escritorio y un menú desplegable en móvil. El menú móvil conserva el foco, se cierra con Escape y se adapta al cambiar de tamaño. La vista del casillero distribuye código y dirección en dos columnas cuando hay espacio, conservando una sola columna en pantallas pequeñas.
+
+## Cotizaciones y envío por correo
+
+La captura admite impuesto Perú en modo automático, aplicar o no aplicar; porcentaje de viajero, suplementos con sus unidades, delivery en Lima, despacho a agencia y vigencia opcional por fecha de Lima. Los cargos configurables que no pueden calcularse con los datos disponibles permanecen pendientes hasta guardar. El detalle conserva el desglose y la cantidad de aduana confirmados por el backend.
+
+«Guardar sin correo» registra la propuesta; «Guardar y enviar» solicita además su envío con PDF. Si falla el correo, la cotización permanece guardada y puede reenviarse desde su detalle mediante `POST /quotes/:id/send`. El catálogo determina qué precios de extras pueden editarse; los automáticos omiten el precio para respetar la tarifa del cliente. Las pruebas de navegador usan API simulada y no envían correos reales.

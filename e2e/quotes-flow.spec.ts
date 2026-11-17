@@ -24,9 +24,9 @@ for (const { store, url } of [
     await workbench.getByLabel('Precio unitario en USD').fill('100.00');
     await workbench.getByLabel('Peso (KG)').fill('0.500');
     await expect(
-      workbench.getByRole('button', { name: 'Crear cotización', exact: true }),
+      workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }),
     ).toBeEnabled();
-    await workbench.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+    await workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }).click();
     await expect(workbench).not.toBeVisible();
     await expect(page.getByRole('heading', { name: 'CA-TEST-43', exact: true })).toBeVisible();
     const requests = fixture.requests.filter((r) => r.path === '/quotes' && r.method === 'POST');
@@ -70,7 +70,7 @@ for (const status of [422, 403, 409]) {
     await workbench.getByLabel('Producto', { exact: true }).fill('Audífonos');
     await workbench.getByLabel('Precio unitario en USD').fill('100.25');
     await workbench.getByLabel('Peso (KG)').fill('0.500');
-    await workbench.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+    await workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }).click();
     await expect(workbench.getByRole('alert')).toHaveText('No se pudo registrar esta cotización.');
     await expect(workbench.getByLabel('Nombre del cliente o prospecto')).toHaveValue(
       'Prospecto recuperable',
@@ -82,7 +82,7 @@ for (const status of [422, 403, 409]) {
     await page.getByRole('button', { name: 'Nueva cotización', exact: true }).click();
     await expect(workbench.getByLabel('Producto', { exact: true })).toHaveValue('Audífonos');
     expect(attempts).toBe(1);
-    await workbench.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+    await workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }).click();
     await expect(workbench).not.toBeVisible();
     await expect(page.locator('.inspector h2')).toHaveText('CA-TEST-43');
     expect(attempts).toBe(2);
@@ -114,7 +114,7 @@ test('exige correo o teléfono del prospecto antes de enviar la cotización', as
   await workbench.getByLabel('Producto', { exact: true }).fill('Audífonos');
   await workbench.getByLabel('Precio unitario en USD').fill('100');
   await workbench.getByLabel('Peso (KG)').fill('0.500');
-  await workbench.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+  await workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }).click();
   await expect(workbench.getByRole('alert')).toHaveText(
     'Indica al menos un correo electrónico o teléfono para el prospecto.',
   );
@@ -122,7 +122,7 @@ test('exige correo o teléfono del prospecto antes de enviar la cotización', as
     0,
   );
   await workbench.getByLabel('Teléfono', { exact: true }).fill('999000043');
-  await workbench.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+  await workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }).click();
   await expect(workbench).not.toBeVisible();
   await expect(page.locator('.inspector h2')).toHaveText('CA-TEST-43');
   expect(
@@ -172,7 +172,7 @@ test('prepara tarifas y servicios con resumen adaptable en ambos temas', async (
       });
     }
   }
-  await workbench.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+  await workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }).click();
   await expect(workbench).not.toBeVisible();
   const request = fixture.requests.find((r) => r.path === '/quotes' && r.method === 'POST');
   expect(request?.body).toMatchObject({
@@ -208,7 +208,7 @@ test('Enter busca el casillero sin crear y conserva la tarifa automática del cl
     .getByRole('combobox', { name: 'Servicio adicional', exact: true })
     .selectOption('HANDLING_TEST');
   await expect(workbench.locator('.quote-summary')).toContainText('Por calcular');
-  await workbench.getByRole('button', { name: 'Crear cotización', exact: true }).click();
+  await workbench.getByRole('button', { name: 'Guardar sin correo', exact: true }).click();
   await expect(workbench).not.toBeVisible();
   const request = fixture.requests.find((r) => r.path === '/quotes' && r.method === 'POST');
   expect(request?.body).toMatchObject({
@@ -218,4 +218,123 @@ test('Enter busca el casillero sin crear y conserva la tarifa automática del cl
   expect((request?.body?.['extras'] as Record<string, unknown>[])[0]).not.toHaveProperty(
     'unit_cents',
   );
+});
+
+test('guarda con reglas nuevas y reintenta el correo sin crear otra cotización', async ({
+  page,
+}) => {
+  const fixture = await mockPanel(page);
+  let creations = 0;
+  await page.route('**/api/v1/quotes', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    creations++;
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 201,
+      json: {
+        ...body,
+        id: 'saved-email-quote',
+        number: 'CA-EMAIL-44',
+        status: 'pending',
+        currency: 'USD',
+        total_cents: 25136,
+        breakdown: [
+          { concept: 'product', cents: 10000 },
+          { concept: 'tax_usa', cents: 700 },
+          { concept: 'assisted_purchase', cents: 500 },
+          { concept: 'freight', cents: 500 },
+          { concept: 'traveler', cents: 7000 },
+          { concept: 'supplements', cents: 2700 },
+          { concept: 'peru_tax_estimate', cents: 2500 },
+          { concept: 'delivery_lima', cents: 1235 },
+          { concept: 'agency_dispatch', cents: 1 },
+        ],
+        created_at: '2026-11-16T12:00:00Z',
+        expires_at: '2099-11-26T04:59:59Z',
+        email_sent: false,
+        email_error: 'SMTP temporalmente no disponible',
+      },
+    });
+  });
+  await login(page);
+  await navigate(page, 'Cotizaciones', 'quotes');
+  await page.getByRole('button', { name: 'Nueva cotización', exact: true }).click();
+  const workbench = page.locator('.quote-workbench');
+  await workbench.getByLabel('Nombre del cliente o prospecto').fill('Prospecto de envío');
+  await workbench.getByLabel('Correo electrónico').fill('prospecto@example.test');
+  await workbench.getByLabel('Producto', { exact: true }).fill('Suplemento');
+  await workbench.getByLabel('Precio unitario en USD').fill('100');
+  await workbench.getByLabel('Peso (KG)').fill('0,250');
+  await workbench.getByLabel('Modalidad viajero').check();
+  await workbench.getByLabel('Envío con viajero (%) (opcional)').fill('15.25');
+  await workbench.getByLabel('Suplementos o líquidos').check();
+  await workbench.getByLabel('Unidades de suplementos').fill('3');
+  await workbench.getByLabel('Tributos estimados en Perú').selectOption('yes');
+  await workbench.getByLabel('Delivery en Lima en USD').fill('12,35');
+  await workbench.getByLabel('Despacho a agencia en USD').fill('0.01');
+  await workbench.getByLabel('Válida hasta (opcional)').fill('2026-11-25');
+  const createRequest = page.waitForRequest(
+    (request) => request.url().endsWith('/api/v1/quotes') && request.method() === 'POST',
+  );
+  await workbench.getByRole('button', { name: 'Guardar y enviar', exact: true }).click();
+  expect((await createRequest).postDataJSON()).toMatchObject({
+    peru_tax_mode: 'yes',
+    traveler_percent_bp: 1525,
+    supplements: true,
+    supplement_units: 3,
+    delivery_lima_cents: 1235,
+    agency_dispatch_cents: 1,
+    valid_until: '2026-11-25',
+    weight_kg: '0.250',
+    send_email: true,
+  });
+  await expect(workbench).not.toBeVisible();
+  await expect(page.locator('.inspector h2')).toHaveText('CA-EMAIL-44');
+  await expect(page.getByRole('status')).toContainText('La cotización está guardada.');
+  await expect(page.getByRole('status')).toContainText('SMTP temporalmente no disponible');
+  await page.getByRole('button', { name: 'Enviar por correo', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Cotización enviada por correo.');
+  expect(
+    fixture.requests.filter((request) => request.path === '/quotes/saved-email-quote/send'),
+  ).toHaveLength(1);
+  expect(creations).toBe(1);
+});
+
+test('mantiene de solo lectura el precio fijo del catálogo', async ({ page }) => {
+  await mockPanel(page);
+  await page.route('**/api/v1/charge-types', (route) =>
+    route.fulfill({
+      json: {
+        charge_types: [
+          {
+            code: 'FIXED_TEST',
+            name: 'Servicio fijo',
+            active: true,
+            default_cents: 350,
+            quote_price_editable: false,
+          },
+          {
+            code: 'FREE_TEST',
+            name: 'Servicio sin tarifa',
+            active: true,
+            default_cents: null,
+            quote_price_editable: false,
+          },
+        ],
+      },
+    }),
+  );
+  await login(page);
+  await navigate(page, 'Cotizaciones', 'quotes');
+  await page.getByRole('button', { name: 'Nueva cotización', exact: true }).click();
+  const workbench = page.locator('.quote-workbench');
+  await workbench.getByRole('button', { name: 'Añadir servicio', exact: true }).click();
+  await workbench
+    .getByRole('combobox', { name: 'Servicio adicional', exact: true })
+    .selectOption('FIXED_TEST');
+  await expect(workbench.getByLabel('Precio del servicio en USD')).toHaveAttribute('readonly', '');
+  await workbench
+    .getByRole('combobox', { name: 'Servicio adicional', exact: true })
+    .selectOption('FREE_TEST');
+  await expect(workbench.getByLabel('Precio del servicio en USD')).not.toHaveAttribute('readonly');
 });

@@ -129,7 +129,15 @@ it('envía tarifas explícitas y servicios del catálogo, conservando los centav
   const { page } = setup(new Subject<Quote[]>());
   const api = TestBed.inject(QuotesApi);
   api.create = vi.fn(() => of(created));
-  page.charges.set([{ code: 'repack', name: 'Reempaque', active: true, default_cents: 350 }]);
+  page.charges.set([
+    {
+      code: 'repack',
+      name: 'Reempaque',
+      active: true,
+      default_cents: 350,
+      quote_price_editable: true,
+    },
+  ]);
   page.addExtra();
   page.extras.at(0).patchValue({ code: 'repack', quantity: 2, price: '3,50' });
   page.form.patchValue({ tax: '7,25', assisted: '5', freight: '12,50', peru: 'no' });
@@ -139,7 +147,7 @@ it('envía tarifas explícitas y servicios del catálogo, conservando los centav
       tax_usa_bp: 725,
       assisted_bp: 500,
       rate_per_kg_cents: 1250,
-      peru_tax_on: false,
+      peru_tax_mode: 'no',
       extras: [{ code: 'repack', quantity: 2, unit_cents: 350 }],
     }),
   );
@@ -155,7 +163,7 @@ it('mantiene pendientes los cargos desconocidos y calcula un peso con tres decim
   expect(page.previewLines().find((line) => line.label === 'Aduana')?.cents).toBeNull();
   expect(page.previewLines().find((line) => line.label === 'Impuesto en USA')?.cents).toBeNull();
   expect(page.knownSubtotal()).toBe(11001);
-  expect(page.parameters()).toEqual({ rate_per_kg_cents: 1000 });
+  expect(page.parameters()).toEqual({ rate_per_kg_cents: 1000, peru_tax_mode: 'auto' });
 });
 
 it('rechaza un prospecto sin contacto, tarifas inválidas y servicios duplicados', () => {
@@ -170,7 +178,15 @@ it('rechaza un prospecto sin contacto, tarifas inválidas y servicios duplicados
   page.create();
   expect(api.create).not.toHaveBeenCalled();
   page.form.patchValue({ tax: '' });
-  page.charges.set([{ code: 'repack', name: 'Reempaque', active: true, default_cents: 350 }]);
+  page.charges.set([
+    {
+      code: 'repack',
+      name: 'Reempaque',
+      active: true,
+      default_cents: 350,
+      quote_price_editable: true,
+    },
+  ]);
   page.addExtra();
   page.addExtra();
   for (const extra of page.extras.controls)
@@ -194,7 +210,15 @@ it('omite el precio automático del extra para respetar la tarifa vigente del cl
   const { page } = setup(new Subject<Quote[]>());
   const api = TestBed.inject(QuotesApi);
   api.create = vi.fn(() => of(created));
-  page.charges.set([{ code: 'repack', name: 'Reempaque', active: true, default_cents: 350 }]);
+  page.charges.set([
+    {
+      code: 'repack',
+      name: 'Reempaque',
+      active: true,
+      default_cents: 350,
+      quote_price_editable: true,
+    },
+  ]);
   page.addExtra();
   page.extras.at(0).patchValue({ code: 'repack', quantity: 2, price: '9.99' });
   page.changeExtra(0);
@@ -237,4 +261,103 @@ it('conserva el borrador al consultar el historial y lo limpia después de crear
   page.create();
   expect(page.creating()).toBe(false);
   expect(page.form.controls.product_name.value).toBe('');
+});
+
+it('omite cualquier precio escrito en un servicio fijo y permite servicios sin precio predeterminado', () => {
+  const { page } = setup(new Subject<Quote[]>());
+  page.charges.set([
+    { code: 'fixed', name: 'Fijo', active: true, default_cents: 350, quote_price_editable: false },
+  ]);
+  page.addExtra();
+  page.extras.at(0).patchValue({ code: 'fixed', quantity: 2, price: '99.00' });
+  expect(page.extraPriceEditable(0)).toBe(false);
+  expect(page.extraInputs()).toEqual([{ code: 'fixed', quantity: 2 }]);
+  page.charges.set([
+    {
+      code: 'fixed',
+      name: 'Libre',
+      active: true,
+      default_cents: null,
+      quote_price_editable: false,
+    },
+  ]);
+  expect(page.extraPriceEditable(0)).toBe(true);
+  expect(page.extraInputs()).toEqual([{ code: 'fixed', quantity: 2, unit_cents: 9900 }]);
+});
+
+it('guarda sin duplicar cuando falla el correo y reintenta únicamente el envío', () => {
+  const { page } = setup(new Subject<Quote[]>());
+  const api = TestBed.inject(QuotesApi);
+  api.create = vi.fn(() =>
+    of({
+      ...created,
+      expires_at: '2099-01-01T00:00:00Z',
+      email_sent: false,
+      email_error: 'SMTP no disponible',
+    }),
+  );
+  api.send = vi.fn(() => of({ email_sent: true }));
+  page.create(true);
+  expect(page.creating()).toBe(false);
+  expect(page.selected()?.id).toBe('created');
+  expect(page.emailNotice()).toContain('está guardada');
+  expect(page.emailNotice()).toContain('SMTP no disponible');
+  page.send();
+  expect(api.send).toHaveBeenCalledWith('created');
+  expect(api.create).toHaveBeenCalledTimes(1);
+  expect(page.quotes()).toHaveLength(1);
+  expect(page.emailNotice()).toBe('Cotización enviada por correo.');
+});
+
+it('envía modos, suplementos, última milla y fecha civil sin desplazarla a UTC', () => {
+  const { page } = setup(new Subject<Quote[]>());
+  const api = TestBed.inject(QuotesApi);
+  api.create = vi.fn(() => of(created));
+  page.form.patchValue({
+    peru: 'yes',
+    traveler: true,
+    traveler_percent: '15,25',
+    supplements: true,
+    supplement_units: 3,
+    delivery_lima: '12,35',
+    agency_dispatch: '0.01',
+    valid_until: '2026-11-25',
+  });
+  expect(page.previewLines().find((line) => line.label === 'Aduana')?.cents).toBe(0);
+  expect(
+    page.previewLines().find((line) => line.label === 'Tributos estimados en Perú')?.cents,
+  ).toBeNull();
+  expect(page.previewLines().find((line) => line.label === 'Envío con viajero')?.cents).toBeNull();
+  expect(
+    page.previewLines().find((line) => line.label === 'Suplementos y líquidos')?.cents,
+  ).toBeNull();
+  page.create(true);
+  expect(api.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      peru_tax_mode: 'yes',
+      traveler_percent_bp: 1525,
+      supplements: true,
+      supplement_units: 3,
+      delivery_lima_cents: 1235,
+      agency_dispatch_cents: 1,
+      valid_until: '2026-11-25',
+      send_email: true,
+    }),
+  );
+  expect(page.quoteDate('2026-11-26T04:59:59Z')).toBe('25/11/2026');
+});
+
+it('no bloquea guardar cuando se desactivan suplementos con unidades incompletas', () => {
+  const { page } = setup(new Subject<Quote[]>());
+  page.form.controls.supplements.setValue(true);
+  page.form.controls.supplement_units.setValue(0);
+  expect(page.form.invalid).toBe(true);
+  page.form.controls.supplements.setValue(false);
+  expect(page.form.valid).toBe(true);
+  const api = TestBed.inject(QuotesApi);
+  api.create = vi.fn(() => of(created));
+  page.create();
+  expect(api.create).toHaveBeenCalledWith(
+    expect.objectContaining({ supplements: false, supplement_units: 0 }),
+  );
 });

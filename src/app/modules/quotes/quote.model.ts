@@ -4,6 +4,18 @@ export interface Quote {
   status: string;
   customer_id?: string;
   prospect_name?: string;
+  prospect_email?: string;
+  prospect_phone?: string;
+  traveler?: boolean;
+  traveler_percent_bp?: number;
+  supplements?: boolean;
+  supplement_units?: number;
+  peru_tax_mode?: PeruTaxMode;
+  delivery_lima_cents?: number;
+  agency_dispatch_cents?: number;
+  extras?: QuoteExtra[];
+  email_sent?: boolean;
+  email_error?: string;
   product_name: string;
   product_url?: string;
   store?: string;
@@ -12,7 +24,7 @@ export interface Quote {
   weight_kg: string;
   currency: string;
   total_cents: number;
-  breakdown: { concept: string; cents: number }[];
+  breakdown: { concept: string; cents: number; quantity?: number }[];
   notes?: string;
   created_at: string;
   expires_at: string;
@@ -35,7 +47,14 @@ export interface QuoteInput {
   tax_usa_bp?: number;
   assisted_bp?: number;
   rate_per_kg_cents?: number;
-  peru_tax_on?: boolean;
+  peru_tax_mode: PeruTaxMode;
+  traveler_percent_bp?: number;
+  supplements: boolean;
+  supplement_units: number;
+  delivery_lima_cents: number;
+  agency_dispatch_cents: number;
+  valid_until?: string;
+  send_email: boolean;
   notes: string;
 }
 
@@ -49,4 +68,15 @@ export interface QuoteChargeType {
   name: string;
   active: boolean;
   default_cents: number | null;
+  quote_price_editable: boolean;
+}
+
+export type PeruTaxMode = 'auto' | 'yes' | 'no';
+export interface QuoteExtra extends QuoteExtraInput {
+  name: string;
+  unit_cents: number;
+}
+export interface QuoteEmailResult {
+  email_sent: boolean;
+  email_error?: string;
 }

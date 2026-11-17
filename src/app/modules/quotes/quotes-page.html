@@ -22,6 +22,11 @@
   @if (error()) {
     <p class="alert error" role="alert">{{ error() }}</p>
   }
+  @if (emailNotice()) {
+    <p class="alert" [class.error]="emailFailed()" [class.success]="!emailFailed()" role="status">
+      {{ emailNotice() }}
+    </p>
+  }
   @if (loading()) {
     <p role="status" class="muted">Cargando cotizaciones…</p>
   }
@@ -55,7 +60,7 @@
                   </button>
                 </td>
                 <td><app-status [value]="quote.status" /></td>
-                <td class="quote-date">{{ date(quote.expires_at) }}</td>
+                <td class="quote-date">{{ quoteDate(quote.expires_at) }}</td>
                 <td class="numeric">{{ money(quote.total_cents) }}</td>
               </tr>
             }
@@ -100,7 +105,7 @@
           </div>
           <div>
             <dt>Vigencia</dt>
-            <dd>{{ date(quote.expires_at) }}</dd>
+            <dd>{{ quoteDate(quote.expires_at) }}</dd>
           </div>
         </dl>
         <section class="detail-section">
@@ -111,7 +116,9 @@
                 <span>{{
                   line.concept === 'freight'
                     ? 'Envío USA-PERU (' + summaryWeight(quote.weight_kg) + ' kg)'
-                    : concept(line.concept)
+                    : line.concept === 'customs' && line.quantity
+                      ? 'Aduana (' + line.quantity + ' unidades)'
+                      : concept(line.concept)
                 }}</span><strong class="numeric">{{ money(line.cents) }}</strong>
               </li>
             }
@@ -121,9 +128,25 @@
           </div>
           <p class="fine-print">Calculado con los parámetros vigentes al emitir esta cotización.</p>
         </section>
+        @if (quote.extras?.length) {
+          <section class="detail-section">
+            <h3>Servicios contratados</h3>
+            @for (extra of quote.extras; track extra.code) {
+              <p>{{ extra.name }} · {{ extra.quantity }} × {{ money(extra.unit_cents) }}</p>
+            }
+          </section>
+        }
         @if (quote.notes) {
           <p>{{ quote.notes }}</p>
         }
+        <button
+          type="button"
+          class="button"
+          (click)="send()"
+          [disabled]="busy() || !canSend(quote)"
+        >
+          {{ sending() ? 'Enviando…' : 'Enviar por correo' }}
+        </button>
         <button class="button primary" (click)="download()" [disabled]="busy()">
           {{ busy() ? 'Preparando…' : 'Descargar PDF' }}
         </button>
@@ -265,6 +288,23 @@
           <label class="checkbox-row traveler-control"
             ><input type="checkbox" formControlName="traveler" />Modalidad viajero</label
           >
+          <label class="checkbox-row traveler-control"
+            ><input type="checkbox" formControlName="supplements" />Suplementos o líquidos</label
+          >
+          @if (form.controls.supplements.value) {
+            <label class="field"
+              >Unidades de suplementos<input
+                type="number"
+                formControlName="supplement_units"
+                min="1"
+                max="1000"
+                step="1"
+            /></label>
+          }
+          <p class="field-hint">
+            Viajero y suplementos conservan el flete internacional. Sus cargos se confirman al
+            guardar; no pagan aduana ni tributos automáticos.
+          </p>
         </section>
         <section class="quote-block" aria-labelledby="quote-rates-heading">
           <h3 id="quote-rates-heading"><app-icon name="billing" />Tarifas e impuestos</h3>
@@ -288,9 +328,14 @@
                 inputmode="decimal"
                 placeholder="Configuración vigente" /></label
             ><label class="field"
+              >Envío con viajero (%) (opcional)<input
+                formControlName="traveler_percent"
+                inputmode="decimal"
+                placeholder="Configuración vigente" /></label
+            ><label class="field"
               >Tributos estimados en Perú<select formControlName="peru">
-                <option value="">Configuración vigente</option>
-                <option value="yes">Aplicar según configuración</option>
+                <option value="auto">Automático según reglas vigentes</option>
+                <option value="yes">Aplicar siempre</option>
                 <option value="no">No aplicar</option>
               </select></label
             >
@@ -327,8 +372,8 @@
             </p>
           }
           <p class="field-hint">
-            Deja el precio vacío para aplicar la tarifa vigente del cliente. Ingresa un precio solo
-            si deseas reemplazarla.
+            El precio automático respeta la tarifa del cliente. Solo puedes indicar un precio cuando
+            el catálogo lo permita o no tenga precio predeterminado.
           </p>
           <div formArrayName="extras">
             @for (extra of extras.controls; track extra; let i = $index) {
@@ -350,6 +395,7 @@
                 ><label class="field"
                   >Precio del servicio en USD (opcional)<input
                     formControlName="price"
+                    [readOnly]="!extraPriceEditable(i)"
                     inputmode="decimal"
                     placeholder="Tarifa vigente" /></label
                 ><button
@@ -369,6 +415,19 @@
           <div class="form-grid">
             <label class="field"
               >Descuento en USD<input formControlName="discount" inputmode="decimal" /></label
+            ><label class="field"
+              >Delivery en Lima en USD<input
+                formControlName="delivery_lima"
+                inputmode="decimal" /></label
+            ><label class="field"
+              >Despacho a agencia en USD<input
+                formControlName="agency_dispatch"
+                inputmode="decimal" /></label
+            ><label class="field"
+              >Válida hasta (opcional)<input type="date" formControlName="valid_until" /><span
+                class="field-hint"
+                >Hasta el final del día en Lima. Vacío: vigencia configurada.</span
+              ></label
             ><label class="field full"
               >Observaciones<textarea
                 formControlName="notes"
@@ -422,7 +481,15 @@
           <p class="alert error" role="alert">{{ formError() }}</p>
         }
         <button class="button primary save-quote" [disabled]="form.invalid || busy()">
-          <app-icon name="check" />{{ busy() ? 'Calculando…' : 'Crear cotización' }}
+          <app-icon name="check" />{{ busy() ? 'Guardando…' : 'Guardar sin correo' }}
+        </button>
+        <button
+          type="button"
+          class="button save-quote"
+          (click)="create(true)"
+          [disabled]="form.invalid || busy()"
+        >
+          Guardar y enviar
         </button>
         <p class="pdf-hint">Podrás descargar el PDF después de crear la cotización.</p>
         <button

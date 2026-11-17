@@ -278,7 +278,76 @@ export async function mockPanel(
         });
         return;
       }
-      data = { ...quote, ...body, id: 'created-quote-test', number: 'CA-TEST-43' };
+      // Parámetros de prueba del servidor simulado; el frontend no conoce estos valores.
+      const input = body!;
+      const product = Number(input['unit_cents']) * Number(input['quantity']);
+      const grams = Math.round(Number(input['weight_kg']) * 1000);
+      const percentage = (bp: number) => Math.floor((product * bp + 5000) / 10000);
+      const special = !!input['traveler'] || !!input['supplements'];
+      const mode = input['peru_tax_mode'] ?? 'auto';
+      const extras = (
+        (input['extras'] ?? []) as { code: string; quantity: number; unit_cents?: number }[]
+      ).map((extra) => ({
+        ...extra,
+        name: 'Manipulación de prueba',
+        unit_cents: extra.unit_cents ?? 125,
+      }));
+      const breakdown = [
+        { concept: 'product', cents: product },
+        { concept: 'tax_usa', cents: percentage(Number(input['tax_usa_bp'] ?? 700)) },
+        { concept: 'assisted_purchase', cents: percentage(Number(input['assisted_bp'] ?? 500)) },
+        {
+          concept: 'freight',
+          cents: Math.floor((grams * Number(input['rate_per_kg_cents'] ?? 1000) + 500) / 1000),
+        },
+        { concept: 'delivery_usa', cents: Number(input['delivery_usa_cents'] ?? 0) },
+        {
+          concept: 'customs',
+          cents: special ? 0 : 1000 * Number(input['quantity']),
+          quantity: Number(input['quantity']),
+        },
+        {
+          concept: 'traveler',
+          cents: input['traveler']
+            ? Math.max(percentage(Number(input['traveler_percent_bp'] ?? 1500)), 7000)
+            : 0,
+        },
+        {
+          concept: 'supplements',
+          cents: input['supplements']
+            ? grams <= 260
+              ? 900 * Number(input['supplement_units'])
+              : Math.floor((grams * 3500 + 500) / 1000)
+            : 0,
+        },
+        {
+          concept: 'peru_tax_estimate',
+          cents:
+            mode === 'yes' || (mode === 'auto' && !special && product > 20000)
+              ? percentage(2500)
+              : 0,
+        },
+        { concept: 'delivery_lima', cents: Number(input['delivery_lima_cents'] ?? 0) },
+        { concept: 'agency_dispatch', cents: Number(input['agency_dispatch_cents'] ?? 0) },
+        ...extras.map((extra) => ({
+          concept: extra.code,
+          cents: extra.quantity * extra.unit_cents,
+        })),
+        { concept: 'discount', cents: -Number(input['discount_cents'] ?? 0) },
+      ].filter((line) => line.cents !== 0);
+      data = {
+        ...quote,
+        ...body,
+        extras,
+        breakdown,
+        total_cents: breakdown.reduce((sum, line) => sum + line.cents, 0),
+        ...(input['valid_until'] ? { expires_at: `${input['valid_until']}T23:59:59-05:00` } : {}),
+        id: 'created-quote-test',
+        number: 'CA-TEST-43',
+        ...(body?.['send_email'] ? { email_sent: true } : {}),
+      };
+    } else if (/^\/quotes\/[^/]+\/send$/.test(path) && method === 'POST') {
+      data = { email_sent: true };
     } else if (path === '/quotes' && method === 'GET') data = { quotes: [quote] };
     else if (path === '/agencies' && method === 'GET') data = { agencies: options.agencies ?? [] };
     else if (path === '/charge-types' && method === 'GET')
@@ -290,6 +359,7 @@ export async function mockPanel(
             calc: 'per_unit',
             active: true,
             default_cents: 125,
+            quote_price_editable: true,
           },
         ],
       };

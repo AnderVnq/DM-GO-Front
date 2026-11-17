@@ -68,3 +68,23 @@ it('consulta el catálogo de servicios adicionales sin solicitar ajustes adminis
   expect(codes).toEqual(['repack']);
   http.verify();
 });
+
+it('reenvía por el endpoint explícito y conserva un fallo de correo como resultado', () => {
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
+    ],
+  });
+  let sent: boolean | undefined;
+  TestBed.inject(QuotesApi)
+    .send('quote/42')
+    .subscribe((result) => (sent = result.email_sent));
+  const http = TestBed.inject(HttpTestingController);
+  const request = http.expectOne('/api/v1/quotes/quote%2F42/send');
+  expect(request.request.method).toBe('POST');
+  request.flush({ email_sent: false, email_error: 'SMTP no disponible' });
+  expect(sent).toBe(false);
+  http.verify();
+});
