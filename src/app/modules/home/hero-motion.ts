@@ -14,6 +14,7 @@ export function setupHeroMotion(hero: HTMLElement): () => void {
   let frame = 0;
   let disposed = false;
   let flying = false;
+  let introStarted = false;
   let introObserver: IntersectionObserver | undefined;
   let flightObserver: IntersectionObserver | undefined;
   const length = route.getTotalLength();
@@ -32,11 +33,13 @@ export function setupHeroMotion(hero: HTMLElement): () => void {
     flightObserver?.disconnect();
     reduced.removeEventListener('change', onPreference);
     hero.ownerDocument.removeEventListener('keydown', onKeyboard);
+    hero.removeEventListener('animationend', onIntroEnd);
   };
   const finish = () => {
     if (disposed) return;
     place(1);
     hero.dataset['heroMotion'] = 'complete';
+    hero.dataset['heroIntro'] = 'complete';
     cleanup();
   };
   function onPreference() {
@@ -45,9 +48,20 @@ export function setupHeroMotion(hero: HTMLElement): () => void {
   function onKeyboard() {
     finish();
   }
+  function onIntroEnd(event: AnimationEvent) {
+    if (
+      event.animationName.endsWith('hero-arrival') &&
+      event.target === hero.querySelector('.hero-actions')
+    ) {
+      hero.dataset['heroIntro'] = 'complete';
+      hero.removeEventListener('animationend', onIntroEnd);
+    }
+  }
   const startIntro = () => {
-    if (disposed) return;
+    if (disposed || introStarted) return;
+    introStarted = true;
     hero.dataset['heroMotion'] = 'running';
+    hero.dataset['heroIntro'] = 'running';
     introObserver?.disconnect();
   };
   const startFlight = () => {
@@ -68,6 +82,7 @@ export function setupHeroMotion(hero: HTMLElement): () => void {
     };
     frame = view.requestAnimationFrame(tick);
   };
+  hero.addEventListener('animationend', onIntroEnd);
   reduced.addEventListener('change', onPreference);
   hero.ownerDocument.addEventListener('keydown', onKeyboard);
   if ('IntersectionObserver' in view) {

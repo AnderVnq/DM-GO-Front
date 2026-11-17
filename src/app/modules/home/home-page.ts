@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { setupHeroMotion } from './hero-motion';
+import { setupProcessMotion } from './process-motion';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { ThemeToggle } from '../../shared/theme-toggle';
@@ -38,11 +39,18 @@ export class HomePage {
 
   private readonly hero = viewChild.required<ElementRef<HTMLElement>>('hero');
 
+  private readonly process = viewChild.required<ElementRef<HTMLElement>>('process');
+
   constructor() {
     const destroy = inject(DestroyRef);
     let cleanup: (() => void) | undefined;
     afterNextRender(() => {
-      cleanup = setupHeroMotion(this.hero().nativeElement);
+      const heroCleanup = setupHeroMotion(this.hero().nativeElement);
+      const processCleanup = setupProcessMotion(this.process().nativeElement);
+      cleanup = () => {
+        heroCleanup();
+        processCleanup();
+      };
     });
     destroy.onDestroy(() => cleanup?.());
     void fetch('/business-info.json')

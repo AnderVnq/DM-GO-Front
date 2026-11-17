@@ -264,8 +264,7 @@ h3 {
 .steps li {
   position: relative;
 }
-.steps li:not(:last-child)::after {
-  content: '';
+.step-connector {
   position: absolute;
   top: 1.2rem;
   left: 3.5rem;
@@ -553,7 +552,7 @@ section[id],
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 2rem;
   }
-  .steps li::after {
+  .step-connector {
     display: none;
   }
   .service-list article > div {
@@ -634,7 +633,7 @@ section[id],
   .steps h3 {
     margin: 0 0 0.4rem;
   }
-  .steps li:not(:last-child)::after {
+  .step-connector {
     display: block;
     top: 2.7rem;
     bottom: -1.25rem;
@@ -685,7 +684,7 @@ section[id],
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .hero[data-hero-motion='running'] {
+  .hero[data-hero-intro='running'] {
     .hero-copy > h1,
     .hero-copy > p,
     .hero-actions,
