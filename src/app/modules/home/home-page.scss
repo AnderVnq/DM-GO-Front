@@ -145,15 +145,15 @@ h1 span {
   stroke-width: 5;
 }
 .route-aircraft {
-  position: absolute;
-  top: 12%;
-  left: calc(50% - 1.1rem);
-  display: grid;
-  place-items: center;
-  width: 2.2rem;
-  height: 2.2rem;
-  background: var(--feature-inset);
-  color: var(--brand-secondary);
+  color: var(--action);
+  pointer-events: none;
+}
+.route-aircraft path {
+  stroke: currentColor;
+  fill: var(--feature-inset);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .locker-illustration {
   padding-top: 1.6rem;
@@ -681,5 +681,35 @@ section[id],
     align-items: flex-start;
     margin-top: 2.5rem;
     gap: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero[data-hero-motion='running'] {
+    .hero-copy > h1,
+    .hero-copy > p,
+    .hero-actions,
+    .journey {
+      animation: hero-arrival 620ms var(--ease-out) both;
+    }
+    .hero-copy > p,
+    .journey {
+      animation-delay: 80ms;
+    }
+    .hero-actions {
+      animation-delay: 150ms;
+    }
+  }
+}
+@keyframes hero-arrival {
+  from {
+    opacity: 0.35;
+    transform: translateY(0.625rem);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
   }
 }

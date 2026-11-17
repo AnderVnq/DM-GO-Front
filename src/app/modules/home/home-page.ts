@@ -1,4 +1,13 @@
-import { Component, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { setupHeroMotion } from './hero-motion';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { ThemeToggle } from '../../shared/theme-toggle';
@@ -27,7 +36,15 @@ export class HomePage {
   readonly error = signal('');
   readonly year = new Date().getFullYear();
 
+  private readonly hero = viewChild.required<ElementRef<HTMLElement>>('hero');
+
   constructor() {
+    const destroy = inject(DestroyRef);
+    let cleanup: (() => void) | undefined;
+    afterNextRender(() => {
+      cleanup = setupHeroMotion(this.hero().nativeElement);
+    });
+    destroy.onDestroy(() => cleanup?.());
     void fetch('/business-info.json')
       .then(async (response) => {
         if (response.ok) this.business.set((await response.json()) as BusinessInfo);

@@ -14,7 +14,7 @@
   </div>
 </header>
 <main id="public-content" tabindex="-1">
-  <section class="hero public-width">
+  <section #hero class="hero public-width">
     <div class="hero-copy">
       <h1>Tus compras en USA.<br /><span>Su destino, Perú.</span></h1>
       <p>
@@ -45,8 +45,10 @@
           <path class="route-path" pathLength="1" d="M24 76C150 2 330 2 456 76" />
           <circle cx="24" cy="76" r="5" />
           <circle cx="456" cy="76" r="5" />
+          <g class="route-aircraft" transform="translate(240 20.5) rotate(45)">
+            <path transform="translate(-12 -12)" d="m22 2-7 20-4-9-9-4Zm0 0L11 13" />
+          </g>
         </svg>
-        <span class="route-aircraft"><app-icon name="plane" /></span>
       </div>
       <div class="locker-illustration">
         <h2>Una dirección en USA.<br />Un código que te identifica.</h2>
