@@ -9,6 +9,7 @@ import { Icon } from '../shared/icon';
   selector: 'app-login-page',
   imports: [Icon, RouterLink, ThemeToggle],
   styleUrl: './login-page.scss',
+  host: { '(window:pageshow)': 'restoreFromHistory($event)' },
   template: `
     <main class="login-page">
       <app-theme-toggle class="login-theme" />
@@ -72,13 +73,27 @@ export class LoginPage {
     });
   }
   readonly error = signal('');
+  private loginAttempt = 0;
+
+  restoreFromHistory(event: PageTransitionEvent) {
+    if (!event.persisted) return;
+    this.loginAttempt++;
+    this.busy.set(false);
+    this.error.set('');
+  }
+
   async login() {
+    if (this.busy() || this.initializing()) return;
+    const attempt = ++this.loginAttempt;
     this.busy.set(true);
+    this.error.set('');
     try {
       await this.auth.login(this.route.snapshot.queryParamMap.get('returnUrl') ?? undefined);
     } catch {
-      this.error.set('No se pudo iniciar sesión. Recarga la página e inténtalo de nuevo.');
-      this.busy.set(false);
+      if (attempt === this.loginAttempt)
+        this.error.set('No se pudo iniciar sesión. Vuelve a intentarlo.');
+    } finally {
+      if (attempt === this.loginAttempt) this.busy.set(false);
     }
   }
 }

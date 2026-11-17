@@ -28,6 +28,7 @@ interface BusinessInfo {
   imports: [RouterLink, ThemeToggle, Icon],
   templateUrl: './home-page.html',
   styleUrl: './home-page.scss',
+  host: { '(window:pageshow)': 'restoreFromHistory($event)' },
 })
 export class HomePage {
   private readonly auth = inject(AuthService);
@@ -62,19 +63,31 @@ export class HomePage {
       });
   }
 
+  private registrationAttempt = 0;
+
+  restoreFromHistory(event: PageTransitionEvent) {
+    if (!event.persisted) return;
+    this.registrationAttempt++;
+    this.busy.set(false);
+    this.error.set('');
+  }
+
   async createLocker() {
     if (this.busy()) return;
+    const attempt = ++this.registrationAttempt;
     this.busy.set(true);
     this.error.set('');
     try {
       await this.auth.ensureInitialized(true);
+      if (attempt !== this.registrationAttempt) return;
       if (this.auth.user()) {
         await this.router.navigateByUrl(this.auth.staff() ? '/internal/overview' : '/portal');
-        this.busy.set(false);
       } else await this.auth.register();
     } catch {
-      this.error.set('No se pudo abrir el registro. Inténtalo de nuevo en unos momentos.');
-      this.busy.set(false);
+      if (attempt === this.registrationAttempt)
+        this.error.set('No se pudo abrir el registro. Inténtalo de nuevo en unos momentos.');
+    } finally {
+      if (attempt === this.registrationAttempt) this.busy.set(false);
     }
   }
 }
