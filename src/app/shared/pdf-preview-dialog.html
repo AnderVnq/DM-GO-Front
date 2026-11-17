@@ -1,0 +1,71 @@
+<dialog #dialog class="pdf-preview" aria-labelledby="pdf-preview-title" (cancel)="close($event)">
+  <header class="dialog-header">
+    <div>
+      <h2 id="pdf-preview-title">{{ preview.request()?.title }}</h2>
+      <p class="muted">Vista previa del documento</p>
+    </div>
+    <div class="actions">
+      <button type="button" class="button primary" (click)="download()" [disabled]="!downloadable">
+        {{ image() ? 'Descargar imagen' : 'Descargar PDF' }}
+      </button>
+      <button type="button" class="icon-button" aria-label="Cerrar vista previa" (click)="close()">
+        <app-icon name="close" />
+      </button>
+    </div>
+  </header>
+  @if (total()) {
+    <nav class="pdf-toolbar" aria-label="Controles del documento">
+      <div class="actions">
+        <button class="button compact" (click)="turn(-1)" [disabled]="loading() || page() <= 1">
+          Anterior</button
+        ><span>Página {{ page() }} de {{ total() }}</span
+        ><button
+          class="button compact"
+          (click)="turn(1)"
+          [disabled]="loading() || page() >= total()"
+        >
+          Siguiente
+        </button>
+      </div>
+      <div class="actions">
+        <button
+          class="button compact"
+          aria-label="Reducir zoom"
+          (click)="resizeZoom(-1)"
+          [disabled]="loading() || zoom() <= 0.5"
+        >
+          −</button
+        ><span>{{ zoom() * 100 }} %</span
+        ><button
+          class="button compact"
+          aria-label="Aumentar zoom"
+          (click)="resizeZoom(1)"
+          [disabled]="loading() || zoom() >= 2"
+        >
+          +
+        </button>
+      </div>
+    </nav>
+  }
+  @if (loading()) {
+    <p role="status">Preparando vista previa…</p>
+  }
+  @if (error()) {
+    <div class="pdf-error">
+      <p class="alert error" role="alert">{{ error() }}</p>
+      <button class="button" (click)="retry()">Reintentar vista previa</button>
+    </div>
+  }
+  <section #content class="pdf-content" [attr.aria-busy]="loading()">
+    <canvas
+      #canvas
+      [hidden]="!total() || !!image()"
+      role="img"
+      [attr.aria-label]="'Página ' + page() + ' de ' + total() + '. ' + preview.request()?.title"
+    ></canvas>
+    @if (image()) {
+      <img [src]="image()" [alt]="preview.request()?.title" />
+    }
+    <p class="sr-only">{{ text() }}</p>
+  </section>
+</dialog>

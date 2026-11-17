@@ -29,6 +29,7 @@
             <th>Emisión</th>
             <th>Estado</th>
             <th>Total</th>
+            <th>PDF</th>
           </tr>
         </thead>
         <tbody>
@@ -43,6 +44,26 @@
               <td>{{ date(invoice.issued_at) }}</td>
               <td><app-status [value]="invoice.status" /></td>
               <td class="numeric">{{ money(invoice.total_cents) }}</td>
+              <td>
+                <div class="actions">
+                  <button
+                    class="button compact"
+                    (click)="viewPdf(invoice)"
+                    [disabled]="busy() || !invoice.has_pdf"
+                    [attr.aria-label]="'Ver PDF de ' + invoice.code"
+                  >
+                    Ver
+                  </button>
+                  <button
+                    class="button compact"
+                    (click)="download('pdf', invoice)"
+                    [disabled]="busy() || !invoice.has_pdf"
+                    [attr.aria-label]="'Descargar PDF de ' + invoice.code"
+                  >
+                    Descargar
+                  </button>
+                </div>
+              </td>
             </tr>
           }
         </tbody>
@@ -114,6 +135,13 @@
         <div class="actions">
           <button
             class="button primary compact"
+            (click)="viewPdf()"
+            [disabled]="busy() || !invoice.has_pdf"
+          >
+            Ver PDF
+          </button>
+          <button
+            class="button compact"
             (click)="download('pdf')"
             [disabled]="busy() || !invoice.has_pdf"
           >

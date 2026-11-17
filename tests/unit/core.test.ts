@@ -101,3 +101,28 @@ test('el portal excluye personal y repartidores incluso si también son clientes
   assert.equal(isStaff(['driver']), false);
   assert.equal(isStaff(['driver', 'admin']), true);
 });
+
+test('valida que el proxy de documentos reciba un origen HTTP sin rutas ni credenciales', () => {
+  const config = {
+    apiBaseUrl: '/api/v1',
+    oidcUrl: 'http://localhost:8081',
+    oidcRealm: 'dm48',
+    oidcClientId: 'dm48-web',
+  };
+  assert.equal(
+    validateAppConfig({ ...config, documentProxyOrigin: 'http://localhost:4566' })
+      .documentProxyOrigin,
+    'http://localhost:4566',
+  );
+  for (const documentProxyOrigin of [
+    'javascript:alert(1)',
+    'https://files.test/path',
+    'https://user:secret@files.test',
+    '//files.test',
+  ]) {
+    assert.throws(
+      () => validateAppConfig({ ...config, documentProxyOrigin }),
+      /proxy de documentos/,
+    );
+  }
+});

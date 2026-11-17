@@ -1,3 +1,4 @@
+import { testPdf } from './pdf';
 import { expect, type Page } from '@playwright/test';
 import type { Customer } from '../../src/app/modules/customers/customer.model';
 import type { Package } from '../../src/app/modules/shipments/package.model';
@@ -15,6 +16,13 @@ export async function mockPanel(
     package?: Partial<Package>;
   } = {},
 ) {
+  await page.context().route('https://files.example.test/**', (route) =>
+    route.fulfill({
+      contentType: 'application/pdf',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: testPdf(),
+    }),
+  );
   const issuer = 'http://localhost:3000/test-idp/realms/dm48';
   let nonce = '';
   const identity = {

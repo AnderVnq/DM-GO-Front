@@ -44,6 +44,7 @@
               <th>Estado</th>
               <th>Vigencia</th>
               <th>Total estimado</th>
+              <th>PDF</th>
             </tr>
           </thead>
           <tbody>
@@ -62,6 +63,28 @@
                 <td><app-status [value]="quote.status" /></td>
                 <td class="quote-date">{{ quoteDate(quote.expires_at) }}</td>
                 <td class="numeric">{{ money(quote.total_cents) }}</td>
+                <td>
+                  <div class="quote-pdf-actions">
+                    <button
+                      type="button"
+                      class="text-button"
+                      [attr.aria-label]="'Ver PDF de ' + quote.number"
+                      [disabled]="busy()"
+                      (click)="previewPdf(quote)"
+                    >
+                      Ver
+                    </button>
+                    <button
+                      type="button"
+                      class="text-button"
+                      [attr.aria-label]="'Descargar PDF de ' + quote.number"
+                      [disabled]="busy()"
+                      (click)="download(quote)"
+                    >
+                      Descargar
+                    </button>
+                  </div>
+                </td>
               </tr>
             }
           </tbody>
@@ -147,7 +170,10 @@
         >
           {{ sending() ? 'Enviando…' : 'Enviar por correo' }}
         </button>
-        <button class="button primary" (click)="download()" [disabled]="busy()">
+        <button type="button" class="button primary" (click)="previewPdf()" [disabled]="busy()">
+          Ver PDF
+        </button>
+        <button type="button" class="button" (click)="download()" [disabled]="busy()">
           {{ busy() ? 'Preparando…' : 'Descargar PDF' }}
         </button>
       </aside>
@@ -491,7 +517,7 @@
         >
           Guardar y enviar
         </button>
-        <p class="pdf-hint">Podrás descargar el PDF después de crear la cotización.</p>
+        <p class="pdf-hint">Podrás ver y descargar el PDF después de crear la cotización.</p>
         <button
           type="button"
           class="button cancel-quote"

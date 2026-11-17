@@ -366,3 +366,13 @@
 .save-quote + .save-quote {
   margin-top: 0.625rem;
 }
+.quote-pdf-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quote-pdf-actions .text-button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}

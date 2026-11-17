@@ -1,3 +1,4 @@
+import { testPdf } from './fixtures/pdf';
 import { test, expect } from '@playwright/test';
 import { login, mockPanel, navigate } from './fixtures/panel';
 
@@ -92,7 +93,7 @@ for (const status of [422, 403, 409]) {
 test('descarga el PDF binario de la cotización con su número', async ({ page }) => {
   await mockPanel(page);
   await page.route('**/api/v1/quotes/quote-test/pdf', (route) =>
-    route.fulfill({ contentType: 'application/pdf', body: '%PDF-1.7\nCotización de prueba' }),
+    route.fulfill({ contentType: 'application/pdf', body: testPdf() }),
   );
   await login(page);
   await navigate(page, 'Cotizaciones', 'quotes');
@@ -102,6 +103,35 @@ test('descarga el PDF binario de la cotización con su número', async ({ page }
   expect(file.suggestedFilename()).toBe('CA-TEST-42.pdf');
   expect(await file.failure()).toBeNull();
   await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('abre el PDF dentro del panel desde el historial y permite descargarlo', async ({ page }) => {
+  await mockPanel(page);
+  let requests = 0;
+  await page.route('**/api/v1/quotes/quote-test/pdf', (route) => {
+    requests++;
+    return route.fulfill({
+      contentType: 'application/pdf',
+      body: testPdf(),
+    });
+  });
+  await login(page);
+  await navigate(page, 'Cotizaciones', 'quotes');
+  const view = page.getByRole('button', { name: 'Ver PDF de CA-TEST-42', exact: true });
+  await expect(page.getByRole('button', { name: 'Descargar PDF de CA-TEST-42' })).toBeVisible();
+  await view.click();
+  const dialog = page.getByRole('dialog', { name: 'Cotización CA-TEST-42', exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('img', { name: /Página 1 de 2/ })).toBeVisible();
+  await expect(dialog.getByRole('status')).toHaveCount(0);
+  expect(page.context().pages()).toHaveLength(1);
+  const download = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Descargar PDF', exact: true }).click();
+  expect((await download).suggestedFilename()).toBe('CA-TEST-42.pdf');
+  expect(requests).toBe(1);
+  await dialog.getByRole('button', { name: /Cerrar/ }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(view).toBeFocused();
 });
 
 test('exige correo o teléfono del prospecto antes de enviar la cotización', async ({ page }) => {

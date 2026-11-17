@@ -1,12 +1,13 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, map, switchMap } from 'rxjs';
 import { PortalInvoicesApi } from './portal-invoices-api';
 import type { Invoice, InvoiceFileKind } from './invoice.model';
 import { requestCode, requestMessage } from '../../core/api-problem';
 import { formatDate, formatUsd } from '../../shared/amount';
 import { openDownload } from '../../shared/download';
+import { PdfPreviewService } from '../../shared/pdf-preview.service';
 import { Status } from '../../shared/status';
 import { Icon } from '../../shared/icon';
 
@@ -17,6 +18,7 @@ import { Icon } from '../../shared/icon';
 })
 export class PortalInvoicesPage {
   private readonly api = inject(PortalInvoicesApi);
+  private readonly preview = inject(PdfPreviewService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -67,28 +69,29 @@ export class PortalInvoicesPage {
     this.error.set('');
     void this.router.navigate([], { queryParams: { invoice_id: invoice.id }, replaceUrl: true });
   }
-  download(kind: InvoiceFileKind) {
-    const invoice = this.selected();
+  viewPdf(invoice = this.selected()) {
+    if (!invoice || this.busy() || !invoice.has_pdf) return;
+    this.preview.open(`Comprobante ${invoice.code}`, `${invoice.code}.pdf`, () =>
+      this.api.file(invoice.id, 'pdf').pipe(switchMap((link) => this.preview.fetch(link.url))),
+    );
+  }
+  download(kind: InvoiceFileKind, invoice = this.selected()) {
     if (!invoice || this.busy() || !invoice[`has_${kind}`]) return;
     this.busy.set(true);
     this.error.set('');
-    this.api
-      .file(invoice.id, kind)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (link) => {
-          this.busy.set(false);
-          try {
-            openDownload(link.url);
-          } catch (error) {
-            this.error.set(requestMessage(error));
-          }
-        },
-        error: (error: unknown) => {
-          this.busy.set(false);
-          this.fail(error);
-        },
-      });
+    const request =
+      kind === 'pdf'
+        ? this.preview.download(`${invoice.code}.pdf`, () =>
+            this.api.file(invoice.id, kind).pipe(switchMap((link) => this.preview.fetch(link.url))),
+          )
+        : this.api.file(invoice.id, kind).pipe(map((link) => openDownload(link.url)));
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.busy.set(false),
+      error: (error: unknown) => {
+        this.busy.set(false);
+        this.fail(error);
+      },
+    });
   }
   private fail(error: unknown) {
     if (requestCode(error) === 'onboarding_required') void this.router.navigate(['/portal']);

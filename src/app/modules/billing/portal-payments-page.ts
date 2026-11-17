@@ -9,7 +9,8 @@ import { paymentIssue } from './billing-rules';
 import { DocumentsApi } from '../../core/documents-api';
 import { requestCode, requestMessage } from '../../core/api-problem';
 import { formatDate, formatUsd, parseAmountToCents } from '../../shared/amount';
-import { fileError, openDownload } from '../../shared/download';
+import { fileError } from '../../shared/download';
+import { PdfPreviewService } from '../../shared/pdf-preview.service';
 import { Status } from '../../shared/status';
 import { Icon } from '../../shared/icon';
 
@@ -19,6 +20,7 @@ import { Icon } from '../../shared/icon';
   templateUrl: './portal-payments-page.html',
 })
 export class PortalPaymentsPage {
+  private readonly preview = inject(PdfPreviewService);
   private readonly api = inject(PortalBillingApi);
   private readonly docs = inject(DocumentsApi);
   private readonly destroyRef = inject(DestroyRef);
@@ -196,23 +198,24 @@ export class PortalPaymentsPage {
         },
       });
   }
-  download() {
-    const note = this.selected();
+  viewPdf(note = this.selected()) {
+    if (!note || this.busy() || this.detailLoading()) return;
+    this.error.set('');
+    this.preview.open(`Nota de salida ${note.number}`, `${note.number}.pdf`, () =>
+      this.api.pdf(note.id).pipe(switchMap((link) => this.preview.fetch(link.url))),
+    );
+  }
+  download(note = this.selected()) {
     if (!note || this.busy() || this.detailLoading()) return;
     this.busy.set(true);
     this.error.set('');
-    this.api
-      .pdf(note.id)
+    this.preview
+      .download(`${note.number}.pdf`, () =>
+        this.api.pdf(note.id).pipe(switchMap((link) => this.preview.fetch(link.url))),
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (link) => {
-          this.busy.set(false);
-          try {
-            openDownload(link.url);
-          } catch (error) {
-            this.error.set(requestMessage(error));
-          }
-        },
+        next: () => this.busy.set(false),
         error: (error: unknown) => {
           this.busy.set(false);
           this.fail(error);

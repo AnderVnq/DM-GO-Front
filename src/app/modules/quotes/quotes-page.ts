@@ -25,6 +25,7 @@ import { Status } from '../../shared/status';
 import { formatDate, formatUsd, parseAmountToCents } from '../../shared/amount';
 import { requestFieldError, requestMessage } from '../../core/api-problem';
 import { savePdf } from '../../shared/download';
+import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 const concepts: Record<string, string> = {
   product: 'Producto',
@@ -51,6 +52,7 @@ const concepts: Record<string, string> = {
 export class QuotesPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(QuotesApi);
+  private readonly pdfPreview = inject(PdfPreviewService);
   private readonly customersApi = inject(CustomersApi);
   private readonly fb = inject(FormBuilder);
   readonly charges = signal<QuoteChargeType[]>([]);
@@ -507,8 +509,13 @@ export class QuotesPage {
         },
       });
   }
-  download() {
-    const quote = this.selected();
+  previewPdf(quote = this.selected()) {
+    if (!quote || this.busy()) return;
+    this.pdfPreview.open(`Cotización ${quote.number}`, `${quote.number}.pdf`, () =>
+      this.api.pdf(quote.id),
+    );
+  }
+  download(quote = this.selected()) {
     if (!quote || this.busy()) return;
     this.busy.set(true);
     this.error.set('');

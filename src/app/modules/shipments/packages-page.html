@@ -71,6 +71,7 @@
               <th>Casillero</th>
               <th>Estado</th>
               <th>Valor declarado</th>
+              <th>Factura</th>
             </tr>
           </thead>
           <tbody>
@@ -95,6 +96,30 @@
                   }
                 </td>
                 <td class="numeric">{{ money(item.declared_value_cents) }}</td>
+                <td>
+                  @if (item.invoice_document_id) {
+                    <div class="actions">
+                      <button
+                        class="button compact"
+                        (click)="viewInvoice(item)"
+                        [disabled]="busy()"
+                        [attr.aria-label]="'Ver factura de ' + item.carrier_tracking"
+                      >
+                        Ver
+                      </button>
+                      <button
+                        class="button compact"
+                        (click)="download(item)"
+                        [disabled]="busy()"
+                        [attr.aria-label]="'Descargar factura de ' + item.carrier_tracking"
+                      >
+                        Descargar
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="muted">Sin adjunto</span>
+                  }
+                </td>
               </tr>
             }
           </tbody>
@@ -191,8 +216,11 @@
         }
         <div class="actions">
           @if (item.invoice_document_id) {
-            <button class="text-button" (click)="download()" [disabled]="busy()">
+            <button class="button compact" (click)="viewInvoice()" [disabled]="busy()">
               Ver factura adjunta
+            </button>
+            <button class="button compact" (click)="download()" [disabled]="busy()">
+              Descargar factura
             </button>
           }
           <button

@@ -143,8 +143,10 @@ test('traduce el desglose y rechaza una respuesta de PDF incorrecta', async ({ p
   await expect(
     page.locator('.inspector').getByText('Tributos estimados en Perú', { exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: /PDF/ }).click();
-  await expect(page.getByRole('alert')).toContainText('La respuesta recibida no es un PDF.');
+  await page.getByRole('button', { name: 'Ver PDF', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText(
+    'La respuesta recibida no es un PDF.',
+  );
 });
 
 test('muestra el rechazo de una factura grande y conserva el paquete', async ({ page }) => {

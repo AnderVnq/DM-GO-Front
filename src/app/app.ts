@@ -1,3 +1,4 @@
+import { PdfPreviewDialog } from './shared/pdf-preview-dialog';
 import { InteractionMode } from './core/interaction-mode';
 import { Component, inject } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
@@ -7,9 +8,9 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, PdfPreviewDialog],
   hostDirectives: [InteractionMode],
-  template: '<router-outlet />',
+  template: '<router-outlet /><app-pdf-preview-dialog />',
 })
 export class App {
   constructor() {

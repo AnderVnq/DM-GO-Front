@@ -1,3 +1,4 @@
+import { testPdf } from './fixtures/pdf';
 import { test, expect, type Page } from '@playwright/test';
 import { mockPortal, loginPortal, navigatePortal } from './fixtures/portal';
 
@@ -229,11 +230,13 @@ test('reporta un pago con evidencia sin aprobarlo y consulta sus comprobantes', 
   if (testInfo.project.name === 'desktop')
     await page.setViewportSize({ width: 1440, height: 1000 });
   const fixture = await operations(page);
-  await page
-    .context()
-    .route('https://files.example.test/**', (route) =>
-      route.fulfill({ contentType: 'text/plain', body: 'Comprobante de prueba' }),
-    );
+  await page.context().route('https://files.example.test/**', (route) =>
+    route.fulfill({
+      contentType: 'application/pdf',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: testPdf(),
+    }),
+  );
   await loginPortal(page);
   await navigatePortal(page, 'Mis pagos');
   await page.getByRole('button', { name: 'Reportar pago', exact: true }).click();
@@ -273,11 +276,14 @@ test('reporta un pago con evidencia sin aprobarlo y consulta sus comprobantes', 
   await navigatePortal(page, 'Mis comprobantes');
   await expect(page.getByRole('heading', { name: 'B001-42', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Descargar XML', exact: true })).toBeDisabled();
-  const popup = page.context().waitForEvent('page');
-  await page.getByRole('button', { name: 'Descargar PDF', exact: true }).click();
-  const preview = await popup;
-  await expect(preview).toHaveURL('https://files.example.test/client-invoice.pdf');
-  await preview.close();
+  await page.getByRole('button', { name: 'Ver PDF', exact: true }).click();
+  const preview = page.getByRole('dialog');
+  await expect(preview.getByRole('img', { name: /Página 1 de 2/ })).toBeVisible();
+  await expect(preview.getByRole('status')).toHaveCount(0);
+  const download = page.waitForEvent('download');
+  await preview.getByRole('button', { name: 'Descargar PDF', exact: true }).click();
+  expect((await download).suggestedFilename()).toBe('B001-42.pdf');
+  await preview.getByRole('button', { name: 'Cerrar vista previa', exact: true }).click();
   await page.screenshot({
     path: `.impeccable/review/portal-modules/${testInfo.project.name}-invoices.png`,
     fullPage: true,

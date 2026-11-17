@@ -180,3 +180,16 @@ El portal de clientes usa navegación lateral en escritorio y un menú desplegab
 La captura admite impuesto Perú en modo automático, aplicar o no aplicar; porcentaje de viajero, suplementos con sus unidades, delivery en Lima, despacho a agencia y vigencia opcional por fecha de Lima. Los cargos configurables que no pueden calcularse con los datos disponibles permanecen pendientes hasta guardar. El detalle conserva el desglose y la cantidad de aduana confirmados por el backend.
 
 «Guardar sin correo» registra la propuesta; «Guardar y enviar» solicita además su envío con PDF. Si falla el correo, la cotización permanece guardada y puede reenviarse desde su detalle mediante `POST /quotes/:id/send`. El catálogo determina qué precios de extras pueden editarse; los automáticos omiten el precio para respetar la tarifa del cliente. Las pruebas de navegador usan API simulada y no envían correos reales.
+
+Los PDF de cotizaciones, notas y comprobantes se pueden consultar en una vista previa
+con páginas, zoom y descarga. Los listados ofrecen «Ver» y «Descargar» por separado.
+El visor carga PDF.js bajo demanda y también muestra las imágenes adjuntas como
+factura de paquetes. Al cerrar, cancela la carga y libera sus recursos. Los enlaces
+firmados se consultan sin el token de la API; cada reintento solicita un enlace nuevo.
+
+Para el almacenamiento local Floci, `documentProxyOrigin` en `app-config.json`
+redirige únicamente `http://localhost:4566` por `/document-storage`, configurado en
+`proxy.conf.json`. Reinicia `pnpm start` si cambias el proxy. En producción, permite
+GET desde el origen del frontend mediante CORS en el almacenamiento o configura
+una ruta equivalente en el servidor web y su origen en `documentProxyOrigin`;
+elimina esta opción si los archivos se consultan directamente con CORS habilitado.

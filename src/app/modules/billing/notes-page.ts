@@ -8,6 +8,7 @@ import {
   viewChild,
   type ElementRef,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { type Observable, Subscription, forkJoin, of, switchMap } from 'rxjs';
@@ -28,7 +29,8 @@ import { requestMessage } from '../../core/api-problem';
 import { Icon } from '../../shared/icon';
 import { Status } from '../../shared/status';
 import { formatDate, formatUsd, formatWeight, parseAmountToCents } from '../../shared/amount';
-import { fileError, openDownload } from '../../shared/download';
+import { fileError } from '../../shared/download';
+import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 @Component({
   selector: 'app-notes-page',
@@ -36,6 +38,8 @@ import { fileError, openDownload } from '../../shared/download';
   templateUrl: './notes-page.html',
 })
 export class NotesPage {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly preview = inject(PdfPreviewService);
   private readonly api = inject(BillingApi);
   private readonly customers = inject(CustomersApi);
   private readonly shipments = inject(ShipmentsApi);
@@ -719,18 +723,28 @@ export class NotesPage {
         : [note, ...notes],
     );
   }
-  download() {
-    const note = this.selected();
-    if (note && !this.busy())
-      this.api.pdf(note.id).subscribe({
-        next: (link) => {
-          try {
-            openDownload(link.url);
-          } catch (error) {
-            this.error.set(requestMessage(error));
-          }
+  viewPdf(note = this.selected()) {
+    if (!note || this.busy()) return;
+    this.error.set('');
+    this.preview.open(`Nota de salida ${note.number}`, `${note.number}.pdf`, () =>
+      this.api.pdf(note.id).pipe(switchMap((link) => this.preview.fetch(link.url))),
+    );
+  }
+  download(note = this.selected()) {
+    if (!note || this.busy()) return;
+    this.busy.set(true);
+    this.error.set('');
+    this.preview
+      .download(`${note.number}.pdf`, () =>
+        this.api.pdf(note.id).pipe(switchMap((link) => this.preview.fetch(link.url))),
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.busy.set(false),
+        error: (error: unknown) => {
+          this.busy.set(false);
+          this.error.set(requestMessage(error));
         },
-        error: (error: unknown) => this.error.set(requestMessage(error)),
       });
   }
 }

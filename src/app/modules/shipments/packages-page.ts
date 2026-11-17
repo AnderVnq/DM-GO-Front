@@ -10,7 +10,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subscription, forkJoin } from 'rxjs';
+import { Subscription, forkJoin, switchMap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ShipmentsApi } from './shipments-api';
 import { type Package, type TrackingResponse } from './package.model';
 import { PrealertForm, type PrealertResult } from './prealert-form';
@@ -22,7 +23,8 @@ import { formatDate, formatUsd } from '../../shared/amount';
 import { AuthService } from '../../core/auth.service';
 import { DocumentsApi } from '../../core/documents-api';
 import { requestMessage } from '../../core/api-problem';
-import { fileError, openDownload } from '../../shared/download';
+import { fileError } from '../../shared/download';
+import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 @Component({
   selector: 'app-packages-page',
@@ -34,6 +36,8 @@ export class PackagesPage {
   private readonly api = inject(ShipmentsApi);
   private readonly customers = inject(CustomersApi);
   private readonly documents = inject(DocumentsApi);
+  private readonly preview = inject(PdfPreviewService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -273,24 +277,32 @@ export class PackagesPage {
     });
   }
 
-  download() {
-    const id = this.selected()?.invoice_document_id;
-    if (!id || this.busy()) return;
+  viewInvoice(item = this.selected()) {
+    const id = item?.invoice_document_id;
+    if (!item || !id || this.busy()) return;
+    this.preview.open(
+      `Factura de ${item.carrier_tracking}`,
+      `factura-${item.carrier_tracking}.pdf`,
+      () => this.documents.download(id).pipe(switchMap((link) => this.preview.fetch(link.url))),
+    );
+  }
+
+  download(item = this.selected()) {
+    const id = item?.invoice_document_id;
+    if (!item || !id || this.busy()) return;
     this.busy.set(true);
     this.detailError.set('');
-    this.documents.download(id).subscribe({
-      next: (link) => {
-        this.busy.set(false);
-        try {
-          openDownload(link.url);
-        } catch (error) {
+    this.preview
+      .download(`factura-${item.carrier_tracking}.pdf`, () =>
+        this.documents.download(id).pipe(switchMap((link) => this.preview.fetch(link.url))),
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.busy.set(false),
+        error: (error: unknown) => {
           this.detailError.set(requestMessage(error));
-        }
-      },
-      error: (error: unknown) => {
-        this.detailError.set(requestMessage(error));
-        this.busy.set(false);
-      },
-    });
+          this.busy.set(false);
+        },
+      });
   }
 }

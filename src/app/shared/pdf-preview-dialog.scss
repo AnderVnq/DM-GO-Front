@@ -1,0 +1,61 @@
+.pdf-preview {
+  width: min(75rem, calc(100vw - 2rem));
+  height: calc(100dvh - 3rem);
+  max-height: calc(100dvh - 3rem);
+  padding: 1.25rem;
+  overflow: auto;
+}
+.dialog-header {
+  align-items: center;
+}
+.dialog-header .actions,
+.pdf-toolbar .actions {
+  margin: 0;
+}
+.pdf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.pdf-toolbar span {
+  font-variant-numeric: tabular-nums;
+}
+.pdf-content {
+  overflow: auto;
+  padding: 1rem;
+  background: var(--surface-inset);
+  min-height: 10rem;
+  border-radius: var(--radius);
+}
+canvas,
+img {
+  display: block;
+  margin-inline: auto;
+  background: white;
+}
+canvas[hidden] {
+  display: none;
+}
+img {
+  max-width: 100%;
+  height: auto;
+}
+@media (max-width: 600px) {
+  .pdf-preview {
+    width: calc(100vw - 1rem);
+    height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem);
+    padding: 0.75rem;
+  }
+  .dialog-header {
+    flex-wrap: wrap;
+  }
+  .dialog-header h2 {
+    overflow-wrap: anywhere;
+  }
+  .pdf-content {
+    padding: 0.5rem;
+  }
+}

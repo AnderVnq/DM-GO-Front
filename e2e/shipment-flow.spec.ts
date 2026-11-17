@@ -1,3 +1,4 @@
+import { testPdf } from './fixtures/pdf';
 import { test, expect, type Page } from '@playwright/test';
 import { login, mockPanel, navigate } from './fixtures/panel';
 
@@ -33,8 +34,9 @@ test('adjunta la factura en multipart y abre su enlace autorizado', async ({ pag
   });
   await page.context().route('https://files.example.test/invoice.pdf', (route) =>
     route.fulfill({
-      contentType: 'text/html',
-      body: '<title>Factura de prueba</title>Factura de prueba',
+      contentType: 'application/pdf',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: testPdf(),
     }),
   );
   await openPackages(page);
@@ -45,13 +47,12 @@ test('adjunta la factura en multipart y abre su enlace autorizado', async ({ pag
   expect(
     fixture.requests.filter((r) => r.path.endsWith('/invoice') && r.method === 'POST'),
   ).toHaveLength(1);
-  const opened = page.context().waitForEvent('page');
   await page.getByRole('button', { name: 'Ver factura adjunta', exact: true }).click();
-  const preview = await opened;
-  await expect(preview).toHaveURL('https://files.example.test/invoice.pdf');
-  await expect(preview).toHaveTitle('Factura de prueba');
-  expect(await preview.evaluate(() => window.opener)).toBe(null);
-  await preview.close();
+  const preview = page.getByRole('dialog');
+  await expect(preview.getByRole('img', { name: /Página 1 de 2/ })).toBeVisible();
+  await expect(preview.getByRole('status')).toHaveCount(0);
+  expect(page.context().pages()).toHaveLength(1);
+  await preview.getByRole('button', { name: 'Cerrar vista previa', exact: true }).click();
 });
 
 test('una factura de un paquete consolidado permanece en solo lectura', async ({ page }) => {

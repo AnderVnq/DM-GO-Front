@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import { CustomersApi, type Customer } from '../customers';
 import { DocumentsApi } from '../../core/documents-api';
 import { PackagesPage } from './packages-page';
+import { PdfPreviewService } from '../../shared/pdf-preview.service';
 import { ShipmentsApi } from './shipments-api';
 import type { Package, TrackingResponse } from './package.model';
 
@@ -41,12 +42,19 @@ const customer: Customer = {
   created_at: first.created_at,
 };
 
-function setup(shipments: object, customers: object = {}, params: Record<string, string> = {}) {
+function setup(
+  shipments: object,
+  customers: object = {},
+  params: Record<string, string> = {},
+  documents: object = {},
+  preview: object = {},
+) {
   TestBed.configureTestingModule({
     providers: [
       { provide: ShipmentsApi, useValue: shipments },
       { provide: CustomersApi, useValue: customers },
-      { provide: DocumentsApi, useValue: {} },
+      { provide: DocumentsApi, useValue: documents },
+      { provide: PdfPreviewService, useValue: preview },
       { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
       {
         provide: ActivatedRoute,
@@ -148,4 +156,31 @@ it('la cola genera una URL sin arrastrar el cliente anterior', () => {
     queryParams: { view: 'invoice-pending', package_id: 'second' },
     replaceUrl: true,
   });
+});
+
+it('un error al descargar conserva el paquete seleccionado y permite reintentar', () => {
+  const page = setup(
+    {},
+    {},
+    {},
+    { download: () => throwError(() => new Error('Archivo no disponible')) },
+    { download: (_filename: string, source: () => Observable<Blob>) => source() },
+  );
+  page.selected.set({ ...first, invoice_document_id: 'document-first' });
+  page.download();
+  expect(page.busy()).toBe(false);
+  expect(page.selected()?.id).toBe('first');
+  expect(page.detailError()).not.toBe('');
+});
+
+it('la descarga de una factura de otra fila no cambia la ficha seleccionada', () => {
+  const pending = new Subject<void>();
+  const page = setup({}, {}, {}, {}, { download: () => pending });
+  page.selected.set(first);
+  page.download({ ...second, invoice_document_id: 'document-second' });
+  expect(page.busy()).toBe(true);
+  expect(page.selected()?.id).toBe('first');
+  pending.next();
+  expect(page.busy()).toBe(false);
+  expect(page.selected()?.id).toBe('first');
 });

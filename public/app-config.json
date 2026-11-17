@@ -2,5 +2,6 @@
   "apiBaseUrl": "/api/v1",
   "oidcUrl": "http://localhost:8081",
   "oidcRealm": "dm48",
-  "oidcClientId": "dm48-web"
+  "oidcClientId": "dm48-web",
+  "documentProxyOrigin": "http://localhost:4566"
 }

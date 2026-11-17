@@ -24,6 +24,7 @@
             <th>Estado</th>
             <th>Total</th>
             <th>Saldo pendiente</th>
+            <th>PDF</th>
           </tr>
         </thead>
         <tbody>
@@ -37,6 +38,26 @@
               <td><app-status [value]="note.status" /></td>
               <td class="numeric">{{ money(note.total_cents) }}</td>
               <td class="numeric">{{ money(note.balance_cents) }}</td>
+              <td>
+                <div class="actions">
+                  <button
+                    class="button compact"
+                    (click)="viewPdf(note)"
+                    [disabled]="busy() || detailLoading()"
+                    [attr.aria-label]="'Ver PDF de ' + note.number"
+                  >
+                    Ver
+                  </button>
+                  <button
+                    class="button compact"
+                    (click)="download(note)"
+                    [disabled]="busy() || detailLoading()"
+                    [attr.aria-label]="'Descargar PDF de ' + note.number"
+                  >
+                    Descargar
+                  </button>
+                </div>
+              </td>
             </tr>
           }
         </tbody>
@@ -78,8 +99,11 @@
         <p role="status">Actualizando el detalle…</p>
       }
       <div class="actions">
-        <button class="button compact" (click)="download()" [disabled]="busy() || detailLoading()">
+        <button class="button compact" (click)="viewPdf()" [disabled]="busy() || detailLoading()">
           Ver PDF
+        </button>
+        <button class="button compact" (click)="download()" [disabled]="busy() || detailLoading()">
+          Descargar PDF
         </button>
         @if (note.status === 'pending_payment') {
           <button

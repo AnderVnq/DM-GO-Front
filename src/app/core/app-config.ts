@@ -3,6 +3,7 @@ export interface AppConfig {
   oidcUrl: string;
   oidcRealm: string;
   oidcClientId: string;
+  documentProxyOrigin?: string;
 }
 
 export function validateAppConfig(value: unknown): AppConfig {
@@ -17,7 +18,19 @@ export function validateAppConfig(value: unknown): AppConfig {
   if (!/^(\/[^/]|https?:\/\/)/.test(api) || !/^https?:\/\//.test(String(data['oidcUrl']))) {
     throw new Error('Las URLs de la configuración no son válidas.');
   }
+  let documentProxyOrigin: string | undefined;
+  if (data['documentProxyOrigin'] !== undefined) {
+    try {
+      const url = new URL(String(data['documentProxyOrigin']));
+      if (!['http:', 'https:'].includes(url.protocol) || url.origin !== data['documentProxyOrigin'])
+        throw new Error();
+      documentProxyOrigin = url.origin;
+    } catch {
+      throw new Error('El origen del proxy de documentos no es válido.');
+    }
+  }
   return {
+    ...(documentProxyOrigin ? { documentProxyOrigin } : {}),
     apiBaseUrl: api,
     oidcUrl: String(data['oidcUrl']),
     oidcRealm: String(data['oidcRealm']),

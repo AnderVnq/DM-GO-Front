@@ -1,3 +1,4 @@
+import { testPdf } from './fixtures/pdf';
 import { test, expect, type Page } from '@playwright/test';
 import { login, mockPanel, navigate } from './fixtures/panel';
 
@@ -294,7 +295,34 @@ test('una nota pagada permanece en solo lectura incluso para administración', a
   ]) {
     await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
-  await expect(page.getByRole('button', { name: 'Ver PDF', exact: true })).toBeEnabled();
+  await expect(
+    page.locator('.inspector').getByRole('button', { name: 'Ver PDF', exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: 'Descargar PDF de NS-TEST-42', exact: true }),
+  ).toBeEnabled();
+});
+
+test('abre la nota dentro de la aplicación y conserva la selección al cerrar', async ({ page }) => {
+  await mockPanel(page);
+  await openNotes(page);
+  const view = page.getByRole('button', { name: 'Ver PDF de NS-TEST-42', exact: true });
+  await view.click();
+  const preview = page.getByRole('dialog');
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText('NS-TEST-42');
+  const download = preview.getByRole('button', { name: 'Descargar PDF', exact: true });
+  await expect(download).toBeEnabled();
+  const saved = page.waitForEvent('download');
+  await download.click();
+  expect((await saved).suggestedFilename()).toBe('NS-TEST-42.pdf');
+  expect(page.context().pages()).toHaveLength(1);
+  await page.keyboard.press('Escape');
+  await expect(preview).not.toBeVisible();
+  await expect(view).toBeFocused();
+  await expect(
+    page.locator('.inspector').getByRole('heading', { name: 'NS-TEST-42' }),
+  ).toBeVisible();
 });
 
 test('solicita de nuevo el enlace firmado de la nota al repetir la descarga', async ({ page }) => {
@@ -311,17 +339,16 @@ test('solicita de nuevo el enlace firmado de la nota al repetir la descarga', as
   const externalHeaders: (string | undefined)[] = [];
   await page.context().route('https://files.example.test/**', async (route) => {
     externalHeaders.push(route.request().headers()['authorization']);
-    await route.fulfill({ contentType: 'text/plain', body: 'Documento de prueba' });
+    await route.fulfill({ contentType: 'application/pdf', body: testPdf() });
   });
   await openNotes(page);
   for (let index = 1; index <= 2; index++) {
-    const popup = page.context().waitForEvent('page');
-    await page.getByRole('button', { name: 'Ver PDF', exact: true }).click();
-    const preview = await popup;
-    await expect(preview).toHaveURL(`https://files.example.test/note-${index}.pdf`);
-    await preview.waitForLoadState();
-    expect(await preview.evaluate(() => window.opener)).toBeNull();
-    await preview.close();
+    const download = page.waitForEvent('download');
+    await page
+      .locator('.inspector')
+      .getByRole('button', { name: 'Descargar PDF', exact: true })
+      .click();
+    expect((await download).suggestedFilename()).toBe('NS-TEST-42.pdf');
   }
   expect(links).toBe(2);
   expect(externalHeaders).toEqual([undefined, undefined]);
