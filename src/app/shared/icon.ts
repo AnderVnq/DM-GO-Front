@@ -9,6 +9,8 @@ const paths = {
   packages: 'm12 3 9 5v9l-9 5-9-5V8Zm0 9v10M3 8l9 4 9-4M7.5 5.5l9 5',
   billing: 'M14 2H5v20h14V7Zm0 0v6h5M8 12h8M8 16h8',
   quotes: 'M20 13 11 22 2 13V3h10l8 8ZM7 7h.01',
+  eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Zm13 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+  download: 'M12 3v12m-5-5 5 5 5-5M4 15v5h16v-5',
   search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
   plus: 'M12 5v14M5 12h14',
   edit: 'm16 3 5 5L9 20l-6 1 1-6ZM14 5l5 5',

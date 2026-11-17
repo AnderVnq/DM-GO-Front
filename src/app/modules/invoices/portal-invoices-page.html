@@ -45,22 +45,24 @@
               <td><app-status [value]="invoice.status" /></td>
               <td class="numeric">{{ money(invoice.total_cents) }}</td>
               <td>
-                <div class="actions">
+                <div class="document-actions">
                   <button
-                    class="button compact"
+                    class="icon-button"
                     (click)="viewPdf(invoice)"
                     [disabled]="busy() || !invoice.has_pdf"
+                    [attr.title]="'Ver PDF de ' + invoice.code"
                     [attr.aria-label]="'Ver PDF de ' + invoice.code"
                   >
-                    Ver
+                    <app-icon name="eye" />
                   </button>
                   <button
-                    class="button compact"
+                    class="icon-button"
                     (click)="download('pdf', invoice)"
                     [disabled]="busy() || !invoice.has_pdf"
+                    [attr.title]="'Descargar PDF de ' + invoice.code"
                     [attr.aria-label]="'Descargar PDF de ' + invoice.code"
                   >
-                    Descargar
+                    <app-icon name="download" />
                   </button>
                 </div>
               </td>

@@ -247,3 +247,20 @@ dialog .actions {
     grid-template-columns: 1fr;
   }
 }
+
+.document-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.document-actions .icon-button {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  color: var(--text);
+}
+@media (hover: hover) and (pointer: fine) {
+  .document-actions .icon-button:hover:not(:disabled) {
+    color: var(--accent);
+  }
+}

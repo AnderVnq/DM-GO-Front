@@ -43,6 +43,11 @@ test('muestra páginas, zoom y descarga desde la vista previa sin repetir la pet
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
   await expect(opener).toBeFocused();
+  await page.screenshot({
+    path: info.outputPath('document-row-actions.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
 });
 
 test('reintenta un error de acceso sin abandonar el visor', async ({ page }) => {

@@ -98,22 +98,24 @@
                 <td class="numeric">{{ money(item.declared_value_cents) }}</td>
                 <td>
                   @if (item.invoice_document_id) {
-                    <div class="actions">
+                    <div class="document-actions">
                       <button
-                        class="button compact"
+                        class="icon-button"
                         (click)="viewInvoice(item)"
                         [disabled]="busy()"
+                        [attr.title]="'Ver factura de ' + item.carrier_tracking"
                         [attr.aria-label]="'Ver factura de ' + item.carrier_tracking"
                       >
-                        Ver
+                        <app-icon name="eye" />
                       </button>
                       <button
-                        class="button compact"
+                        class="icon-button"
                         (click)="download(item)"
                         [disabled]="busy()"
+                        [attr.title]="'Descargar factura de ' + item.carrier_tracking"
                         [attr.aria-label]="'Descargar factura de ' + item.carrier_tracking"
                       >
-                        Descargar
+                        <app-icon name="download" />
                       </button>
                     </div>
                   } @else {

@@ -30,7 +30,7 @@
   @if (loading()) {
     <p role="status" class="muted">Cargando cotizaciones…</p>
   }
-  <div class="split-view">
+  <div class="split-view quote-history-layout">
     <section class="surface quote-history" aria-labelledby="quote-history-heading">
       <div class="history-heading">
         <h2 id="quote-history-heading">Historial de cotizaciones</h2>
@@ -64,24 +64,26 @@
                 <td class="quote-date">{{ quoteDate(quote.expires_at) }}</td>
                 <td class="numeric">{{ money(quote.total_cents) }}</td>
                 <td>
-                  <div class="quote-pdf-actions">
+                  <div class="document-actions">
                     <button
                       type="button"
-                      class="text-button"
+                      class="icon-button"
+                      [attr.title]="'Ver PDF de ' + quote.number"
                       [attr.aria-label]="'Ver PDF de ' + quote.number"
                       [disabled]="busy()"
                       (click)="previewPdf(quote)"
                     >
-                      Ver
+                      <app-icon name="eye" />
                     </button>
                     <button
                       type="button"
-                      class="text-button"
+                      class="icon-button"
+                      [attr.title]="'Descargar PDF de ' + quote.number"
                       [attr.aria-label]="'Descargar PDF de ' + quote.number"
                       [disabled]="busy()"
                       (click)="download(quote)"
                     >
-                      Descargar
+                      <app-icon name="download" />
                     </button>
                   </div>
                 </td>

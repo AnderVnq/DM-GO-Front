@@ -50,22 +50,24 @@
               <td class="numeric">{{ money(note.total_cents) }}</td>
               <td class="numeric">{{ money(note.balance_cents) }}</td>
               <td>
-                <div class="actions">
+                <div class="document-actions">
                   <button
-                    class="button compact"
+                    class="icon-button"
                     (click)="viewPdf(note)"
                     [disabled]="busy()"
+                    [attr.title]="'Ver PDF de ' + note.number"
                     [attr.aria-label]="'Ver PDF de ' + note.number"
                   >
-                    Ver
+                    <app-icon name="eye" />
                   </button>
                   <button
-                    class="button compact"
+                    class="icon-button"
                     (click)="download(note)"
                     [disabled]="busy()"
+                    [attr.title]="'Descargar PDF de ' + note.number"
                     [attr.aria-label]="'Descargar PDF de ' + note.number"
                   >
-                    Descargar
+                    <app-icon name="download" />
                   </button>
                 </div>
               </td>
