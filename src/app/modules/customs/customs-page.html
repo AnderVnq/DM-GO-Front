@@ -1,0 +1,418 @@
+<div class="page-header">
+  <div>
+    <h1>Aduanas</h1>
+    <p>Revisa tributos, documentos e inspecciones antes de liberar cada guía.</p>
+  </div>
+  <button class="button primary" (click)="startImport()" [disabled]="busy() || detailLoading()">
+    <app-icon name="plus" />Importar reporte
+  </button>
+</div>
+@if (notice()) {
+  <p class="alert success" role="status">{{ notice() }}</p>
+}
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+<form class="customer-strip search-bar" [formGroup]="lookup" (ngSubmit)="openReference()">
+  <div class="field">
+    <label for="customs-reference">Referencia o enlace de una guía de Aduanas</label
+    ><input
+      id="customs-reference"
+      formControlName="reference"
+      [readOnly]="busy()"
+      placeholder="Referencia UUID o enlace guardado"
+    />
+  </div>
+  <button class="button" [disabled]="busy() || !lookup.controls.reference.value.trim()">
+    Consultar guía
+  </button>
+</form>
+@if (result(); as reportResult) {
+  <section class="surface surface-body import-result" aria-labelledby="import-result-title">
+    <h2 id="import-result-title" #resultHeading tabindex="-1">Resultado del reporte</h2>
+    <p>
+      Resultado confirmado por el servidor. Las guías con conflicto no fueron modificadas; las que
+      aún no llegaron a Lima pueden reimportarse después de su recepción.
+    </p>
+    <div class="report-groups">
+      @for (group of groups; track group.key) {
+        <details
+          [open]="
+            group.key === 'conflicts' || group.key === 'unknown' || group.key === 'not_arrived'
+          "
+        >
+          <summary>{{ group.label }} · {{ reportResult[group.key].length }}</summary>
+          @if (reportResult[group.key].length) {
+            <ul>
+              @for (guide of reportResult[group.key]; track guide) {
+                <li>{{ guide }}</li>
+              }
+            </ul>
+          } @else {
+            <p class="muted">Sin guías en este grupo.</p>
+          }
+        </details>
+      }
+    </div>
+  </section>
+}
+<section class="surface pending-workspace" aria-labelledby="customs-pending-title">
+  <div class="section-heading">
+    <div>
+      <h2 id="customs-pending-title">Pendientes de Aduanas</h2>
+      <p class="muted">
+        Hasta 200 guías pendientes devueltas por la API. Las liberadas se consultan con su enlace.
+      </p>
+    </div>
+    <button class="button" (click)="load()" [disabled]="busy() || loading()">
+      Actualizar pendientes
+    </button>
+  </div>
+  <div class="field pending-filter" [formGroup]="filters">
+    <label for="customs-filter">Filtrar guías cargadas</label
+    ><input
+      id="customs-filter"
+      formControlName="query"
+      placeholder="Guía, declaración o manifiesto"
+    />
+  </div>
+  @if (listError()) {
+    <p class="alert error" role="alert">{{ listError() }}</p>
+  }
+  @if (loading()) {
+    <p class="empty-state" role="status">Consultando pendientes…</p>
+  }
+  <div class="table-scroll" tabindex="0" aria-label="Guías pendientes de Aduanas">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Guía y manifiesto</th>
+          <th scope="col">Declaración</th>
+          <th scope="col">Canal</th>
+          <th scope="col">Tributo</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of visibleLines; track line.id) {
+          <tr [class.selected-row]="selected()?.id === line.id">
+            <td>
+              <strong>{{ line.guide }}</strong><small>{{ line.customs_manifest }}</small>
+            </td>
+            <td>{{ line.declaration }}</td>
+            <td>{{ line.channel === 'red' ? 'Rojo · inspección' : 'Verde' }}</td>
+            <td class="amount">{{ money(line.tax_cents, line.currency) }}</td>
+            <td>{{ status[line.status] }}</td>
+            <td>
+              <button
+                class="icon-button"
+                (click)="select(line)"
+                [disabled]="busy() || detailLoading()"
+                [attr.aria-label]="'Ver guía ' + line.guide"
+                [attr.title]="'Ver guía ' + line.guide"
+              >
+                <app-icon name="eye" />
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (!loading() && !listError() && !visibleLines.length) {
+    <p class="empty-state">
+      {{
+        lines().length
+          ? 'No hay coincidencias en las guías cargadas.'
+          : 'No hay guías pendientes de Aduanas.'
+      }}
+    </p>
+  }
+</section>
+@if (detailLoading()) {
+  <p role="status">Actualizando detalle de Aduanas…</p>
+}
+@if (lastDetailAvailable && stale() && !detailLoading()) {
+  <button class="button" (click)="reloadDetail()" [disabled]="busy()">Actualizar detalle</button>
+}
+@if (selected(); as line) {
+  <section class="surface surface-body customs-detail" aria-labelledby="customs-detail-title">
+    <div class="page-header">
+      <div>
+        <h2 id="customs-detail-title" #detailHeading tabindex="-1">Guía {{ line.guide }}</h2>
+        <p>{{ status[line.status] }} · {{ line.customs_manifest }}</p>
+      </div>
+      <button class="button" (click)="reloadDetail()" [disabled]="busy() || detailLoading()">
+        Actualizar detalle
+      </button>
+    </div>
+    <dl class="detail-grid">
+      <div>
+        <dt>Declaración</dt>
+        <dd>{{ line.declaration }}</dd>
+      </div>
+      <div>
+        <dt>Canal</dt>
+        <dd>{{ line.channel === 'red' ? 'Rojo · requiere revisión' : 'Verde' }}</dd>
+      </div>
+      <div>
+        <dt>Tributo</dt>
+        <dd class="amount">{{ money(line.tax_cents, line.currency) }}</dd>
+      </div>
+      <div>
+        <dt>Liberación · hora de Perú</dt>
+        <dd>{{ date(line.released_at ?? undefined) }}</dd>
+      </div>
+    </dl>
+    @if (stale()) {
+      <p class="alert">Actualiza el detalle antes de adjuntar documentos o liberar la guía.</p>
+    }
+    <h3>Documentos de la guía</h3>
+    <ul class="document-list">
+      <li>
+        <div>
+          <strong>Liquidación de tributos</strong>
+          <p class="muted">
+            {{ line.assessment_document_id ? 'Documento disponible' : 'Sin documento adjunto' }}
+          </p>
+        </div>
+        <div class="actions">
+          @if (line.assessment_document_id) {
+            <button
+              class="icon-button"
+              (click)="viewDocument(line.assessment_document_id, 'Liquidación ' + line.guide)"
+              [disabled]="busy()"
+              aria-label="Ver liquidación de tributos"
+              title="Ver liquidación de tributos"
+            >
+              <app-icon name="eye" /></button
+            ><button
+              class="icon-button"
+              (click)="downloadDocument(line.assessment_document_id, 'Liquidación ' + line.guide)"
+              [disabled]="busy()"
+              aria-label="Descargar liquidación de tributos"
+              title="Descargar liquidación de tributos"
+            >
+              <app-icon name="download" />
+            </button>
+          }
+          @if (line.status !== 'released') {
+            <button class="button" (click)="startDocument('assessment')" [disabled]="!canAct">
+              <app-icon [name]="line.assessment_document_id ? 'edit' : 'attachment'" />{{
+                line.assessment_document_id ? 'Reemplazar liquidación' : 'Adjuntar liquidación'
+              }}
+            </button>
+          }
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Constancia de pago del tributo</strong>
+          <p class="muted">
+            {{ line.proof_document_id ? 'Disponible para revisar' : 'Sin constancia adjunta' }}
+          </p>
+        </div>
+        <div class="actions">
+          @if (line.proof_document_id) {
+            <button
+              class="icon-button"
+              (click)="viewDocument(line.proof_document_id, 'Constancia ' + line.guide)"
+              [disabled]="busy()"
+              aria-label="Ver constancia de pago"
+              title="Ver constancia de pago"
+            >
+              <app-icon name="eye" /></button
+            ><button
+              class="icon-button"
+              (click)="downloadDocument(line.proof_document_id, 'Constancia ' + line.guide)"
+              [disabled]="busy()"
+              aria-label="Descargar constancia de pago"
+              title="Descargar constancia de pago"
+            >
+              <app-icon name="download" />
+            </button>
+          }
+          @if (line.status !== 'released') {
+            <button class="button" (click)="startDocument('payment_proof')" [disabled]="!canAct">
+              <app-icon [name]="line.proof_document_id ? 'edit' : 'attachment'" />{{
+                line.proof_document_id ? 'Reemplazar constancia' : 'Adjuntar constancia'
+              }}
+            </button>
+          }
+        </div>
+      </li>
+    </ul>
+    @if (line.status !== 'released') {
+      @if (line.tax_cents > 0 && !line.proof_document_id) {
+        <p class="alert">
+          Falta la constancia de pago del tributo. Adjunta el documento antes de liberar.
+        </p>
+      }
+      <div class="actions">
+        <button class="button primary" (click)="prepareRelease()" [disabled]="!canReleaseSelected">
+          <app-icon name="check" />Liberar guía
+        </button>
+      </div>
+    }
+    <p class="field-hint">
+      Conserva el enlace de esta página para volver a consultar la guía después de liberarla.
+    </p>
+  </section>
+}
+<dialog #importDialog aria-labelledby="customs-import-title" (cancel)="cancelImport($event)">
+  <div class="dialog-header">
+    <h2 id="customs-import-title">Importar reporte de Aduanas</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar importación"
+      (click)="cancelImport()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p class="alert">
+    Al confirmar, el servidor puede liberar automáticamente las guías verdes sin tributo. Las filas
+    inválidas impiden importar todo el archivo.
+  </p>
+  @if (modalError()) {
+    <p class="alert error" role="alert">{{ modalError() }}</p>
+  }
+  @if (rowErrors().length) {
+    <ul class="row-errors">
+      @for (error of rowErrors(); track error[0]) {
+        <li>
+          <strong>{{ error[0] }}</strong>: {{ error[1] }}
+        </li>
+      }
+    </ul>
+  }
+  <form [formGroup]="report" (ngSubmit)="importReport()">
+    <fieldset class="form-grid" [disabled]="busy() || reportUncertain()">
+      <legend class="sr-only">Datos del reporte del agente</legend>
+      <div class="field full">
+        <label for="customs-manifest">Manifiesto de Aduanas</label
+        ><input
+          id="customs-manifest"
+          formControlName="customs_manifest"
+          required
+          aria-describedby="manifest-hint"
+        /><span id="manifest-hint" class="field-hint">Obligatorio, hasta 50 bytes.</span>
+      </div>
+      <div class="field">
+        <label for="customs-mawb">Número MAWB (opcional)</label
+        ><input id="customs-mawb" formControlName="mawb_number" />
+      </div>
+      <div class="field">
+        <label for="customs-airline">Aerolínea (opcional)</label
+        ><input id="customs-airline" formControlName="airline" />
+      </div>
+      <div class="field full">
+        <label for="customs-file">Reporte del agente</label
+        ><input
+          #reportInput
+          id="customs-file"
+          type="file"
+          accept=".csv,.xlsx"
+          (change)="chooseReport($event)"
+          aria-describedby="report-file-hint"
+        /><span id="report-file-hint" class="field-hint"
+          >CSV o XLSX, máximo 5 MB y 5000 filas. Columnas: guía, declaración, tributo y canal;
+          moneda opcional (USD o PEN). Excel usa la primera hoja. Canal: verde o rojo.</span
+        >
+      </div>
+    </fieldset>
+    <div class="actions dialog-footer">
+      <button type="button" class="button" (click)="cancelImport()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="!canImport">
+        {{ busy() ? 'Importando…' : 'Confirmar importación' }}
+      </button>
+    </div>
+  </form>
+</dialog>
+<dialog #documentDialog aria-labelledby="customs-document-title" (cancel)="cancelDocument($event)">
+  <div class="dialog-header">
+    <h2 id="customs-document-title">
+      {{ documentKind() === 'assessment' ? 'Adjuntar liquidación' : 'Adjuntar constancia' }}
+    </h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar documento"
+      (click)="cancelDocument()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>
+    Guía {{ selected()?.guide }}. Este archivo reemplazará el documento anterior del mismo tipo, si
+    existe. Adjuntarlo no libera la guía.
+  </p>
+  @if (modalError()) {
+    <p class="alert error" role="alert">{{ modalError() }}</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  <div class="field">
+    <label for="customs-document">Documento PDF o imagen</label
+    ><input
+      #documentInput
+      id="customs-document"
+      type="file"
+      accept="application/pdf,image/jpeg,image/png,image/webp"
+      (change)="chooseDocument($event)"
+      [disabled]="busy() || stale() || detailLoading()"
+      aria-describedby="document-hint"
+    /><span id="document-hint" class="field-hint">PDF, JPG, PNG o WebP. Máximo 15 MB.</span>
+  </div>
+  <div class="actions dialog-footer">
+    <button class="button" (click)="cancelDocument()" [disabled]="busy()">Cancelar</button
+    ><button class="button primary" (click)="saveDocument()" [disabled]="!canAttach">
+      {{ busy() ? 'Guardando…' : 'Guardar documento' }}
+    </button>
+  </div>
+</dialog>
+<dialog #releaseDialog aria-labelledby="customs-release-title" (cancel)="cancelRelease($event)">
+  <div class="dialog-header">
+    <h2 id="customs-release-title">Confirmar liberación</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar confirmación"
+      (click)="cancelRelease()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>
+    Confirma que revisaste los documentos y
+    {{
+      selected()?.channel === 'red'
+        ? 'la inspección del canal rojo'
+        : 'los requisitos de esta guía'
+    }}.
+  </p>
+  <p>
+    <strong>{{ selected()?.guide }}</strong> · Tributo:
+    {{ money(selected()?.tax_cents ?? 0, selected()?.currency ?? 'USD') }}
+  </p>
+  <p>
+    Esta acción libera la guía y actualiza el estado del paquete. El backend comprobará que los
+    requisitos se cumplen.
+  </p>
+  @if (modalError()) {
+    <p class="alert error" role="alert">{{ modalError() }}</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  <div class="actions dialog-footer">
+    <button class="button" (click)="cancelRelease()" [disabled]="busy()">Cancelar</button
+    ><button class="button primary" (click)="release()" [disabled]="!canReleaseSelected">
+      {{ busy() ? 'Liberando…' : 'Confirmar liberación' }}
+    </button>
+  </div>
+</dialog>

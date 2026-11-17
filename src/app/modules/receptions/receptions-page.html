@@ -59,6 +59,9 @@
       <button class="button" (click)="reload()" [disabled]="busy() || loading()">
         Actualizar recepción</button
       ><button class="button" (click)="copyLink()">Copiar enlace</button>
+      @if (item.status === 'closed') {
+        <a class="button primary" routerLink="/internal/customs">Continuar en Aduanas</a>
+      }
       @if (item.status === 'open') {
         <button class="button primary" (click)="prepareClose()" [disabled]="!canOperate">
           Cerrar recepción

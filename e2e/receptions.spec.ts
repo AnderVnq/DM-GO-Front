@@ -178,6 +178,9 @@ test('escanea, corrige con lápiz y cierra con el cuadre canónico', async ({ pa
   for (const title of ['Completos · 1', 'Con diferencias · 1', 'Faltantes · 1', 'Sobrantes · 1'])
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
   await expect(page.getByLabel('Guía o WR', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Continuar en Aduanas', exact: true }),
+  ).toHaveAttribute('href', '/internal/customs');
   if (info.project.name === 'desktop')
     await page.getByRole('button', { name: /Cambiar a modo oscuro/ }).click();
   await page.screenshot({

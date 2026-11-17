@@ -1,0 +1,87 @@
+:host {
+  display: block;
+}
+.pending-workspace,
+.customs-detail,
+.import-result {
+  margin-block: 1.5rem;
+}
+.section-heading {
+  align-items: center;
+  gap: 1rem;
+}
+.section-heading h2 {
+  font-size: 1.2rem;
+}
+.section-heading p {
+  margin-bottom: 0;
+  max-width: 40rem;
+}
+.pending-filter {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0 1.25rem 1.25rem;
+  max-width: 36rem;
+}
+.icon-button {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.document-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.document-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--border);
+}
+.document-list p {
+  margin-bottom: 0;
+}
+.report-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+}
+.report-groups details {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+.report-groups summary {
+  cursor: pointer;
+  min-height: 2.75rem;
+  align-content: center;
+  font-weight: 600;
+}
+.report-groups li,
+.row-errors li {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .section-heading,
+  .document-list > li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .report-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .document-list .actions {
+    flex-wrap: wrap;
+  }
+}
+
+.dialog-footer {
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}

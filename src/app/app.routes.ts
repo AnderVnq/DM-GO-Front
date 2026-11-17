@@ -135,6 +135,12 @@ export const routes: Routes = [
           import('./modules/warehouses/warehouses-page').then((m) => m.WarehousesPage),
       },
       {
+        path: 'customs',
+        title: 'Aduanas · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () => import('./modules/customs/customs-page').then((m) => m.CustomsPage),
+      },
+      {
         path: 'receptions',
         title: 'Recepción en Lima · DM48',
         canActivate: [managerGuard],

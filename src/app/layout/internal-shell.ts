@@ -64,6 +64,7 @@ export class InternalShell {
     { path: 'consolidations', label: 'Consolidados', icon: 'plane', managerOnly: true },
     { path: 'airfreight', label: 'Operación aérea', icon: 'plane', managerOnly: true },
     { path: 'receptions', label: 'Recepción en Lima', icon: 'warehouse', managerOnly: true },
+    { path: 'customs', label: 'Aduanas', icon: 'billing', managerOnly: true },
   ];
   get navigation() {
     return this.navigationItems.filter((item) => !item.managerOnly || this.auth.manager());
