@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import { formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
@@ -15,7 +16,7 @@ import type { Bulk, Consolidation } from './consolidation.model';
 
 @Component({
   selector: 'app-consolidations-page',
-  imports: [FormsModule, RouterLink, Status],
+  imports: [Icon, FormsModule, RouterLink, Status],
   templateUrl: './consolidations-page.html',
 })
 export class ConsolidationsPage {

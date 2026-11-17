@@ -53,6 +53,16 @@
           item.status === 'open' ? 'Creación de AWB' : 'Ver agrupaciones AWB'
         }}</a>
       </div>
+      @if (item.status === 'closed') {
+        <div class="actions">
+          <a
+            class="button"
+            routerLink="/internal/airfreight"
+            [queryParams]="{ consolidation_id: item.id }"
+            ><app-icon name="plane" />Revisar manifiesto y MAWB</a
+          >
+        </div>
+      }
       <h3 class="detail-section">Bultos incluidos</h3>
       <ul class="line-list">
         @for (id of item.bulk_ids; track id) {

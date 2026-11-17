@@ -135,6 +135,13 @@ export const routes: Routes = [
           import('./modules/warehouses/warehouses-page').then((m) => m.WarehousesPage),
       },
       {
+        path: 'airfreight',
+        title: 'Operación aérea · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () =>
+          import('./modules/airfreight/airfreight-page').then((m) => m.AirfreightPage),
+      },
+      {
         path: 'quotes',
         loadChildren: () => import('./modules/quotes/routes').then((m) => m.routes),
       },

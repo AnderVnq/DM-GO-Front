@@ -1,0 +1,285 @@
+<div class="page-header">
+  <div>
+    <h1>Operación aérea</h1>
+    <p>Organiza la guía aérea, revisa el manifiesto y registra la salida del vuelo.</p>
+  </div>
+  <button class="button primary" (click)="startCreate()" [disabled]="busy() || loading()">
+    <app-icon name="plus" />Nueva MAWB
+  </button>
+</div>
+<form class="customer-strip search-bar" [formGroup]="lookupForm" (ngSubmit)="open()">
+  <label class="field"
+    >Referencia o enlace de MAWB<input
+      [formControl]="reference"
+      placeholder="Pega el enlace guardado o la referencia UUID"
+      [readOnly]="busy() || loading()"
+  /></label>
+  <button class="button" [disabled]="!reference.value.trim() || busy() || loading()">
+    Abrir MAWB
+  </button>
+</form>
+@if (error() && !confirming()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="alert success" role="status">{{ success() }}</p>
+}
+@if (loading()) {
+  <p role="status">Consultando MAWB…</p>
+}
+<div class="flight-layout">
+  <section class="surface surface-body">
+    @if (mawb(); as item) {
+      <div class="page-header">
+        <div>
+          <h2 #flightHeading tabindex="-1">{{ item.number }}</h2>
+          <p>{{ item.flight_number }} · {{ item.origin }} → {{ item.destination }}</p>
+        </div>
+        <span class="status">{{ item.status === 'open' ? 'Abierta' : 'Despachada' }}</span>
+      </div>
+      <dl class="detail-grid">
+        <div>
+          <dt>Salida prevista · hora de Perú</dt>
+          <dd>{{ date(item.departure_at) }}</dd>
+        </div>
+        <div>
+          <dt>Salida registrada</dt>
+          <dd>{{ date(item.dispatched_at) }}</dd>
+        </div>
+      </dl>
+      <div class="actions">
+        <button class="button" (click)="open()" [disabled]="busy() || loading()">
+          Actualizar MAWB</button
+        ><button class="button" (click)="copyLink()">Copiar enlace</button>
+      </div>
+      <h3 class="detail-section">Consolidados asociados</h3>
+      <ul class="line-list">
+        @for (id of item.consolidation_ids ?? []; track id) {
+          <li>
+            <button
+              class="text-button"
+              (click)="inspect(id)"
+              [disabled]="busy() || manifestLoading()"
+            >
+              Revisar consolidado
+              {{ candidate()?.id === id ? candidate()?.code : id.slice(0, 8) }}</button
+            ><a
+              class="button compact"
+              routerLink="/internal/consolidations"
+              [queryParams]="{ consolidation_id: id }"
+              >Abrir consolidado</a
+            >
+          </li>
+        } @empty {
+          <li>No hay consolidados asociados. Revisa un manifiesto para añadir el primero.</li>
+        }
+      </ul>
+      @if (item.status === 'open') {
+        <button
+          class="button primary actions"
+          (click)="prepareDispatch()"
+          [disabled]="!canDispatch"
+        >
+          <app-icon name="plane" />Registrar salida
+        </button>
+      }
+    } @else if (!loading()) {
+      <div class="empty-state">
+        <app-icon name="plane" />
+        <h2>Prepara el próximo vuelo</h2>
+        <p>Crea una guía aérea o retoma una MAWB con su enlace guardado.</p>
+      </div>
+    }
+  </section>
+  <section class="surface surface-body" aria-labelledby="flight-manifest-title">
+    <h2 id="flight-manifest-title">Revisar consolidado</h2>
+    <p class="muted">Comprueba las guías y los paquetes antes de asociarlos a una MAWB.</p>
+    <form class="search-bar" [formGroup]="consolidationLookupForm" (ngSubmit)="inspect()">
+      <label class="field"
+        >Referencia o enlace del consolidado<input
+          [formControl]="consolidationReference"
+          [readOnly]="busy() || manifestLoading()"
+          placeholder="Enlace guardado o UUID" /></label
+      ><button
+        class="button"
+        [disabled]="!consolidationReference.value.trim() || busy() || manifestLoading()"
+      >
+        Revisar manifiesto
+      </button>
+    </form>
+    @if (manifestLoading()) {
+      <p role="status">Consultando consolidado y manifiesto…</p>
+    }
+    @if (manifestError()) {
+      <p class="alert error" role="alert">{{ manifestError() }}</p>
+    }
+    @if (candidate(); as candidate) {
+      <div class="detail-section">
+        <h3>{{ candidate.code }}</h3>
+        <p>
+          {{ candidate.warehouse_code }} ·
+          {{ candidate.status === 'closed' ? 'Cerrado' : 'Abierto' }}
+        </p>
+      </div>
+      @if (candidate.status !== 'closed') {
+        <p class="alert">Cierra el consolidado antes de asociarlo a una MAWB.</p>
+      }
+    }
+    @if (manifest(); as manifest) {
+      <dl class="detail-grid">
+        <div>
+          <dt>Guías HAWB</dt>
+          <dd>{{ manifest.totals.hawbs }}</dd>
+        </div>
+        <div>
+          <dt>Paquetes</dt>
+          <dd>{{ manifest.totals.packages }}</dd>
+        </div>
+        <div>
+          <dt>Peso real</dt>
+          <dd>{{ manifest.totals.weight_kg }} kg</dd>
+        </div>
+        <div>
+          <dt>Peso facturable</dt>
+          <dd>{{ manifest.totals.billable_kg }} kg · {{ manifest.totals.billable_lb }} lb</dd>
+        </div>
+        <div>
+          <dt>Valor declarado</dt>
+          <dd>{{ money(manifest.totals.declared_value_cents) }}</dd>
+        </div>
+        <div>
+          <dt>MAWB asignada</dt>
+          <dd>{{ manifest.mawb || 'Sin asignar' }}</dd>
+        </div>
+      </dl>
+      <div class="actions">
+        <button class="button" (click)="downloadCsv()" [disabled]="busy() || manifestLoading()">
+          <app-icon name="download" />Descargar manifiesto CSV
+        </button>
+        @if (mawb(); as target) {
+          <button class="button primary" (click)="attach()" [disabled]="!canAttach">
+            Asociar a {{ target.number }}
+          </button>
+        }
+      </div>
+      @if (manifest.mawb) {
+        <p class="fine-print">El consolidado ya está asociado a una MAWB.</p>
+      }
+      <div class="table-scroll" tabindex="0" aria-label="Guías del manifiesto">
+        <table class="data-table">
+          <caption class="sr-only">
+            Manifiesto de
+            {{
+              manifest.consolidation
+            }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Guía y destinatario</th>
+              <th scope="col">Paquetes</th>
+              <th scope="col">Peso real</th>
+              <th scope="col">Peso facturable</th>
+              <th scope="col">Valor declarado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of manifest.rows; track row.hawb) {
+              <tr>
+                <td>
+                  {{ row.hawb }}<small>{{ row.customer_name }}</small
+                  ><small
+                    >{{ row.customer_doc_type.toUpperCase() }} {{ row.customer_doc_number }}</small
+                  ><small>{{ (row.descriptions ?? []).join(' · ') }}</small>
+                </td>
+                <td>{{ row.packages }}</td>
+                <td>{{ row.weight_kg }} kg</td>
+                <td>{{ row.billable_kg }} kg</td>
+                <td>{{ money(row.declared_value_cents) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+<dialog #createDialog aria-labelledby="mawb-create-title" (cancel)="cancelCreate($event)">
+  <div class="dialog-header">
+    <div>
+      <h2 id="mawb-create-title">Nueva MAWB</h2>
+      <p class="muted">Registra los datos de la guía aérea y el vuelo.</p>
+    </div>
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Cerrar nueva MAWB"
+      (click)="cancelCreate()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (createError()) {
+    <p class="alert error" role="alert">{{ createError() }}</p>
+  }
+  <form [formGroup]="form" (ngSubmit)="create()">
+    <fieldset class="form-grid" [disabled]="busy()">
+      <legend class="sr-only">Datos del vuelo</legend>
+      @for (field of creationFields; track field.key) {
+        <div class="field" [class.full]="field.full">
+          <label [for]="'mawb-' + field.key">{{ field.label }}</label>
+          <input
+            [id]="'mawb-' + field.key"
+            [formControlName]="field.key"
+            [type]="field.key === 'departure_at' ? 'datetime-local' : 'text'"
+            [placeholder]="field.placeholder"
+            [attr.maxlength]="field.key === 'origin' || field.key === 'destination' ? 3 : null"
+            required
+            [attr.aria-invalid]="fieldError(field.key) ? 'true' : null"
+            [attr.aria-describedby]="'mawb-' + field.key + '-hint mawb-' + field.key + '-error'"
+          />
+          <span [id]="'mawb-' + field.key + '-hint'" class="field-hint">{{ field.hint }}</span>
+          <span [id]="'mawb-' + field.key + '-error'" class="field-error">{{
+            fieldError(field.key)
+          }}</span>
+        </div>
+      }
+      <div class="actions full">
+        <button type="button" class="button" (click)="cancelCreate()">Cancelar</button
+        ><button class="button primary" [disabled]="!payload || busy()">
+          {{ busy() ? 'Registrando…' : 'Crear MAWB' }}
+        </button>
+      </div>
+    </fieldset>
+  </form>
+</dialog>
+<dialog #dispatchDialog aria-labelledby="mawb-dispatch-title" (cancel)="cancelDispatch($event)">
+  <div class="dialog-header">
+    <h2 id="mawb-dispatch-title">Registrar salida del vuelo</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar confirmación de salida"
+      (click)="cancelDispatch()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>
+    Confirmas la salida de <strong>{{ mawb()?.number }}</strong>, vuelo
+    <strong>{{ mawb()?.flight_number }}</strong>, {{ mawb()?.origin }} → {{ mawb()?.destination }}.
+  </p>
+  <p>
+    Los paquetes de sus consolidados pasarán a en tránsito. La cantidad se confirmará al registrar
+    la salida.
+  </p>
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  <div class="actions">
+    <button class="button" (click)="cancelDispatch()" [disabled]="busy()">Cancelar</button
+    ><button class="button primary" (click)="dispatch()" [disabled]="!canDispatch || busy()">
+      {{ busy() ? 'Registrando…' : 'Confirmar salida' }}
+    </button>
+  </div>
+</dialog>

@@ -61,6 +61,7 @@ src/app/
     ├── notifications/
     ├── warehouses/
     ├── consolidation/
+    ├── airfreight/
     ├── customers/
     ├── shipments/
     ├── billing/
@@ -78,6 +79,7 @@ La portada pública está en `/`, el alta y casillero propio en `/portal` y el p
 - Paquetes: consulta por cliente, prealertas, seguimiento con reintento y factura adjunta editable antes de consolidar.
 - Notas de salida: borradores, guías, cargos, destino, liquidación, pagos, revisión de vouchers y PDF.
 - Cotizaciones: compra asistida para prospectos o clientes, desglose y PDF. Un prospecto requiere nombre y al menos correo o teléfono; tienda y enlace del producto son opcionales.
+- Operación aérea: creación y consulta de MAWB por referencia o enlace, manifiestos de consolidados cerrados con exportación CSV, asociación a vuelos y confirmación de salida. Solo supervisor/admin; fechas explícitas en hora de Perú y cantidades confirmadas por el servidor.
 - Resumen: registros recientes y accesos a la operación; sin indicadores globales calculados a partir de muestras.
 
 Las acciones de gestión requieren `admin` o `supervisor`; `seller` accede a las operaciones admitidas para personal. El backend sigue validando permisos, estados y reglas financieras. Ante un conflicto en una nota, el panel consulta su estado actualizado y conserva las entradas; si la consulta falla, bloquea la nota obsoleta hasta volver a cargarla. Los importes se envían como centavos enteros, el peso como texto decimal en kilogramos (hasta tres decimales) y los totales se toman de la API.
