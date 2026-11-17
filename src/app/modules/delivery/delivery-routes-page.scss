@@ -1,0 +1,130 @@
+:host {
+  display: block;
+}
+.routes-list,
+.route-detail {
+  margin-block: 1.5rem;
+}
+.section-heading h2 {
+  font-size: 1.2rem;
+}
+.date-search {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.25rem 1.25rem;
+  flex-wrap: wrap;
+}
+.date-search .field {
+  min-width: 12rem;
+}
+.icon-button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+.package-assignment {
+  border-top: 1px solid var(--line-subtle);
+  padding-block: 1.5rem;
+  margin-top: 1rem;
+}
+.checked-package,
+.stop-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.checked-package p {
+  margin-bottom: 0.4rem;
+}
+.route-actions {
+  margin-block: 1rem 2rem;
+  flex-wrap: wrap;
+}
+.stops-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.stops-list > li {
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--line-subtle);
+}
+.stop-heading h4 {
+  font-size: 1.05rem;
+  margin: 0 0 0.5rem;
+}
+.stop-heading p {
+  margin: 0;
+}
+.stop-packages {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.stop-packages > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 0;
+}
+.stop-packages p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.package-reference,
+.package-choice span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.package-reference {
+  font-size: 0.85rem;
+}
+.failure-fields {
+  border: 0;
+  padding: 0;
+  margin: 1rem 0;
+}
+.failure-fields legend {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+.package-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding-block: 0.5rem;
+}
+.package-choice input {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  accent-color: var(--action);
+}
+.failure-fields .field {
+  margin-top: 1rem;
+}
+.dialog-footer {
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+@media (max-width: 700px) {
+  .checked-package,
+  .stop-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .date-search .field {
+    flex: 1;
+  }
+  .date-search .button {
+    align-self: start;
+    margin-top: 1.6rem;
+  }
+}

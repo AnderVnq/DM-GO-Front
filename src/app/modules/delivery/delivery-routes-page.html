@@ -1,0 +1,439 @@
+<div class="page-header">
+  <div>
+    <h1>Rutas de reparto</h1>
+    <p>Organiza la salida desde Lima y revisa el resultado de cada parada.</p>
+  </div>
+  <button class="button primary" (click)="startCreate()" [disabled]="busy() || detailLoading()">
+    <app-icon name="plus" />Nueva ruta
+  </button>
+</div>
+@if (notice()) {
+  <p class="alert success" role="status">{{ notice() }}</p>
+}
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+<section class="surface routes-list" aria-labelledby="delivery-routes-title">
+  <div class="section-heading"><h2 id="delivery-routes-title">Rutas por fecha</h2></div>
+  <form class="date-search" [formGroup]="listForm" (ngSubmit)="loadRoutes()">
+    <div class="field">
+      <label for="routes-date">Fecha de reparto</label
+      ><input
+        id="routes-date"
+        type="date"
+        formControlName="date"
+        required
+        [readOnly]="busy()"
+      /><span class="field-hint">Día operativo en Perú.</span>
+    </div>
+    <button class="button" [disabled]="busy() || loading() || !validDate">Buscar rutas</button>
+  </form>
+  @if (listError()) {
+    <p class="alert error" role="alert">{{ listError() }}</p>
+  }
+  @if (loading()) {
+    <p class="empty-state" role="status">Consultando rutas…</p>
+  }
+  <div class="table-scroll" tabindex="0" aria-label="Rutas de reparto por fecha">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Ruta y fecha</th>
+          <th scope="col">Repartidor</th>
+          <th scope="col">Almacén</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Paradas</th>
+          <th scope="col">Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (route of routes(); track route.id) {
+          <tr>
+            <td>
+              <strong>{{ route.code }}</strong><small>{{ day(route.date) }}</small>
+            </td>
+            <td>{{ route.driver_name || 'Sin nombre disponible' }}</td>
+            <td>{{ route.warehouse_code }}</td>
+            <td>{{ statuses[route.status] }}</td>
+            <td>{{ route.stops.length }}</td>
+            <td>
+              <button
+                class="icon-button"
+                (click)="select(route)"
+                [disabled]="busy() || detailLoading()"
+                [attr.aria-label]="'Ver ruta ' + route.code"
+                [attr.title]="'Ver ruta ' + route.code"
+              >
+                <app-icon name="eye" />
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (!loading() && !listError() && !routes().length) {
+    <p class="empty-state">No hay rutas para la fecha consultada.</p>
+  }
+</section>
+<form class="customer-strip search-bar" [formGroup]="lookup" (ngSubmit)="openReference()">
+  <div class="field">
+    <label for="route-reference">Referencia o enlace de ruta</label
+    ><input
+      id="route-reference"
+      formControlName="reference"
+      placeholder="Referencia UUID o enlace guardado"
+      [readOnly]="busy()"
+    />
+  </div>
+  <button class="button" [disabled]="busy() || !lookup.controls.reference.value.trim()">
+    Consultar ruta
+  </button>
+</form>
+@if (detailLoading()) {
+  <p role="status">Actualizando ruta…</p>
+}
+@if (canReloadDetail && stale() && !detailLoading() && !selected()) {
+  <button class="button" (click)="reload()" [disabled]="busy()">Actualizar detalle de ruta</button>
+}
+@if (selected(); as route) {
+  <section class="surface surface-body route-detail" aria-labelledby="route-detail-title">
+    <div class="page-header">
+      <div>
+        <h2 #routeHeading id="route-detail-title" tabindex="-1">Ruta {{ route.code }}</h2>
+        <p>{{ statuses[route.status] }} · {{ day(route.date) }}</p>
+      </div>
+      <button class="button" (click)="reload()" [disabled]="busy() || detailLoading()">
+        Actualizar detalle de ruta
+      </button>
+    </div>
+    <dl class="detail-grid">
+      <div>
+        <dt>Repartidor</dt>
+        <dd>{{ route.driver_name || 'Sin nombre disponible' }}</dd>
+      </div>
+      <div>
+        <dt>Almacén de salida</dt>
+        <dd>{{ route.warehouse_code }}</dd>
+      </div>
+      <div>
+        <dt>Inicio · hora de Perú</dt>
+        <dd>{{ date(route.started_at ?? undefined) }}</dd>
+      </div>
+      <div>
+        <dt>Cierre · hora de Perú</dt>
+        <dd>{{ date(route.completed_at ?? undefined) }}</dd>
+      </div>
+    </dl>
+    @if (stale()) {
+      <p class="alert">
+        Actualiza el detalle antes de modificar o confirmar operaciones de esta ruta.
+      </p>
+    }
+    @if (route.status === 'planned') {
+      <section class="package-assignment" aria-labelledby="route-package-title">
+        <h3 id="route-package-title">Asignar paquete</h3>
+        <p class="muted">
+          Comprueba su referencia antes de asignarlo. El backend valida el estado, la liquidación
+          pagada, el destino y los intentos disponibles.
+        </p>
+        <form class="search-bar" [formGroup]="packageForm" (ngSubmit)="checkPackage()">
+          <div class="field">
+            <label for="route-package">Referencia UUID del paquete</label
+            ><input
+              id="route-package"
+              formControlName="reference"
+              [readOnly]="!canOperate"
+              placeholder="Referencia del paquete"
+            />
+          </div>
+          <button
+            class="button"
+            [disabled]="
+              !canOperate || packageLoading() || !packageForm.controls.reference.value.trim()
+            "
+          >
+            Comprobar paquete
+          </button>
+        </form>
+        @if (packageLoading()) {
+          <p role="status">Consultando paquete…</p>
+        }
+        @if (packageError()) {
+          <p class="alert error" role="alert">{{ packageError() }}</p>
+        }
+        @if (checkedPackage(); as pkg) {
+          <div class="checked-package">
+            <div>
+              <strong>{{ pkg.carrier_tracking }}</strong>
+              <p>{{ pkg.description }}</p>
+              <p class="muted">
+                Casillero {{ pkg.locker_code }} · <app-status [value]="pkg.status" />
+              </p>
+            </div>
+            <button class="button primary" (click)="addPackage()" [disabled]="!canAdd">
+              Asignar a {{ route.code }}
+            </button>
+          </div>
+          @if (!canAdd && canOperate && !packageLoading()) {
+            <p class="field-hint">Este paquete ya está asignado a una parada de la ruta.</p>
+          }
+        }
+      </section>
+    }
+    <div class="route-actions actions">
+      @if (route.status === 'planned') {
+        <button
+          class="button primary"
+          (click)="prepareAction('start')"
+          [disabled]="!canOperate || !startAllowed(route)"
+        >
+          <app-icon name="delivery" />Iniciar reparto
+        </button>
+      }
+      @if (route.status === 'in_progress') {
+        <button
+          class="button primary"
+          (click)="prepareAction('complete')"
+          [disabled]="!canOperate || !completeAllowed(route)"
+        >
+          <app-icon name="check" />Finalizar ruta</button
+        ><span class="muted">{{ pendingCount(route) }} paquetes pendientes de resolver.</span>
+      }
+    </div>
+    @if (route.status === 'planned' && !route.stops.length) {
+      <p class="field-hint">Añade al menos un paquete para iniciar el reparto.</p>
+    }
+    <h3>Paradas · {{ route.stops.length }}</h3>
+    <p class="muted">
+      Las direcciones son las que el servidor fijó al asignar cada paquete. Los cambios posteriores
+      del cliente no alteran estas paradas.
+    </p>
+    <ol class="stops-list">
+      @for (stop of route.stops; track stop.id) {
+        <li>
+          <div class="stop-heading">
+            <div>
+              <h4>Parada {{ stop.seq }} · {{ stop.recipient_name }}</h4>
+              <p>
+                {{ stop.kind === 'agency' ? 'Entrega en agencia' : 'Domicilio' }} ·
+                {{ stopStatuses[stop.status] }}
+              </p>
+            </div>
+            @if (route.status === 'in_progress' && stop.status === 'pending') {
+              <button class="button" (click)="prepareFail(stop)" [disabled]="!canOperate">
+                Registrar no entregados
+              </button>
+            }
+          </div>
+          <p>{{ stop.address }} · {{ stop.ubigeo }}</p>
+          @if (stop.reference) {
+            <p class="muted">Referencia: {{ stop.reference }}</p>
+          }
+          @if (stop.recipient_phone) {
+            <p>Teléfono: {{ stop.recipient_phone }}</p>
+          }
+          <ul class="stop-packages">
+            @for (pkg of stop.packages; track pkg.package_id) {
+              <li>
+                <span class="package-reference">{{ pkg.package_id }}</span><span>{{
+                  results[pkg.result]
+                }}</span>
+                @if (pkg.fail_reason) {
+                  <p class="muted">Motivo: {{ pkg.fail_reason }}</p>
+                }
+                @if (pkg.resolved_at) {
+                  <p class="muted">{{ date(pkg.resolved_at) }}</p>
+                }
+              </li>
+            }
+          </ul>
+        </li>
+      }
+    </ol>
+    <p class="field-hint">
+      Conserva el enlace de esta página para retomar la ruta. La entrega con receptor y evidencia se
+      registra desde el flujo del repartidor.
+    </p>
+  </section>
+}
+<dialog #createDialog aria-labelledby="route-create-title" (cancel)="cancelCreate($event)">
+  <div class="dialog-header">
+    <h2 id="route-create-title">Nueva ruta de reparto</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar nueva ruta"
+      (click)="cancelCreate()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (createError()) {
+    <p class="alert error" role="alert">{{ createError() }}</p>
+  }
+  <form [formGroup]="createForm" (ngSubmit)="create()">
+    <fieldset class="form-grid" [disabled]="busy() || uncertainCreate()">
+      <legend class="sr-only">Planificación de reparto</legend>
+      <div class="field full">
+        <label for="new-route-date">Fecha de la nueva ruta</label
+        ><input id="new-route-date" type="date" formControlName="date" required />
+      </div>
+      <div class="field full">
+        <label for="new-route-driver">Repartidor</label
+        ><select id="new-route-driver" formControlName="driver_id">
+          <option value="">Selecciona un repartidor</option>
+          @for (driver of drivers(); track driver.id) {
+            <option [value]="driver.id">{{ driver.name }} · {{ driver.email }}</option>
+          }
+        </select>
+        @if (driversLoading()) {
+          <span role="status">Consultando repartidores…</span>
+        } @else if (driversError()) {
+          <p class="alert error" role="alert">{{ driversError() }}</p>
+          <button type="button" class="button" (click)="loadDrivers()">
+            Reintentar repartidores
+          </button>
+        } @else if (!drivers().length) {
+          <span class="field-hint"
+            >No hay repartidores registrados. Deben entrar primero a su aplicación.</span
+          >
+        }
+      </div>
+      <div class="field full">
+        <label for="new-route-warehouse">Almacén de salida en Perú</label
+        ><select id="new-route-warehouse" formControlName="warehouse_code">
+          <option value="">Selecciona un almacén</option>
+          @for (warehouse of warehouses(); track warehouse.code) {
+            <option [value]="warehouse.code">{{ warehouse.code }} · {{ warehouse.name }}</option>
+          }
+        </select>
+        @if (warehousesLoading()) {
+          <span role="status">Consultando almacenes…</span>
+        } @else if (warehousesError()) {
+          <p class="alert error" role="alert">{{ warehousesError() }}</p>
+          <button type="button" class="button" (click)="loadWarehouses()">
+            Reintentar almacenes
+          </button>
+        } @else if (!warehouses().length) {
+          <span class="field-hint">Se requiere un almacén activo de Perú.</span>
+        }
+      </div>
+    </fieldset>
+    <div class="actions dialog-footer">
+      <button type="button" class="button" (click)="cancelCreate()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="!canCreate">
+        {{ busy() ? 'Creando…' : 'Crear ruta' }}
+      </button>
+    </div>
+  </form>
+</dialog>
+<dialog #actionDialog aria-labelledby="route-action-title" (cancel)="cancelAction($event)">
+  <div class="dialog-header">
+    <h2 id="route-action-title">
+      {{ action() === 'start' ? 'Iniciar reparto' : 'Finalizar ruta' }}
+    </h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar confirmación de ruta"
+      (click)="cancelAction()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>
+    <strong>{{ selected()?.code }}</strong> · {{ selected()?.driver_name }} ·
+    {{ day(selected()?.date ?? '') }}
+  </p>
+  <p>
+    {{
+      action() === 'start'
+        ? 'Los paquetes de esta ruta pasarán a reparto. Verifica el repartidor y las paradas antes de confirmar.'
+        : 'Se cerrará la ruta con el resultado de sus paquetes. Todos deben estar resueltos antes de finalizar.'
+    }}
+  </p>
+  @if (modalError()) {
+    <p class="alert error" role="alert">{{ modalError() }}</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  @if (stale()) {
+    <button type="button" class="button" (click)="reload()" [disabled]="busy() || detailLoading()">
+      Actualizar ruta
+    </button>
+  }
+  <div class="actions dialog-footer">
+    <button class="button" (click)="cancelAction()" [disabled]="busy()">Cancelar</button
+    ><button class="button primary" (click)="confirmAction()" [disabled]="!canConfirmAction">
+      {{ busy() ? 'Guardando…' : action() === 'start' ? 'Confirmar salida' : 'Confirmar cierre' }}
+    </button>
+  </div>
+</dialog>
+<dialog #failDialog aria-labelledby="route-fail-title" (cancel)="cancelFail($event)">
+  <div class="dialog-header">
+    <h2 id="route-fail-title">Registrar no entregados</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar registro de no entregados"
+      (click)="cancelFail()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>Parada {{ failureStop()?.seq }} · {{ failureStop()?.recipient_name }}</p>
+  <p class="alert">
+    El servidor registrará un intento fallido para cada paquete seleccionado. Confirma el motivo y
+    evita incluir paquetes que sí se entregaron.
+  </p>
+  @if (modalError()) {
+    <p class="alert error" role="alert">{{ modalError() }}</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  @if (failureNotice()) {
+    <p class="alert" role="status">{{ failureNotice() }}</p>
+  }
+  @if (stale()) {
+    <button type="button" class="button" (click)="reload()" [disabled]="busy() || detailLoading()">
+      Actualizar ruta
+    </button>
+  }
+  <form [formGroup]="failure" (ngSubmit)="fail()">
+    <fieldset class="failure-fields" [disabled]="busy() || stale() || detailLoading()">
+      <legend>Paquetes pendientes de esta parada</legend>
+      @for (pkg of failureStop()?.packages ?? []; track pkg.package_id) {
+        @if (pkg.result === 'pending') {
+          <label class="package-choice"
+            ><input
+              type="checkbox"
+              [checked]="failureIds().includes(pkg.package_id)"
+              (change)="toggleFailure(pkg.package_id, $event)"
+            /><span>{{ pkg.package_id }}</span></label
+          >
+        }
+      }
+      <div class="field">
+        <label for="route-fail-reason">Motivo de no entrega</label
+        ><textarea
+          id="route-fail-reason"
+          formControlName="reason"
+          required
+          rows="3"
+          placeholder="Describe lo ocurrido en esta parada"
+        ></textarea>
+      </div>
+    </fieldset>
+    <div class="actions dialog-footer">
+      <button type="button" class="button" (click)="cancelFail()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="!canFail">
+        {{ busy() ? 'Registrando…' : 'Confirmar no entregados' }}
+      </button>
+    </div>
+  </form>
+</dialog>

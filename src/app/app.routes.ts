@@ -135,6 +135,13 @@ export const routes: Routes = [
           import('./modules/warehouses/warehouses-page').then((m) => m.WarehousesPage),
       },
       {
+        path: 'delivery-routes',
+        title: 'Rutas de reparto · DM48',
+        canActivate: [managerGuard],
+        loadComponent: () =>
+          import('./modules/delivery/delivery-routes-page').then((m) => m.DeliveryRoutesPage),
+      },
+      {
         path: 'customs',
         title: 'Aduanas · DM48',
         canActivate: [managerGuard],
