@@ -15,5 +15,5 @@
   document.documentElement.dataset.theme = mode;
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', mode === 'dark' ? '#0b1120' : '#f8fafc');
+    ?.setAttribute('content', mode === 'dark' ? '#1b1127' : '#f6f2f8');
 })();

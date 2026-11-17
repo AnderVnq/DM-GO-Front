@@ -16,8 +16,8 @@ for (const theme of ['light', 'dark'] as const) {
     });
     expect(colors).toEqual(
       theme === 'light'
-        ? { background: 'rgb(248, 250, 252)', text: 'rgb(15, 23, 42)' }
-        : { background: 'rgb(11, 17, 32)', text: 'rgb(241, 245, 249)' },
+        ? { background: 'rgb(246, 242, 248)', text: 'rgb(38, 24, 47)' }
+        : { background: 'rgb(27, 17, 39)', text: 'rgb(246, 240, 250)' },
     );
     await expect(
       page.getByRole('button', {
@@ -36,7 +36,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByText('Liberado por aduana', { exact: true })).toBeVisible();
     expect(
       await page.locator('.inspector').evaluate((el) => getComputedStyle(el).backgroundColor),
-    ).toBe(theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(19, 30, 49)');
+    ).toBe(theme === 'light' ? 'rgb(255, 252, 255)' : 'rgb(48, 39, 56)');
     await page.screenshot({ path: testInfo.outputPath('packages.png'), fullPage: true });
     await assertTextContrast(page);
     await navigate(page, 'Cotizaciones', 'quotes');
@@ -208,7 +208,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         .toBe(true);
     }
     await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(248, 250, 252)');
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(246, 242, 248)');
     expect(await page.evaluate(() => localStorage.getItem('dm48-theme'))).toBe('light');
   });
 }
@@ -222,7 +222,7 @@ test('cambia de tema aunque el navegador no admita View Transitions', async ({ p
   await page.goto('/login');
   await page.getByRole('button', { name: 'Cambiar a modo oscuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(11, 17, 32)');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(27, 17, 39)');
 });
 
 for (const clicks of [2, 3]) {

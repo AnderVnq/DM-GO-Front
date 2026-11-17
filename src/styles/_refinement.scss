@@ -193,7 +193,7 @@
   padding: 0.625rem 0.9375rem;
 }
 .button.primary {
-  background: var(--accent);
+  background: var(--action);
   border-color: transparent;
   color: var(--on-accent);
 }
@@ -369,9 +369,9 @@ dialog {
   }
 }
 
-// Acento de marca secundario; las acciones y el foco conservan el azul.
+// El ámbar destaca acciones; el titanio separa las superficies sobre la base ciruela.
 .brand-dot {
-  background: var(--brand-secondary);
+  background: var(--action);
 }
 .route-context app-icon {
   color: var(--brand-secondary);

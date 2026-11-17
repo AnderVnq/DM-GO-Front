@@ -22,7 +22,7 @@ Las dependencias están fijadas en `pnpm-lock.yaml`. Usa `pnpm install --frozen-
 
 ## Apariencia
 
-El botón de sol o luna permite alternar entre los temas azul claro y oscuro desde
+El botón de sol o luna permite alternar entre los temas claro y oscuro desde
 el acceso y la cabecera del panel. El tema oscuro se revela desde la esquina superior derecha hasta la inferior izquierda
 en 400 ms; al volver a claro el barrido se invierte. Con movimiento reducido o en
 navegadores sin soporte del efecto, el cambio es inmediato. La elección se guarda en este navegador. Sin
@@ -167,7 +167,7 @@ Estas vistas usan `/bulks` y `/consolidations`, con permisos de supervisión o a
 
 ## Apariencia e interacción
 
-Los temas claro y oscuro comparten una jerarquía de superficies para navegación, tablas, formularios y detalle. Los estados usan colores semánticos y el foco permanece visible. El cambio de tema conserva la preferencia y el barrido de esquina a esquina al usar el puntero.
+La paleta usa ciruela eclipse como base dominante (60 %), seda titanio para superficies secundarias (30 %) y destello ámbar en acciones y énfasis (10 %). Los temas claro y oscuro comparten una jerarquía de superficies para navegación, tablas, formularios y detalle. Los estados usan colores semánticos y el foco permanece visible. El cambio de tema conserva la preferencia y el barrido de esquina a esquina al usar el puntero.
 
 El movimiento explica acciones: trazado inicial USA–Perú en portada, respuesta breve al pulsar y transición de diálogos. La navegación y las tablas no añaden esperas. Con teclado o movimiento reducido se desactivan los desplazamientos de componentes; el cambio de tema por teclado es inmediato.
 
