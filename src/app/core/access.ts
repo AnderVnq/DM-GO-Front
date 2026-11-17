@@ -1,3 +1,7 @@
+export function isDriver(roles: readonly string[]): boolean {
+  return roles.includes('driver');
+}
+
 export function isAdmin(roles: readonly string[]): boolean {
   return roles.includes('admin');
 }
@@ -17,7 +21,9 @@ export function canManage(roles: readonly string[]): boolean {
 
 export function safeReturnUrl(value: string | null | undefined): string {
   if (!value || /[\\%\r\n]/.test(value)) return '/internal/overview';
-  return /^\/(?:internal|portal)(?:\/|\?|$)/.test(value) ? value : '/internal/overview';
+  return /^(?:\/(?:internal|portal)(?:\/|\?|$)|\/driver(?:\?|$))/.test(value)
+    ? value
+    : '/internal/overview';
 }
 
 export function isApiRequest(url: string, base: string, origin: string): boolean {

@@ -197,6 +197,14 @@ firmados se consultan sin el token de la API; cada reintento solicita un enlace 
 Para el almacenamiento local Floci, `documentProxyOrigin` en `app-config.json`
 redirige únicamente `http://localhost:4566` por `/document-storage`, configurado en
 `proxy.conf.json`. Reinicia `pnpm start` si cambias el proxy. En producción, permite
-GET desde el origen del frontend mediante CORS en el almacenamiento o configura
+GET y PUT desde el origen del frontend mediante CORS en el almacenamiento o configura
 una ruta equivalente en el servidor web y su origen en `documentProxyOrigin`;
 elimina esta opción si los archivos se consultan directamente con CORS habilitado.
+
+## Espacio del repartidor
+
+La ruta `/driver` requiere el rol `driver`; una cuenta de reparto entra allí después de iniciar sesión. El registro en `/driver/me` precede a la consulta de sus rutas por fecha de Perú. Solo las rutas en curso permiten registrar resultados; supervisión conserva el inicio y cierre.
+
+La entrega exige selección explícita de paquetes pendientes, receptor con documento válido, foto o video y ubicación obtenida mediante una acción del usuario. En el counter de una agencia también exige su guía. Un intento fallido requiere motivo; ubicación y evidencia son opcionales. Los conflictos actualizan los pendientes sin borrar el borrador y una lectura fallida bloquea nuevas operaciones.
+
+Las evidencias usan subidas firmadas: hasta diez fotos (15 MB cada una) o videos MP4/MOV (200 MB cada uno). Las referencias de subidas completadas se conservan durante los reintentos del registro. El almacenamiento no recibe el token de sesión y el proxy local también admite PUT. En producción, la ubicación del navegador requiere HTTPS y permiso del usuario. Las pruebas simulan API, archivos y GPS, sin entregas reales.

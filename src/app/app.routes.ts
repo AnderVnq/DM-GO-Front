@@ -2,8 +2,15 @@ import { type Routes } from '@angular/router';
 import { staffGuard } from './core/staff.guard';
 import { managerGuard } from './core/manager.guard';
 import { portalGuard } from './core/portal.guard';
+import { driverGuard } from './core/driver.guard';
 
 export const routes: Routes = [
+  {
+    path: 'driver',
+    title: 'Mis rutas de reparto · DM48',
+    canActivate: [driverGuard],
+    loadComponent: () => import('./modules/delivery/driver-page').then((m) => m.DriverPage),
+  },
   {
     path: 'portal',
     canActivate: [portalGuard],

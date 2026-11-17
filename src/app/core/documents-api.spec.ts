@@ -50,3 +50,28 @@ it('solicita un enlace nuevo cada vez sin reutilizar el enlace caducado', () => 
     'https://files.example.test/fresh.pdf',
   ]);
 });
+it('sube evidencia firmada por el proxy local conservando ruta, firma y tipo', () => {
+  TestBed.overrideProvider(RuntimeConfig, {
+    useValue: { value: { apiBaseUrl: '/api/v1', documentProxyOrigin: 'http://localhost:4566' } },
+  });
+  const http = TestBed.inject(HttpTestingController),
+    file = new File(['photo'], 'foto.jpg', { type: 'image/jpeg' });
+  let saved = '';
+  TestBed.inject(DocumentsApi)
+    .uploadDirect(file)
+    .subscribe((document) => (saved = document.id));
+  http.expectOne('/api/v1/documents/uploads').flush({
+    upload_id: 'up1',
+    method: 'PUT',
+    url: 'http://localhost:4566/bucket/foto.jpg?X-Amz-Signature=test',
+    headers: { 'Content-Type': 'image/jpeg' },
+  });
+  const storage = http.expectOne('/document-storage/bucket/foto.jpg?X-Amz-Signature=test');
+  expect(storage.request.method).toBe('PUT');
+  expect(storage.request.body).toBe(file);
+  expect(storage.request.headers.get('Authorization')).toBeNull();
+  expect(storage.request.headers.get('Content-Type')).toBe('image/jpeg');
+  storage.flush('');
+  http.expectOne('/api/v1/documents/uploads/up1/complete').flush({ id: 'doc1' });
+  expect(saved).toBe('doc1');
+});

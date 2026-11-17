@@ -43,12 +43,21 @@ export class DocumentsApi {
       .pipe(
         switchMap((ticket) => {
           const url = new URL(ticket.url, location.origin);
-          if (ticket.method !== 'PUT' || !['http:', 'https:'].includes(url.protocol)) {
+          if (
+            ticket.method !== 'PUT' ||
+            !['http:', 'https:'].includes(url.protocol) ||
+            url.username ||
+            url.password
+          ) {
             throw new Error('No se recibió un enlace de subida válido.');
           }
           // La URL ya está firmada: el almacenamiento no recibe el Bearer de la API.
+          const href =
+            this.config.value.documentProxyOrigin === url.origin
+              ? `/document-storage${url.pathname}${url.search}`
+              : url.href;
           return this.storage
-            .put(url.href, file, { headers: ticket.headers, responseType: 'text' })
+            .put(href, file, { headers: ticket.headers, responseType: 'text' })
             .pipe(
               switchMap(() =>
                 this.http.post<DocumentResponse>(

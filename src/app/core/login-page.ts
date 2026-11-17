@@ -65,9 +65,11 @@ export class LoginPage {
           ? safeReturnUrl(requested)
           : this.auth.staff()
             ? '/internal/overview'
-            : this.auth.portalUser()
-              ? '/portal'
-              : '/forbidden';
+            : this.auth.driver()
+              ? '/driver'
+              : this.auth.portalUser()
+                ? '/portal'
+                : '/forbidden';
         void router.navigateByUrl(target);
       }
     });

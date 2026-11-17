@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import Keycloak from 'keycloak-js';
 import { firstValueFrom } from 'rxjs';
 import { RuntimeConfig } from './runtime-config';
-import { canManage, isAdmin, isStaff, isPortalUser, safeReturnUrl } from './access';
+import { canManage, isAdmin, isDriver, isStaff, isPortalUser, safeReturnUrl } from './access';
 import { SessionExpiredError } from './session-error';
 
 export interface UserProfile {
@@ -23,6 +23,7 @@ export class AuthService {
   private initialization: Promise<void> | null = null;
   readonly user = signal<UserProfile | null>(null);
   readonly error = signal('');
+  readonly driver = computed(() => isDriver(this.user()?.roles ?? []));
   readonly staff = computed(() => isStaff(this.user()?.roles ?? []));
   readonly portalUser = computed(() => isPortalUser(this.user()?.roles ?? []));
   readonly admin = computed(() => isAdmin(this.user()?.roles ?? []));

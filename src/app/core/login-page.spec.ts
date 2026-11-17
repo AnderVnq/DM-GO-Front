@@ -17,6 +17,7 @@ async function setup() {
   const auth = {
     user: signal(null),
     staff: signal(false),
+    driver: signal(false),
     portalUser: signal(true),
     error: signal(''),
     ensureInitialized: vi.fn(async () => {}),

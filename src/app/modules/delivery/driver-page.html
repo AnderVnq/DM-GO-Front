@@ -1,0 +1,337 @@
+<a class="skip-link" href="#driver-content">Saltar al contenido</a>
+<header class="driver-header">
+  <a class="wordmark" routerLink="/">DM48<span class="brand-dot"></span></a>
+  <div class="actions">
+    <span class="driver-name">{{
+      identity()?.name || auth.user()?.name
+    }}</span><app-theme-toggle /><button class="button" (click)="auth.logout()" [disabled]="busy()">
+      <app-icon name="logout" />Salir
+    </button>
+  </div>
+</header>
+<main id="driver-content" class="driver-main">
+  <div class="page-header">
+    <div>
+      <h1>Mis rutas de reparto</h1>
+      <p>Consulta tus paradas y registra el resultado de los paquetes asignados.</p>
+    </div>
+  </div>
+  @if (notice()) {
+    <p class="alert success" role="status">{{ notice() }}</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  <form class="date-search surface surface-body" [formGroup]="listForm" (ngSubmit)="load()">
+    <div class="field">
+      <label for="driver-date">Fecha de reparto</label
+      ><input
+        id="driver-date"
+        type="date"
+        formControlName="date"
+        required
+        [readOnly]="busy()"
+      /><span class="field-hint">Día operativo en Perú. Solo se muestran tus rutas.</span>
+    </div>
+    <button class="button" [disabled]="busy() || loading() || !validDate">
+      Actualizar mis rutas
+    </button>
+  </form>
+  @if (loading()) {
+    <p role="status">Consultando tus rutas…</p>
+  }
+  @if (stale() && routes().length) {
+    <p class="alert">Actualiza las rutas antes de registrar entregas o intentos fallidos.</p>
+  }
+  <div class="driver-workspace">
+    <nav class="driver-routes" aria-label="Mis rutas asignadas">
+      @for (route of routes(); track route.id) {
+        <button
+          class="route-option"
+          (click)="showRoute(route)"
+          [disabled]="busy() || loading()"
+          [attr.aria-pressed]="selectedRouteId() === route.id"
+          [attr.aria-label]="'Abrir ruta ' + route.code"
+        >
+          <strong>{{ route.code }}</strong><span
+            >{{ day(route.date) }} · {{ route.warehouse_code }}</span
+          ><span>{{ statuses[route.status] }} · {{ route.stops.length }} paradas</span>
+        </button>
+      }
+    </nav>
+    @if (selectedRoute; as route) {
+      <section class="surface surface-body driver-route" aria-labelledby="driver-route-title">
+        <h2 id="driver-route-title" #routeHeading tabindex="-1">Ruta {{ route.code }}</h2>
+        <p>{{ statuses[route.status] }} · {{ day(route.date) }}</p>
+        @if (route.status === 'planned') {
+          <p class="alert">
+            Esta ruta aún no salió. Supervisión debe iniciarla antes de registrar entregas.
+          </p>
+        }
+        @if (route.status === 'completed') {
+          <p class="muted">Ruta finalizada. Los resultados se conservan para consulta.</p>
+        }
+        <ol class="driver-stops">
+          @for (stop of route.stops; track stop.id) {
+            <li>
+              <h3>Parada {{ stop.seq }} · {{ stop.recipient_name }}</h3>
+              <p>
+                {{ stop.kind === 'agency' ? 'Counter de agencia' : 'Domicilio' }} ·
+                {{ pending(stop) }} paquetes pendientes
+              </p>
+              <p>{{ stop.address }} · {{ stop.ubigeo }}</p>
+              @if (stop.reference) {
+                <p class="muted">Referencia: {{ stop.reference }}</p>
+              }
+              @if (stop.recipient_phone) {
+                <a class="phone-link" [href]="'tel:' + stop.recipient_phone"
+                  >Llamar al {{ stop.recipient_phone }}</a
+                >
+              }
+              <ul class="driver-packages">
+                @for (pkg of stop.packages; track pkg.package_id) {
+                  <li>
+                    <span class="package-reference">{{ pkg.package_id }}</span><strong>{{
+                      results[pkg.result]
+                    }}</strong>
+                    @if (pkg.fail_reason) {
+                      <span class="muted">{{ pkg.fail_reason }}</span>
+                    }
+                    @if (pkg.resolved_at) {
+                      <span class="muted">{{ date(pkg.resolved_at) }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+              @if (route.status === 'in_progress' && pending(stop)) {
+                <div class="actions stop-actions">
+                  <button
+                    class="button primary"
+                    (click)="openStop(route, stop, 'deliver')"
+                    [disabled]="busy() || loading() || stale()"
+                  >
+                    <app-icon name="check" />Registrar entrega</button
+                  ><button
+                    class="button"
+                    (click)="openStop(route, stop, 'fail')"
+                    [disabled]="busy() || loading() || stale()"
+                  >
+                    Registrar intento fallido
+                  </button>
+                </div>
+              }
+            </li>
+          }
+        </ol>
+      </section>
+    } @else if (routes().length) {
+      <section class="surface empty-state">
+        <app-icon name="delivery" />
+        <h2>Elige una ruta</h2>
+        <p>Abre una de tus rutas para consultar las paradas y sus paquetes.</p>
+      </section>
+    }
+  </div>
+  @if (!loading() && !error() && !routes().length) {
+    <section class="surface empty-state">
+      <app-icon name="delivery" />
+      <h2>No tienes rutas para esta fecha</h2>
+      <p>Consulta otra fecha o confirma la asignación con supervisión.</p>
+    </section>
+  }
+</main>
+<dialog
+  #resolutionDialog
+  class="driver-resolution"
+  aria-labelledby="driver-resolution-title"
+  (cancel)="cancel($event)"
+>
+  <div class="dialog-header">
+    <h2 id="driver-resolution-title">
+      {{ mode() === 'deliver' ? 'Registrar entrega' : 'Registrar intento fallido' }}
+    </h2>
+    <button class="icon-button" aria-label="Cerrar registro" (click)="cancel()" [disabled]="busy()">
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>Parada {{ modalStop()?.seq }} · {{ modalStop()?.recipient_name }}</p>
+  @if (modalError()) {
+    <p class="alert error" role="alert">{{ modalError() }}</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  @if (changedNotice()) {
+    <p class="alert" role="status">{{ changedNotice() }}</p>
+  }
+  @if (stale()) {
+    <button type="button" class="button" (click)="load()" [disabled]="busy() || loading()">
+      Actualizar rutas
+    </button>
+  }
+  <form [formGroup]="resolution" (ngSubmit)="resolve()">
+    <fieldset class="resolution-fields" [disabled]="busy() || loading() || stale()">
+      <legend>Paquetes a registrar</legend>
+      @for (pkg of modalStop()?.packages ?? []; track pkg.package_id) {
+        @if (pkg.result === 'pending') {
+          <label class="package-choice"
+            ><input
+              type="checkbox"
+              [checked]="selectedIds().includes(pkg.package_id)"
+              (change)="togglePackage(pkg.package_id, $event)"
+            /><span>{{ pkg.package_id }}</span></label
+          >
+        }
+      }
+      @if (!selectedIds().length) {
+        <p class="field-hint">Selecciona al menos un paquete pendiente.</p>
+      }
+      @if (mode() === 'deliver') {
+        <div class="form-grid receiver-fields">
+          <div class="field full">
+            <label for="driver-receiver">Nombre de quien recibe</label
+            ><input
+              id="driver-receiver"
+              formControlName="receiver_name"
+              required
+              maxlength="200"
+              autocomplete="name"
+            />
+          </div>
+          <div class="field">
+            <label for="driver-doc-type">Tipo de documento</label
+            ><select id="driver-doc-type" formControlName="doc_type">
+              <option value="dni">DNI</option>
+              <option value="ce">Carné de extranjería</option>
+              <option value="passport">Pasaporte</option>
+              <option value="ruc">RUC</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="driver-doc-number">Número de documento</label
+            ><input
+              id="driver-doc-number"
+              formControlName="doc_number"
+              required
+              autocomplete="off"
+              aria-describedby="receiver-doc-hint"
+            /><span id="receiver-doc-hint" class="field-hint"
+              >DNI: 8 dígitos. CE: 9–12 caracteres. Pasaporte: 6–12. RUC: 11 dígitos y verificador
+              válido.</span
+            >
+          </div>
+          @if (modalStop()?.kind === 'agency') {
+            <div class="field full">
+              <label for="driver-agency-guide">Número de guía de la agencia</label
+              ><input id="driver-agency-guide" formControlName="agency_guide_number" required />
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="field">
+          <label for="driver-fail-reason">Motivo del intento fallido</label
+          ><textarea
+            id="driver-fail-reason"
+            formControlName="reason"
+            required
+            rows="3"
+            placeholder="Describe por qué no se entregaron los paquetes"
+          ></textarea>
+        </div>
+      }
+      <section class="evidence-fields" aria-labelledby="driver-evidence-title">
+        <h3 id="driver-evidence-title">
+          {{ mode() === 'deliver' ? 'Evidencia de entrega' : 'Evidencia (opcional)' }}
+        </h3>
+        <div class="field">
+          <label for="driver-evidence">Fotos o videos</label
+          ><input
+            #fileInput
+            id="driver-evidence"
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime"
+            (change)="chooseFiles($event)"
+            aria-describedby="driver-evidence-hint"
+          /><span id="driver-evidence-hint" class="field-hint"
+            >Hasta 10 archivos. Fotos JPG, PNG o WebP: máximo 15 MB cada una. Videos MP4/MOV: máximo
+            200 MB cada uno.</span
+          >
+        </div>
+        @if (fileMessage()) {
+          <p class="alert error" role="alert">{{ fileMessage() }}</p>
+        }
+        <ul class="evidence-list">
+          @for (item of files(); track item.key) {
+            <li>
+              <div>
+                <strong>{{ item.file.name }}</strong><span class="muted">{{
+                  item.uploading ? 'Subiendo…' : item.id ? 'Subida completada' : 'Lista para subir'
+                }}</span>
+              </div>
+              <button
+                type="button"
+                class="icon-button"
+                (click)="removeFile(item.key)"
+                [disabled]="busy()"
+                [attr.aria-label]="'Quitar ' + item.file.name"
+                [attr.title]="'Quitar ' + item.file.name"
+              >
+                <app-icon name="close" />
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+      <section class="location-fields" aria-labelledby="driver-location-title">
+        <h3 id="driver-location-title">
+          {{ mode() === 'deliver' ? 'Ubicación de entrega' : 'Ubicación (opcional)' }}
+        </h3>
+        <p class="muted">Se adjuntará la ubicación obtenida al registro de esta parada.</p>
+        <button
+          type="button"
+          class="button"
+          (click)="captureLocation()"
+          [disabled]="busy() || geoLoading()"
+        >
+          {{
+            geoLoading()
+              ? 'Obteniendo ubicación…'
+              : point()
+                ? 'Actualizar ubicación'
+                : 'Obtener ubicación'
+          }}
+        </button>
+        @if (point(); as position) {
+          <p class="field-hint" role="status">
+            Ubicación obtenida: {{ position.latitude.toFixed(5) }},
+            {{ position.longitude.toFixed(5) }}. Precisión aproximada:
+            {{ accuracy()?.toFixed(0) }} m.
+          </p>
+        }
+        @if (geoError()) {
+          <p class="alert error" role="alert">{{ geoError() }}</p>
+        }
+      </section>
+    </fieldset>
+    <p class="field-hint">
+      {{
+        mode() === 'deliver'
+          ? 'Confirma después de revisar el receptor, los paquetes y la evidencia.'
+          : 'Se registrará un intento fallido únicamente para los paquetes seleccionados.'
+      }}
+    </p>
+    <div class="actions resolution-actions">
+      <button type="button" class="button" (click)="cancel()" [disabled]="busy()">Cancelar</button
+      ><button class="button primary" [disabled]="!canSubmit">
+        {{
+          busy()
+            ? 'Guardando…'
+            : mode() === 'deliver'
+              ? 'Confirmar entrega'
+              : 'Confirmar intento fallido'
+        }}
+      </button>
+    </div>
+  </form>
+</dialog>
