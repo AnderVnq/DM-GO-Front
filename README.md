@@ -62,6 +62,7 @@ src/app/
     ├── warehouses/
     ├── consolidation/
     ├── airfreight/
+    ├── receptions/
     ├── customers/
     ├── shipments/
     ├── billing/
@@ -79,6 +80,7 @@ La portada pública está en `/`, el alta y casillero propio en `/portal` y el p
 - Paquetes: consulta por cliente, prealertas, seguimiento con reintento y factura adjunta editable antes de consolidar.
 - Notas de salida: borradores, guías, cargos, destino, liquidación, pagos, revisión de vouchers y PDF.
 - Cotizaciones: compra asistida para prospectos o clientes, desglose y PDF. Un prospecto requiere nombre y al menos correo o teléfono; tienda y enlace del producto son opcionales.
+- Recepción en Lima: apertura para una MAWB despachada en un almacén activo de Perú, escaneos acumulativos de guías/WR, corrección de cantidades con lápiz y modal y cierre confirmado con completos, diferencias, faltantes y sobrantes. Solo supervisor/admin; recuperación por referencia o enlace y bloqueo ante respuestas inciertas para evitar duplicados.
 - Operación aérea: creación y consulta de MAWB por referencia o enlace, manifiestos de consolidados cerrados con exportación CSV, asociación a vuelos y confirmación de salida. Solo supervisor/admin; fechas explícitas en hora de Perú y cantidades confirmadas por el servidor.
 - Resumen: registros recientes y accesos a la operación; sin indicadores globales calculados a partir de muestras.
 

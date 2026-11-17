@@ -63,6 +63,7 @@ export class InternalShell {
     { path: 'bulks', label: 'Bultos', icon: 'packages', managerOnly: true },
     { path: 'consolidations', label: 'Consolidados', icon: 'plane', managerOnly: true },
     { path: 'airfreight', label: 'Operación aérea', icon: 'plane', managerOnly: true },
+    { path: 'receptions', label: 'Recepción en Lima', icon: 'warehouse', managerOnly: true },
   ];
   get navigation() {
     return this.navigationItems.filter((item) => !item.managerOnly || this.auth.manager());

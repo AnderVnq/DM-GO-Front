@@ -1,0 +1,479 @@
+<div class="page-header">
+  <div>
+    <h1>Recepción en Lima</h1>
+    <p>Escanea las guías o WR de la MAWB y confirma el cuadre de llegada.</p>
+  </div>
+  <button class="button primary" (click)="startNew()" [disabled]="busy() || loading()">
+    <app-icon name="plus" />Nueva recepción
+  </button>
+</div>
+<form class="customer-strip search-bar" [formGroup]="lookup" (ngSubmit)="openSession()">
+  <label class="field" for="reception-reference"
+    >Referencia o enlace de recepción<input
+      id="reception-reference"
+      formControlName="reference"
+      [readOnly]="busy() || loading()"
+      placeholder="Pega el enlace guardado o la referencia UUID"
+  /></label>
+  <button
+    class="button"
+    [disabled]="!lookup.controls.reference.value.trim() || busy() || loading()"
+  >
+    Abrir recepción
+  </button>
+</form>
+@if (error() && !confirming() && !correcting()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+@if (notice()) {
+  <p class="alert success" role="status">{{ notice() }}</p>
+}
+@if (loading()) {
+  <p role="status">Actualizando recepción…</p>
+}
+@if (session(); as item) {
+  <section class="surface surface-body reception-summary">
+    <div class="page-header">
+      <div>
+        <h2 #receptionHeading tabindex="-1">MAWB {{ item.mawb_number }}</h2>
+        <p>
+          {{ item.warehouse_code }} ·
+          {{ item.status === 'open' ? 'Recepción abierta' : 'Recepción cerrada' }}
+        </p>
+      </div>
+      <a class="button" routerLink="/internal/airfreight" [queryParams]="{ mawb_id: item.mawb_id }"
+        >Consultar vuelo</a
+      >
+    </div>
+    <dl class="detail-grid">
+      <div>
+        <dt>Apertura · hora de Perú</dt>
+        <dd>{{ date(item.opened_at) }}</dd>
+      </div>
+      <div>
+        <dt>Cierre · hora de Perú</dt>
+        <dd>{{ date(item.closed_at ?? undefined) }}</dd>
+      </div>
+    </dl>
+    <div class="actions">
+      <button class="button" (click)="reload()" [disabled]="busy() || loading()">
+        Actualizar recepción</button
+      ><button class="button" (click)="copyLink()">Copiar enlace</button>
+      @if (item.status === 'open') {
+        <button class="button primary" (click)="prepareClose()" [disabled]="!canOperate">
+          Cerrar recepción
+        </button>
+      }
+    </div>
+    @if (stale()) {
+      <p class="alert">La sesión debe actualizarse antes de registrar otro escaneo o cerrar.</p>
+    }
+    @if (uncertainScan()) {
+      <div class="alert">
+        <p>
+          No se pudo confirmar el último envío. Revisa los códigos y cantidades del historial antes
+          de continuar; el escaneo no se reenviará automáticamente.
+        </p>
+        <button
+          class="button"
+          (click)="acknowledgeScans()"
+          [disabled]="stale() || loading() || busy()"
+        >
+          Revisé el historial; continuar
+        </button>
+      </div>
+    }
+  </section>
+  @if (item.status === 'open') {
+    <section class="surface surface-body scanner-workspace" aria-labelledby="scanner-title">
+      <h2 id="scanner-title">Registrar escaneo</h2>
+      <p class="muted">
+        Puedes usar el lector y pulsar Enter. Repetir un código suma piezas; usa el lápiz para
+        corregir una cantidad existente.
+      </p>
+      <form [formGroup]="scanForm" (ngSubmit)="scan()">
+        <fieldset class="scan-grid" [disabled]="!canOperate">
+          <legend class="sr-only">Datos del escaneo</legend>
+          <div class="field">
+            <label for="scan-code">Guía o WR</label
+            ><input
+              #scanner
+              id="scan-code"
+              formControlName="code"
+              autocomplete="off"
+              spellcheck="false"
+              required
+              placeholder="Escanea o escribe el código"
+              [attr.aria-invalid]="
+                scanForm.controls.code.dirty && !validScanCodeHint ? 'true' : null
+              "
+              aria-describedby="scan-code-hint"
+            /><span id="scan-code-hint" class="field-hint"
+              >Código de hasta 40 bytes; se ignoran espacios al inicio y al final.</span
+            >
+          </div>
+          <div class="field">
+            <label for="scan-pieces">Piezas a sumar</label
+            ><input
+              id="scan-pieces"
+              type="number"
+              min="1"
+              max="999"
+              step="1"
+              formControlName="pieces"
+              required
+              aria-describedby="scan-pieces-hint"
+            /><span id="scan-pieces-hint" class="field-hint">De 1 a 999, sin decimales.</span>
+          </div>
+          <div class="field scan-note">
+            <label for="scan-note">Observación (opcional)</label
+            ><input id="scan-note" formControlName="note" />
+          </div>
+          <button class="button primary" [disabled]="!canOperate || !validScan">
+            {{ busy() ? 'Registrando…' : 'Registrar escaneo' }}
+          </button>
+        </fieldset>
+      </form>
+      @if (lastScan(); as scan) {
+        <p class="alert" role="status">
+          <strong>{{ scan.code }}</strong> · {{ scan.pieces }} piezas registradas para este código.
+          {{
+            scan.in_mawb
+              ? 'Corresponde a esta MAWB.'
+              : scan.known_package
+                ? 'Paquete conocido, fuera de esta MAWB.'
+                : 'Código no identificado; quedará disponible para el cuadre.'
+          }}
+        </p>
+      }
+    </section>
+  }
+  <section class="surface scan-history" aria-labelledby="scan-history-title">
+    <div class="section-heading">
+      <h2 id="scan-history-title">Historial de escaneos</h2>
+      <span>{{ item.scans.length }} códigos</span>
+    </div>
+    <div class="table-scroll" tabindex="0" aria-label="Escaneos registrados">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Guía o WR</th>
+            <th scope="col">Piezas registradas</th>
+            <th scope="col">Hora de Perú</th>
+            <th scope="col">Observación</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (scan of item.scans; track scan.code) {
+            <tr>
+              <td>{{ scan.code }}</td>
+              <td>{{ scan.pieces }}</td>
+              <td>{{ date(scan.scanned_at) }}</td>
+              <td>{{ scan.note || '—' }}</td>
+              <td>
+                @if (item.status === 'open') {
+                  <button
+                    class="icon-button"
+                    (click)="openCorrection(scan)"
+                    [disabled]="!canOperate"
+                    [attr.aria-label]="'Corregir escaneo ' + scan.code"
+                    [attr.title]="'Corregir escaneo ' + scan.code"
+                  >
+                    <app-icon name="edit" />
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!item.scans.length) {
+      <p class="empty-state">Todavía no hay códigos registrados en esta sesión.</p>
+    }
+    @if (item.status === 'open') {
+      <p class="table-footer">
+        El cuadre de completos, diferencias, faltantes y sobrantes se confirma al cerrar.
+      </p>
+    }
+  </section>
+  @if (item.status === 'closed') {
+    <section class="surface surface-body result-workspace" aria-labelledby="reception-result-title">
+      <h2 id="reception-result-title">Cuadre de recepción</h2>
+      <p class="muted">
+        Resultado confirmado por el servidor al cerrar. Las diferencias de cantidad se muestran por
+        paquete y su guía; no se suman entre sí.
+      </p>
+      @if (item.result; as result) {
+        <h3>Completos · {{ result.complete.length }}</h3>
+        @if (result.complete.length) {
+          <ul class="line-list">
+            @for (piece of result.complete; track piece.PackageID) {
+              <li>
+                <span>{{ piece.Guide || piece.WR || piece.PackageID }}</span><span>{{
+                  piece.WR
+                }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">Sin paquetes completos.</p>
+        }
+        <h3>Con diferencias · {{ result.different.length }}</h3>
+        @if (result.different.length) {
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Guía / WR</th>
+                  <th>Piezas recibidas en su guía</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (piece of result.different; track piece.PackageID) {
+                  <tr>
+                    <td>
+                      {{ piece.Guide || piece.PackageID }}<small>{{ piece.WR }}</small>
+                    </td>
+                    <td>{{ piece.received }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="muted">Sin diferencias de piezas.</p>
+        }
+        <h3>Faltantes · {{ result.missing.length }}</h3>
+        @if (result.missing.length) {
+          <ul class="line-list">
+            @for (piece of result.missing; track piece.PackageID) {
+              <li>
+                <span>{{ piece.Guide || piece.WR || piece.PackageID }}</span><span>{{
+                  piece.WR
+                }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">Sin paquetes faltantes.</p>
+        }
+        <h3>Sobrantes · {{ result.extra.length }}</h3>
+        @if (result.extra.length) {
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Piezas</th>
+                  <th>Observación</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (scan of result.extra; track scan.Code) {
+                  <tr>
+                    <td>
+                      {{ scan.Code
+                      }}<small>{{
+                        scan.PackageID
+                          ? 'Paquete conocido fuera de la MAWB'
+                          : 'Código no identificado'
+                      }}</small>
+                    </td>
+                    <td>{{ scan.Pieces }}</td>
+                    <td>{{ scan.Note || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="muted">Sin códigos sobrantes.</p>
+        }
+      } @else {
+        <p class="alert">
+          No se recibió el detalle del cuadre. Actualiza la recepción para consultarlo.
+        </p>
+      }
+    </section>
+  }
+} @else if (!loading()) {
+  <section class="surface empty-state">
+    <app-icon name="warehouse" />
+    <h2>Prepara la recepción de una MAWB</h2>
+    <p>Abre una sesión en un almacén de Perú o retoma una recepción con su enlace guardado.</p>
+  </section>
+}
+<dialog #createDialog aria-labelledby="reception-create-title" (cancel)="cancelNew($event)">
+  <div class="dialog-header">
+    <div>
+      <h2 id="reception-create-title">Nueva recepción</h2>
+      <p class="muted">Comprueba la MAWB y el almacén de llegada.</p>
+    </div>
+    <button
+      class="icon-button"
+      type="button"
+      aria-label="Cerrar nueva recepción"
+      (click)="cancelNew()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (createError()) {
+    <p class="alert error" role="alert">{{ createError() }}</p>
+  }
+  <form [formGroup]="newForm" (ngSubmit)="create()">
+    <fieldset class="form-grid" [disabled]="busy()">
+      <legend class="sr-only">Datos de llegada</legend>
+      <div class="field full">
+        <label for="reception-mawb">Referencia o enlace de MAWB</label
+        ><input id="reception-mawb" formControlName="mawb_reference" autocomplete="off" /><button
+          type="button"
+          class="button"
+          (click)="checkMawb()"
+          [disabled]="!newForm.controls.mawb_reference.value.trim() || mawbLoading()"
+        >
+          Comprobar MAWB
+        </button>
+      </div>
+      @if (mawbLoading()) {
+        <p class="full" role="status">Consultando MAWB…</p>
+      }
+      @if (checkedMawb(); as mawb) {
+        <div class="full">
+          <h3>{{ mawb.number }}</h3>
+          <p>{{ mawb.flight_number }} · {{ mawb.origin }} → {{ mawb.destination }}</p>
+          @if (mawb.status !== 'closed') {
+            <p class="alert">Registra la salida del vuelo antes de abrir su recepción en Lima.</p>
+          }
+        </div>
+      }
+      <div class="field full">
+        <label for="reception-warehouse">Almacén de llegada en Perú</label
+        ><select id="reception-warehouse" formControlName="warehouse_code">
+          <option value="">Selecciona un almacén</option>
+          @for (warehouse of warehouses(); track warehouse.code) {
+            <option [value]="warehouse.code">{{ warehouse.code }} · {{ warehouse.name }}</option>
+          }
+        </select>
+      </div>
+      @if (catalogLoading()) {
+        <p class="full" role="status">Consultando almacenes…</p>
+      }
+      @if (catalogError()) {
+        <div class="full">
+          <p class="alert error" role="alert">{{ catalogError() }}</p>
+          <button type="button" class="button" (click)="loadWarehouses()">
+            Reintentar almacenes
+          </button>
+        </div>
+      }
+      @if (!catalogLoading() && !catalogError() && !warehouses().length) {
+        <p class="full">
+          Necesitas un almacén activo de Perú.
+          <a routerLink="/internal/warehouses">Consultar almacenes</a>
+        </p>
+      }
+      <div class="actions full">
+        <button type="button" class="button" (click)="cancelNew()">Cancelar</button
+        ><button class="button primary" [disabled]="!canCreate">
+          {{ busy() ? 'Abriendo…' : 'Abrir sesión' }}
+        </button>
+      </div>
+    </fieldset>
+  </form>
+</dialog>
+<dialog
+  #correctionDialog
+  aria-labelledby="reception-correction-title"
+  (cancel)="cancelCorrection($event)"
+>
+  <div class="dialog-header">
+    <div>
+      <h2 id="reception-correction-title">Corregir escaneo</h2>
+      <p>{{ editingScan()?.code }}</p>
+    </div>
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Cerrar corrección"
+      (click)="cancelCorrection()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (correctionError()) {
+    <p class="alert error" role="alert">{{ correctionError() }}</p>
+  }
+  @if (uncertainScan()) {
+    <p class="alert">
+      No se pudo confirmar el envío. Cancela y revisa el historial antes de volver a corregir.
+    </p>
+  }
+  <form [formGroup]="correction" (ngSubmit)="saveCorrection()">
+    <fieldset class="form-grid" [disabled]="busy()">
+      <legend class="sr-only">Corrección del código</legend>
+      <div class="field full">
+        <label for="correction-pieces">Cantidad final de piezas</label
+        ><input
+          id="correction-pieces"
+          type="number"
+          min="0"
+          max="999"
+          step="1"
+          formControlName="pieces"
+          required
+          aria-describedby="correction-hint"
+        /><span class="field-hint" id="correction-hint"
+          >Reemplaza la cantidad anterior; 0 anula sus piezas en el cuadre.</span
+        >
+      </div>
+      <div class="field full">
+        <label for="correction-note">Observación (opcional)</label
+        ><textarea id="correction-note" formControlName="note"></textarea>
+      </div>
+      <div class="actions full">
+        <button type="button" class="button" (click)="cancelCorrection()">Cancelar</button
+        ><button class="button primary" [disabled]="!canCorrect">
+          {{ busy() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </fieldset>
+  </form>
+</dialog>
+<dialog #closeDialog aria-labelledby="reception-close-title" (cancel)="cancelClose($event)">
+  <div class="dialog-header">
+    <h2 id="reception-close-title">Cerrar recepción</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar confirmación"
+      (click)="cancelClose()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p>
+    Confirmas el cierre de la recepción de <strong>{{ session()?.mawb_number }}</strong> en
+    <strong>{{ session()?.warehouse_code }}</strong>.
+  </p>
+  <p>
+    Se calculará el cuadre y se registrará la llegada a Lima de los paquetes conciliados. Después no
+    podrás añadir ni corregir escaneos.
+  </p>
+  @if (!session()?.scans?.length) {
+    <p class="alert">No hay escaneos registrados. Revisa la sesión antes de confirmar el cierre.</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  <div class="actions">
+    <button class="button" (click)="cancelClose()" [disabled]="busy()">Cancelar</button
+    ><button class="button primary" (click)="closeReception()" [disabled]="!canOperate">
+      {{ busy() ? 'Cerrando…' : 'Confirmar cierre' }}
+    </button>
+  </div>
+</dialog>

@@ -52,6 +52,16 @@
           Actualizar MAWB</button
         ><button class="button" (click)="copyLink()">Copiar enlace</button>
       </div>
+      @if (item.status === 'closed') {
+        <div class="actions">
+          <a
+            class="button primary"
+            routerLink="/internal/receptions"
+            [queryParams]="{ mawb_id: item.id }"
+            ><app-icon name="warehouse" />Recibir en Lima</a
+          >
+        </div>
+      }
       <h3 class="detail-section">Consolidados asociados</h3>
       <ul class="line-list">
         @for (id of item.consolidation_ids ?? []; track id) {
