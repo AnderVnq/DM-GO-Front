@@ -26,3 +26,25 @@ export interface CreateCustomerInput {
   email: string;
   phone: string;
 }
+
+export type CustomerSort = 'newest' | 'oldest' | 'name';
+
+export type CustomerListItem = Pick<
+  Customer,
+  'id' | 'locker_code' | 'name' | 'email' | 'phone' | 'document' | 'created_at'
+> & { seller: { id: string; name: string } | null };
+
+export interface CustomerListQuery {
+  q: string;
+  sort: CustomerSort;
+  limit: number;
+  offset: number;
+  seller_id?: string;
+}
+
+export interface CustomerListPage {
+  customers: CustomerListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}

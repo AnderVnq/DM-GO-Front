@@ -165,6 +165,19 @@ export async function mockPanel(
         },
       };
       data = customer;
+    } else if (
+      path === '/customers' &&
+      method === 'GET' &&
+      !new URL(request.url()).searchParams.has('locker_code') &&
+      !new URL(request.url()).searchParams.has('doc_number')
+    ) {
+      const params = new URL(request.url()).searchParams;
+      data = {
+        customers: [{ ...customer, seller: null }],
+        total: 1,
+        limit: Number(params.get('limit') || 25),
+        offset: Number(params.get('offset') || 0),
+      };
     } else if ((path === '/customers' || path === `/customers/${customer.id}`) && method === 'GET')
       data = customer;
     else if (path === `/customers/${customer.id}/contact` && method === 'PATCH') {

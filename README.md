@@ -74,7 +74,7 @@ La portada pública está en `/`, el alta y casillero propio en `/portal` y el p
 
 ## Funcionalidad
 
-- Clientes: búsqueda por casillero o DNI/RUC, registro y actualización de contacto.
+- Clientes: listado paginado con búsqueda general, orden por fecha o nombre y vendedor asignado. La API limita los resultados según el usuario. Cada fila abre la ficha completa; al volver se conservan los filtros y la página. También permite búsqueda exacta por casillero o DNI/RUC, registro y edición de contacto mediante modal.
 - Paquetes: consulta por cliente, prealertas, seguimiento con reintento y factura adjunta editable antes de consolidar.
 - Notas de salida: borradores, guías, cargos, destino, liquidación, pagos, revisión de vouchers y PDF.
 - Cotizaciones: compra asistida para prospectos o clientes, desglose y PDF. Un prospecto requiere nombre y al menos correo o teléfono; tienda y enlace del producto son opcionales.

@@ -15,7 +15,7 @@ describe('CustomersApi', () => {
     }),
   );
   afterEach(() => TestBed.inject(HttpTestingController).verify());
-  it('busca un cliente individual por casillero sin inventar listados', () => {
+  it('busca un cliente individual por casillero', () => {
     TestBed.inject(CustomersApi)
       .findByLocker(' pe00042 ')
       .subscribe((customer) => expect(customer.id).toBe('customer-1'));
@@ -29,5 +29,28 @@ describe('CustomersApi', () => {
     TestBed.inject(HttpTestingController)
       .expectOne('/api/v1/customers?doc_type=dni&doc_number=74218365')
       .flush({ id: 'customer-1' });
+  });
+  it('consulta una página con los filtros del contrato y vendedor nullable', () => {
+    TestBed.inject(CustomersApi)
+      .list({ q: '  Ana  ', sort: 'name', limit: 25, offset: 50 })
+      .subscribe((page) => {
+        expect(page.total).toBe(100);
+        expect(page.customers[0]?.seller).toBeNull();
+      });
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      (req) =>
+        req.url === '/api/v1/customers' &&
+        req.params.get('q') === 'Ana' &&
+        req.params.get('sort') === 'name' &&
+        req.params.get('limit') === '25' &&
+        req.params.get('offset') === '50',
+    );
+    expect(request.request.params.has('locker_code')).toBe(false);
+    request.flush({
+      customers: [{ id: 'customer-1', seller: null }],
+      total: 100,
+      limit: 25,
+      offset: 50,
+    });
   });
 });

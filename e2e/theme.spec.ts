@@ -30,6 +30,11 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('overview.png'), fullPage: true });
     await navigate(page, 'Clientes', 'customers');
+    if (
+      !(await page.locator('details').evaluate((element) => (element as HTMLDetailsElement).open))
+    ) {
+      await page.getByText('Buscar por casillero o documento exacto', { exact: true }).click();
+    }
     await page.getByLabel('Casillero o documento', { exact: true }).fill('PE00042');
     await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
     await page.getByRole('link', { name: 'Ver paquetes', exact: true }).click();

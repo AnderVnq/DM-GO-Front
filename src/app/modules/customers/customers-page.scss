@@ -1,0 +1,31 @@
+.customer-exact-search {
+  margin-bottom: 1.25rem;
+}
+.customer-list-filters .field.narrow {
+  flex: 0 0 10rem;
+  min-width: 10rem;
+}
+.customer-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.customer-pagination .actions {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .customer-list-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .customer-list-filters .field,
+  .customer-list-filters .field.narrow {
+    min-width: 0;
+  }
+  .customer-list-filters .field:first-child,
+  .customer-list-filters .button {
+    grid-column: 1 / -1;
+  }
+}

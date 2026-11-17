@@ -18,6 +18,11 @@ async function fillRegistration(page: Page) {
 }
 
 async function findCustomer(page: Page) {
+  if (
+    !(await page.locator('details').evaluate((element) => (element as HTMLDetailsElement).open))
+  ) {
+    await page.getByText('Buscar por casillero o documento exacto', { exact: true }).click();
+  }
   await page.getByLabel('Casillero o documento', { exact: true }).fill('PE00042');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Cliente de prueba', exact: true })).toBeVisible();
@@ -31,6 +36,11 @@ test('registra un cliente y conserva el casillero e identificador asignados por 
   await page.route('**/api/v1/customers?locker_code=UNKNOWN', (route) =>
     route.fulfill({ status: 404, json: { detail: 'El cliente no existe' } }),
   );
+  if (
+    !(await page.locator('details').evaluate((element) => (element as HTMLDetailsElement).open))
+  ) {
+    await page.getByText('Buscar por casillero o documento exacto', { exact: true }).click();
+  }
   await page.getByLabel('Casillero o documento', { exact: true }).fill('UNKNOWN');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('El cliente no existe');
@@ -176,6 +186,11 @@ test('una búsqueda fallida no conserva el éxito de una edición anterior', asy
   await page.route('**/api/v1/customers?**', (route) =>
     route.fulfill({ status: 404, json: { detail: 'El cliente no existe' } }),
   );
+  if (
+    !(await page.locator('details').evaluate((element) => (element as HTMLDetailsElement).open))
+  ) {
+    await page.getByText('Buscar por casillero o documento exacto', { exact: true }).click();
+  }
   await page.getByLabel('Casillero o documento', { exact: true }).fill('PE99999');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('El cliente no existe');

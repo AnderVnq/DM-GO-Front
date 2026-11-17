@@ -3,7 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CustomersApi } from './customers-api';
-import { type Customer } from './customer.model';
+import {
+  type Customer,
+  type CustomerListPage,
+  type CustomerListQuery,
+  type CustomerSort,
+} from './customer.model';
 import { customerFieldErrors } from './customer-validation';
 import { Icon } from '../../shared/icon';
 import { requestMessage } from '../../core/api-problem';
@@ -13,6 +18,7 @@ import { formatDate } from '../../shared/amount';
   selector: 'app-customers-page',
   imports: [ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './customers-page.html',
+  styleUrl: './customers-page.scss',
 })
 export class CustomersPage {
   private readonly api = inject(CustomersApi);
@@ -33,9 +39,90 @@ export class CustomersPage {
   readonly formatDate = formatDate;
   readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('createDialog');
   private request?: Subscription;
+  private listRequest?: Subscription;
+  readonly listPage = signal<CustomerListPage | null>(null);
+  readonly listLoading = signal(false);
+  readonly listError = signal('');
+  readonly listFilters = this.fb.nonNullable.group({
+    q: ['', Validators.maxLength(100)],
+    sort: ['newest' as CustomerSort],
+    limit: [25],
+  });
+  private listQuery: CustomerListQuery = { q: '', sort: 'newest', limit: 25, offset: 0 };
+
+  applyListFilters() {
+    if (this.listFilters.invalid || this.saving()) return;
+    this.listQuery = { ...this.listFilters.getRawValue(), offset: 0 };
+    this.reloadList();
+  }
+
+  reloadList() {
+    if (this.saving()) return;
+    this.listRequest?.unsubscribe();
+    this.listLoading.set(true);
+    this.listError.set('');
+    this.listPage.set(null);
+    this.listRequest = this.api.list(this.listQuery).subscribe({
+      next: (page) => {
+        if (page.total > 0 && page.offset >= page.total) {
+          this.listQuery = {
+            ...this.listQuery,
+            offset: Math.floor((page.total - 1) / page.limit) * page.limit,
+          };
+          this.reloadList();
+          return;
+        }
+        const currentPage = page.total === 0 ? { ...page, offset: 0 } : page;
+        this.listQuery = {
+          ...this.listQuery,
+          limit: currentPage.limit,
+          offset: currentPage.offset,
+        };
+        this.listPage.set(currentPage);
+        this.listLoading.set(false);
+      },
+      error: (error: unknown) => {
+        this.listError.set(requestMessage(error));
+        this.listLoading.set(false);
+      },
+    });
+  }
+
+  changePage(direction: -1 | 1) {
+    const page = this.listPage();
+    if (!page || this.listLoading() || this.saving()) return;
+    const offset = page.offset + direction * page.limit;
+    if (offset < 0 || offset >= page.total) return;
+    this.listQuery = { ...this.listQuery, offset };
+    this.reloadList();
+  }
+
+  openCustomer(id: string) {
+    if (this.saving() || this.loading()) return;
+    this.request?.unsubscribe();
+    this.customer.set(null);
+    this.success.set('');
+    this.error.set('');
+    this.load(id);
+  }
+
+  backToList() {
+    if (this.saving()) return;
+    this.request?.unsubscribe();
+    this.customer.set(null);
+    this.loading.set(false);
+    this.error.set('');
+    this.success.set('');
+    void this.router.navigate([], {
+      queryParams: { id: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    this.reloadList();
+  }
   readonly search = this.fb.nonNullable.group({
     kind: ['locker'],
-    value: ['', Validators.required],
+    value: ['', [Validators.required, Validators.pattern(/\S/)]],
   });
   readonly form = this.fb.nonNullable.group({
     doc_type: ['dni' as 'dni' | 'ruc', Validators.required],
@@ -51,7 +138,10 @@ export class CustomersPage {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
-    destroyRef.onDestroy(() => this.request?.unsubscribe());
+    destroyRef.onDestroy(() => {
+      this.request?.unsubscribe();
+      this.listRequest?.unsubscribe();
+    });
     for (const [controls, fields] of [
       [this.form.controls, this.formFields],
       [this.contact.controls, this.contactFields],
@@ -70,6 +160,7 @@ export class CustomersPage {
     }
     const id = inject(ActivatedRoute).snapshot.queryParamMap.get('id');
     if (id) this.load(id);
+    else this.reloadList();
   }
 
   find() {
@@ -104,6 +195,7 @@ export class CustomersPage {
       next: (customer) => {
         this.setCustomer(customer);
         this.loading.set(false);
+        void this.router.navigate([], { queryParams: { id: customer.id }, replaceUrl: true });
       },
       error: (error: unknown) => {
         this.error.set(requestMessage(error));

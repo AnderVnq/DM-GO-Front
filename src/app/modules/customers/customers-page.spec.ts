@@ -16,7 +16,10 @@ const customer: Customer = {
   created_at: '2026-11-12T12:00:00Z',
 };
 function setup() {
-  const api = { updateContact: vi.fn(() => of(customer)) };
+  const api = {
+    list: vi.fn(() => of({ customers: [], total: 0, limit: 25, offset: 0 })),
+    updateContact: vi.fn(() => of(customer)),
+  };
   TestBed.configureTestingModule({
     providers: [provideRouter([]), { provide: CustomersApi, useValue: api }],
   });
@@ -97,7 +100,11 @@ it('una búsqueda pendiente no reemplaza al cliente recién registrado', () => {
     providers: [
       {
         provide: CustomersApi,
-        useValue: { findByLocker: () => pending, create: () => of(created) },
+        useValue: {
+          list: () => of({ customers: [], total: 0, limit: 25, offset: 0 }),
+          findByLocker: () => pending,
+          create: () => of(created),
+        },
       },
       provideRouter([]),
     ],
@@ -139,7 +146,10 @@ it('la respuesta lenta de una búsqueda no reemplaza al segundo cliente encontra
     providers: [
       {
         provide: CustomersApi,
-        useValue: { findByLocker: (code: string) => (code === 'PE00042' ? first : of(second)) },
+        useValue: {
+          list: () => of({ customers: [], total: 0, limit: 25, offset: 0 }),
+          findByLocker: (code: string) => (code === 'PE00042' ? first : of(second)),
+        },
       },
       provideRouter([]),
     ],

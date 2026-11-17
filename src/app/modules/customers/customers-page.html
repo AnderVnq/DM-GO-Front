@@ -1,33 +1,39 @@
 <div class="page-header">
   <div>
     <h1>Clientes</h1>
-    <p>Encuentra un cliente y continúa con su operación.</p>
+    <p>Consulta tus clientes, encuentra su casillero y continúa con su operación.</p>
   </div>
   <button class="button primary" (click)="createDialog.showModal()">
     <app-icon name="plus" />Nuevo cliente
   </button>
 </div>
-<form class="customer-strip search-bar" [formGroup]="search" (ngSubmit)="find()">
-  <label class="field narrow"
-    >Buscar por<select formControlName="kind">
-      <option value="locker">Casillero</option>
-      <option value="dni">DNI</option>
-      <option value="ruc">RUC</option>
-    </select></label
-  >
-  <label class="field"
-    >Casillero o documento<input
-      formControlName="value"
-      placeholder="Ej. PE00042"
-      autocomplete="off"
-      required
-  /></label>
-  <button class="button" [disabled]="search.invalid || saving()">
-    <app-icon name="search" />Buscar cliente
-  </button>
-</form>
+<details class="surface surface-body customer-exact-search">
+  <summary>Buscar por casillero o documento exacto</summary>
+  <form class="customer-strip search-bar" [formGroup]="search" (ngSubmit)="find()">
+    <label class="field narrow"
+      >Buscar por<select formControlName="kind">
+        <option value="locker">Casillero</option>
+        <option value="dni">DNI</option>
+        <option value="ruc">RUC</option>
+      </select></label
+    >
+    <label class="field"
+      >Casillero o documento<input
+        formControlName="value"
+        placeholder="Ej. PE00042"
+        autocomplete="off"
+        required
+    /></label>
+    <button class="button" [disabled]="search.invalid || saving()">
+      <app-icon name="search" />Buscar cliente
+    </button>
+  </form>
+</details>
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
+  @if (!customer()) {
+    <button class="button" (click)="backToList()" [disabled]="saving()">Volver al listado</button>
+  }
 }
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
@@ -35,7 +41,124 @@
 @if (loading()) {
   <p role="status" class="muted">Buscando cliente…</p>
 }
+@if (!customer() && !loading()) {
+  <form
+    class="customer-strip search-bar customer-list-filters"
+    [formGroup]="listFilters"
+    (ngSubmit)="applyListFilters()"
+  >
+    <label class="field"
+      >Buscar clientes<input
+        formControlName="q"
+        maxlength="100"
+        placeholder="Nombre, casillero, documento o correo"
+    /></label>
+    <label class="field narrow"
+      >Ordenar por<select formControlName="sort" (change)="applyListFilters()">
+        <option value="newest">Más recientes</option>
+        <option value="oldest">Más antiguos</option>
+        <option value="name">Nombre A–Z</option>
+      </select></label
+    >
+    <label class="field narrow"
+      >Por página<select formControlName="limit" (change)="applyListFilters()">
+        <option [ngValue]="25">25 clientes</option>
+        <option [ngValue]="50">50 clientes</option>
+        <option [ngValue]="100">100 clientes</option>
+      </select></label
+    >
+    <button class="button primary" [disabled]="listFilters.invalid || saving()">
+      <app-icon name="search" />Buscar
+    </button>
+  </form>
+  <section class="surface" aria-label="Listado de clientes" [attr.aria-busy]="listLoading()">
+    @if (listLoading()) {
+      <p class="surface-body" role="status">Cargando clientes…</p>
+    }
+    @if (listError()) {
+      <div class="surface-body">
+        <p class="alert error" role="alert">{{ listError() }}</p>
+        <button class="button" (click)="reloadList()">Reintentar listado</button>
+      </div>
+    }
+    @if (listPage(); as page) {
+      @if (page.customers.length) {
+        <div class="table-scroll" tabindex="0" aria-label="Tabla de clientes">
+          <table class="data-table">
+            <caption class="sr-only">
+              Clientes disponibles para tu usuario
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Cliente</th>
+                <th scope="col">Casillero</th>
+                <th scope="col">Contacto</th>
+                <th scope="col">Vendedor</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of page.customers; track item.id) {
+                <tr>
+                  <td>
+                    <button
+                      class="row-button"
+                      (click)="openCustomer(item.id)"
+                      [disabled]="saving() || loading()"
+                      [attr.aria-label]="'Ver ficha de ' + item.name"
+                    >
+                      {{ item.name
+                      }}<small
+                        >{{ item.document.type.toUpperCase() }} {{ item.document.number }}</small
+                      >
+                    </button>
+                  </td>
+                  <td>{{ item.locker_code }}</td>
+                  <td>
+                    {{ item.email }}<small>{{ item.phone || 'Sin teléfono' }}</small>
+                  </td>
+                  <td>{{ item.seller?.name || 'Sin asignar' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <app-icon name="customers" />
+          <h2>Sin clientes para mostrar</h2>
+          <p>Prueba otra búsqueda. Solo aparecen los clientes disponibles para tu usuario.</p>
+        </div>
+      }
+      <div class="table-footer customer-pagination">
+        <span role="status"
+          >{{ page.total ? page.offset + 1 : 0 }}–{{ page.offset + page.customers.length }} de
+          {{ page.total }} clientes</span
+        >
+        <div class="actions">
+          <button
+            class="button compact"
+            (click)="changePage(-1)"
+            [disabled]="page.offset === 0 || listLoading()"
+          >
+            Anterior</button
+          ><button
+            class="button compact"
+            (click)="changePage(1)"
+            [disabled]="page.offset + page.limit >= page.total || listLoading()"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+}
 @if (customer(); as item) {
+  <div class="actions">
+    <button class="button" (click)="backToList()" [disabled]="saving()">
+      <app-icon name="back" />Volver al listado
+    </button>
+  </div>
   <div class="split-view">
     <section class="surface surface-body">
       <h2>{{ item.name }}</h2>
@@ -110,12 +233,6 @@
       }
     </aside>
   </div>
-} @else if (!loading() && !error()) {
-  <section class="empty-state surface">
-    <app-icon name="customers" />
-    <h2>Busca por casillero o documento</h2>
-    <p>La ficha del cliente reúne su contacto, direcciones y acceso a sus paquetes.</p>
-  </section>
 }
 <dialog #createDialog aria-labelledby="customer-create-title">
   <div class="dialog-header">

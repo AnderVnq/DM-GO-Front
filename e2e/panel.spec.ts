@@ -6,6 +6,11 @@ test('busca un cliente, consulta el seguimiento y registra una prealerta', async
   await login(page);
   await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
   await navigate(page, 'Clientes', 'customers');
+  if (
+    !(await page.locator('details').evaluate((element) => (element as HTMLDetailsElement).open))
+  ) {
+    await page.getByText('Buscar por casillero o documento exacto', { exact: true }).click();
+  }
   await page.getByLabel('Casillero o documento', { exact: true }).fill('PE00042');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Cliente de prueba', exact: true })).toBeVisible();
@@ -150,6 +155,11 @@ test('muestra el rechazo de una factura grande y conserva el paquete', async ({ 
   await login(page);
   await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
   await navigate(page, 'Clientes', 'customers');
+  if (
+    !(await page.locator('details').evaluate((element) => (element as HTMLDetailsElement).open))
+  ) {
+    await page.getByText('Buscar por casillero o documento exacto', { exact: true }).click();
+  }
   await page.getByLabel('Casillero o documento', { exact: true }).fill('PE00042');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await page.getByRole('link', { name: 'Ver paquetes', exact: true }).click();

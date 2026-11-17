@@ -1,7 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { RuntimeConfig } from '../../core/runtime-config';
-import { type CreateCustomerInput, type Customer } from './customer.model';
+import {
+  type CreateCustomerInput,
+  type Customer,
+  type CustomerListPage,
+  type CustomerListQuery,
+} from './customer.model';
 
 @Injectable({ providedIn: 'root' })
 export class CustomersApi {
@@ -9,6 +14,17 @@ export class CustomersApi {
   private readonly config = inject(RuntimeConfig);
   private get base() {
     return `${this.config.value.apiBaseUrl}/customers`;
+  }
+
+  list(query: CustomerListQuery) {
+    const params: Record<string, string | number> = {
+      q: query.q.trim(),
+      sort: query.sort,
+      limit: query.limit,
+      offset: query.offset,
+    };
+    if (query.seller_id) params['seller_id'] = query.seller_id;
+    return this.http.get<CustomerListPage>(this.base, { params });
   }
 
   findByLocker(code: string) {
