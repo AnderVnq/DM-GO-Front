@@ -148,3 +148,31 @@ test('lee una factura PDF válida desde el enlace firmado del paquete', async ({
   await expect(dialog.getByRole('status')).toHaveCount(0);
   await expect(dialog.getByRole('alert')).toHaveCount(0);
 });
+
+test('abre, cierra y vuelve a abrir el visor sin errores de detección de cambios', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  page.on('pageerror', (error) => errors.push(error.message));
+  await mockPanel(page);
+  await page.route('**/api/v1/quotes/quote-test/pdf', (route) =>
+    route.fulfill({ contentType: 'application/pdf', body: testPdf() }),
+  );
+  await login(page);
+  await navigate(page, 'Cotizaciones', 'quotes');
+  const opener = page.getByRole('button', { name: 'Ver PDF de CA-TEST-42', exact: true });
+  for (let count = 0; count < 2; count++) {
+    await opener.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('img', { name: /Página 1 de 2/ })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Descargar PDF', exact: true })).toBeEnabled();
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+  }
+  expect(
+    errors.filter((error) => /NG0100|ExpressionChangedAfterItHasBeenCheckedError/.test(error)),
+  ).toEqual([]);
+});

@@ -35,7 +35,7 @@ export class PdfPreviewDialog {
   readonly zoom = signal(1);
   readonly text = signal('');
   readonly image = signal('');
-  private blob: Blob | null = null;
+  private readonly blob = signal<Blob | null>(null);
   private doc: PDFDocumentProxy | null = null;
   private task: PDFDocumentLoadingTask | null = null;
   private renderTask: RenderTask | null = null;
@@ -93,13 +93,13 @@ export class PdfPreviewDialog {
       if (!blob.size) throw new Error('El documento está vacío.');
       if (generation !== this.generation) return;
       if (['image/jpeg', 'image/png', 'image/webp'].includes(blob.type)) {
-        this.blob = blob;
+        this.blob.set(blob);
         this.image.set(URL.createObjectURL(blob));
         this.loading.set(false);
         return;
       }
       if (!blob.type.includes('pdf')) throw new Error('La respuesta recibida no es un PDF.');
-      this.blob = blob;
+      this.blob.set(blob);
       const data = new Uint8Array(await blob.arrayBuffer());
       const pdf = await import('pdfjs-dist');
       if (generation !== this.generation) return;
@@ -169,15 +169,16 @@ export class PdfPreviewDialog {
   }
   download() {
     const request = this.preview.request();
-    if (!request || !this.blob) return;
+    const blob = this.blob();
+    if (!request || !blob) return;
     try {
-      this.preview.save(this.blob, request.filename);
+      this.preview.save(blob, request.filename);
     } catch (error) {
       this.error.set(requestMessage(error));
     }
   }
   get downloadable() {
-    return !!this.blob;
+    return !!this.blob();
   }
   private async fail(error: unknown, generation: number) {
     if (generation !== this.generation) return;
@@ -213,7 +214,7 @@ export class PdfPreviewDialog {
     if (this.task) void this.task.destroy().catch(() => {});
     this.task = null;
     this.doc = null;
-    this.blob = null;
+    this.blob.set(null);
     if (this.image()) URL.revokeObjectURL(this.image());
     this.image.set('');
   }
