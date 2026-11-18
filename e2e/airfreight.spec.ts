@@ -23,7 +23,8 @@ async function operations(
   await page.route('**/api/v1/mawbs**', async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
-    if (request.method() === 'GET') return route.fulfill({ json: mawb });
+    if (request.method() === 'GET')
+      return route.fulfill({ json: path === '/api/v1/mawbs' ? { mawbs: [mawb], total: 1 } : mawb });
     const body = request.postDataJSON() as Record<string, unknown>;
     writes.push({ path, body });
     if (path.endsWith('/dispatch')) {
@@ -35,6 +36,14 @@ async function operations(
     if (path.endsWith('/consolidations')) mawb = { ...mawb, consolidation_ids: [cid] };
     return route.fulfill({ json: mawb });
   });
+  await page.route('**/api/v1/consolidations?**', (route) =>
+    route.fulfill({
+      json: {
+        consolidations: [{ id: cid, code: 'Y-2026-42', warehouse_code: 'USA-01', bulk_count: 1 }],
+        total: 1,
+      },
+    }),
+  );
   await page.route(`**/api/v1/consolidations/${cid}**`, async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/manifest')) {
@@ -112,8 +121,7 @@ async function createFlight(page: Page) {
   await expect(dialog).not.toBeVisible();
 }
 async function inspect(page: Page) {
-  await page.getByLabel('Referencia o enlace del consolidado', { exact: true }).fill(cid);
-  await page.getByRole('button', { name: 'Revisar manifiesto', exact: true }).click();
+  await page.getByRole('button', { name: 'Revisar Y-2026-42', exact: true }).click();
 }
 test('crea la guía aérea, revisa el manifiesto y confirma la salida con el resultado del backend', async ({
   page,

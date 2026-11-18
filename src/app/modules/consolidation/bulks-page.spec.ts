@@ -59,5 +59,8 @@ it('cierra con kg de texto y devuelve la validación del servidor al campo', asy
   expect(page.closure.weight_kg).toBe('1,500');
   page.closure.weight_kg = '500.001';
   expect(page.canClose).toBe(false);
+  http
+    .expectOne((r) => r.url === '/api/v1/packages')
+    .flush({ packages: [], total: 0, limit: 10, offset: 0 });
   http.verify();
 });

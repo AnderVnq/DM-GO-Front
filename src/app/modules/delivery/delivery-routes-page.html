@@ -76,20 +76,7 @@
     <p class="empty-state">No hay rutas para la fecha consultada.</p>
   }
 </section>
-<form class="customer-strip search-bar" [formGroup]="lookup" (ngSubmit)="openReference()">
-  <div class="field">
-    <label for="route-reference">Referencia o enlace de ruta</label
-    ><input
-      id="route-reference"
-      formControlName="reference"
-      placeholder="Referencia UUID o enlace guardado"
-      [readOnly]="busy()"
-    />
-  </div>
-  <button class="button" [disabled]="busy() || !lookup.controls.reference.value.trim()">
-    Consultar ruta
-  </button>
-</form>
+
 @if (detailLoading()) {
   <p role="status">Actualizando ruta…</p>
 }
@@ -134,28 +121,24 @@
       <section class="package-assignment" aria-labelledby="route-package-title">
         <h3 id="route-package-title">Asignar paquete</h3>
         <p class="muted">
-          Comprueba su referencia antes de asignarlo. El backend valida el estado, la liquidación
-          pagada, el destino y los intentos disponibles.
+          Selecciona un paquete para revisar su destino antes de asignarlo. Debe tener la
+          liquidación pagada y cumplir las condiciones de entrega.
         </p>
-        <form class="search-bar" [formGroup]="packageForm" (ngSubmit)="checkPackage()">
-          <div class="field">
-            <label for="route-package">Referencia UUID del paquete</label
-            ><input
-              id="route-package"
-              formControlName="reference"
-              [readOnly]="!canOperate"
-              placeholder="Referencia del paquete"
-            />
-          </div>
-          <button
-            class="button"
-            [disabled]="
-              !canOperate || packageLoading() || !packageForm.controls.reference.value.trim()
-            "
-          >
-            Comprobar paquete
-          </button>
-        </form>
+        <app-record-browser
+          resource="packages"
+          title="Paquetes para reparto"
+          [columns]="[
+            { key: 'carrier_tracking', label: 'Tracking' },
+            { key: 'locker_code', label: 'Casillero' },
+            { key: 'description', label: 'Contenido' },
+          ]"
+          [filters]="{ status: 'READY_FOR_DELIVERY' }"
+          [disabled]="!canOperate || packageLoading()"
+          hint="Buscar paquete o cliente"
+          action="Seleccionar"
+          (selected)="selectPackage($event)"
+        />
+
         @if (packageLoading()) {
           <p role="status">Consultando paquete…</p>
         }
@@ -252,8 +235,8 @@
       }
     </ol>
     <p class="field-hint">
-      Conserva el enlace de esta página para retomar la ruta. La entrega con receptor y evidencia se
-      registra desde el flujo del repartidor.
+      Retoma la ruta desde el listado por fecha. La entrega con receptor y evidencia se registra
+      desde el flujo del repartidor.
     </p>
   </section>
 }

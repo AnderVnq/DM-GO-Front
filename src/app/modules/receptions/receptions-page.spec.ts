@@ -1,3 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { RuntimeConfig } from '../../core/runtime-config';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
@@ -29,6 +32,9 @@ function setup() {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
       { provide: AuthService, useValue: { manager: () => true } },
       { provide: WarehousesApi, useValue: { list: () => of([]) } },
       { provide: ReceptionsApi, useValue: api },

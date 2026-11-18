@@ -7,21 +7,28 @@
     <app-icon name="plus" />Nueva recepción
   </button>
 </div>
-<form class="customer-strip search-bar" [formGroup]="lookup" (ngSubmit)="openSession()">
-  <label class="field" for="reception-reference"
-    >Referencia o enlace de recepción<input
-      id="reception-reference"
-      formControlName="reference"
-      [readOnly]="busy() || loading()"
-      placeholder="Pega el enlace guardado o la referencia UUID"
-  /></label>
-  <button
-    class="button"
-    [disabled]="!lookup.controls.reference.value.trim() || busy() || loading()"
-  >
-    Abrir recepción
+@if (!session()) {
+  <app-record-browser
+    resource="receptions"
+    title="Recepciones registradas"
+    [columns]="[
+      { key: 'mawb_number', label: 'MAWB' },
+      { key: 'warehouse_code', label: 'Almacén' },
+      { key: 'status', label: 'Estado' },
+      { key: 'opened_at', label: 'Apertura', date: true },
+    ]"
+    [statuses]="lotStatuses"
+    [refresh]="listRevision()"
+    [disabled]="busy() || loading()"
+    hint="Buscar por número de MAWB"
+    (selected)="selectRecord($event)"
+  />
+} @else {
+  <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
+    Volver al listado
   </button>
-</form>
+}
+
 @if (error() && !confirming() && !correcting()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
@@ -305,7 +312,7 @@
   <section class="surface empty-state">
     <app-icon name="warehouse" />
     <h2>Prepara la recepción de una MAWB</h2>
-    <p>Abre una sesión en un almacén de Perú o retoma una recepción con su enlace guardado.</p>
+    <p>Selecciona una recepción del listado o abre una nueva para un vuelo despachado.</p>
   </section>
 }
 <dialog #createDialog aria-labelledby="reception-create-title" (cancel)="cancelNew($event)">
@@ -330,17 +337,23 @@
   <form [formGroup]="newForm" (ngSubmit)="create()">
     <fieldset class="form-grid" [disabled]="busy()">
       <legend class="sr-only">Datos de llegada</legend>
-      <div class="field full">
-        <label for="reception-mawb">Referencia o enlace de MAWB</label
-        ><input id="reception-mawb" formControlName="mawb_reference" autocomplete="off" /><button
-          type="button"
-          class="button"
-          (click)="checkMawb()"
-          [disabled]="!newForm.controls.mawb_reference.value.trim() || mawbLoading()"
-        >
-          Comprobar MAWB
-        </button>
-      </div>
+      @if (choosingMawb()) {
+        <div class="full">
+          <app-record-browser
+            resource="mawbs"
+            title="Vuelos despachados"
+            [columns]="[
+              { key: 'number', label: 'MAWB' },
+              { key: 'flight_number', label: 'Vuelo' },
+            ]"
+            [filters]="{ status: 'closed' }"
+            [disabled]="busy() || mawbLoading()"
+            action="Seleccionar"
+            hint="Buscar por MAWB o vuelo"
+            (selected)="selectMawb($event)"
+          />
+        </div>
+      }
       @if (mawbLoading()) {
         <p class="full" role="status">Consultando MAWB…</p>
       }

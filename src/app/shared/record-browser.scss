@@ -1,0 +1,47 @@
+:host {
+  display: block;
+  min-width: 0;
+  margin-block: 1.25rem;
+}
+.records {
+  overflow: hidden;
+}
+h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+.record-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+}
+.field:first-child {
+  flex: 1 1 15rem;
+}
+.record-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.record-pagination .actions {
+  margin: 0;
+}
+.button {
+  min-height: 44px;
+}
+td {
+  max-width: 24rem;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .record-filters > * {
+    flex: 1 1 100%;
+  }
+}
+
+.record-status {
+  white-space: nowrap;
+}

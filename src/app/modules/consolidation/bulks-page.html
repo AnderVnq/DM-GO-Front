@@ -5,23 +5,34 @@
   </div>
   <div class="actions">
     <a class="button" routerLink="/internal/consolidations">Consolidados</a
-    ><button class="button" (click)="newBulk()" [disabled]="busy() || loading()">
+    ><button class="button primary" (click)="newBulk()" [disabled]="busy() || loading()">
       Nuevo bulto
     </button>
   </div>
 </div>
-<form class="customer-strip search-bar" (ngSubmit)="open()">
-  <label class="field"
-    >Referencia o enlace del bulto<input
-      name="bulk_reference"
-      [ngModel]="reference"
-      (ngModelChange)="changeReference($event)"
-      [disabled]="busy() || loading()"
-      placeholder="Pega la referencia UUID o el enlace guardado" /></label
-  ><button class="button" type="submit" [disabled]="!reference.trim() || busy() || loading()">
-    Abrir bulto
+@if (!bulk() && !creating() && !loading()) {
+  <app-record-browser
+    resource="bulks"
+    title="Bultos registrados"
+    [columns]="[
+      { key: 'code', label: 'Código' },
+      { key: 'warehouse_code', label: 'Almacén' },
+      { key: 'status', label: 'Estado' },
+      { key: 'package_count', label: 'Paquetes' },
+      { key: 'created_at', label: 'Creación', date: true },
+    ]"
+    [statuses]="lotStatuses"
+    [refresh]="listRevision()"
+    [disabled]="busy() || loading()"
+    hint="Buscar por código o precinto"
+    (selected)="selectRecord($event)"
+    empty="Todavía no hay registros para estos filtros. Puedes crear uno desde el botón superior."
+  />
+} @else {
+  <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
+    Volver al listado
   </button>
-</form>
+}
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
@@ -34,7 +45,7 @@
 @if (bulk(); as bulk) {
   <div class="page-header">
     <div>
-      <h2>{{ bulk.code }}</h2>
+      <h2 #detailHeading tabindex="-1">{{ bulk.code }}</h2>
       <p>{{ bulk.warehouse_code }} · {{ date(bulk.created_at) }}</p>
     </div>
     <div class="actions">
@@ -151,58 +162,52 @@
     <aside class="inspector">
       @if (bulk.status === 'open') {
         <h2>Añadir paquetes</h2>
-        <form (ngSubmit)="lookup()">
-          <fieldset class="form-grid" [disabled]="busy()">
-            <legend class="sr-only">Buscar cliente</legend>
-            <label class="field full"
-              >Casillero del cliente<input
-                name="locker"
-                [ngModel]="locker"
-                (ngModelChange)="changeLocker($event)"
-                required
-                placeholder="PE00042"
-            /></label>
-            <div class="actions full">
-              <button class="button" type="submit" [disabled]="looking() || !locker.trim()">
-                Buscar cliente
-              </button>
-            </div>
-          </fieldset>
-        </form>
+        <p>
+          Busca por cliente, casillero, tracking o descripción. Solo se muestran paquetes courier
+          recibidos en USA.
+        </p>
+        <app-record-browser
+          resource="packages"
+          title="Paquetes recibidos"
+          [columns]="[
+            { key: 'carrier_tracking', label: 'Tracking' },
+            { key: 'locker_code', label: 'Casillero' },
+            { key: 'description', label: 'Contenido' },
+          ]"
+          [filters]="{ status: 'RECEIVED_USA', mode: 'courier' }"
+          [refresh]="listRevision()"
+          [disabled]="busy() || looking()"
+          action="Seleccionar"
+          hint="Buscar paquete o cliente"
+          (selected)="selectPackage($event)"
+        />
         @if (looking()) {
-          <p role="status">Buscando paquetes del cliente…</p>
+          <p role="status">Consultando paquete…</p>
         }
         @if (lookupError()) {
           <p class="alert error" role="alert">{{ lookupError() }}</p>
         }
-        @if (customer(); as customer) {
-          <section class="detail-section">
-            <h3>{{ customer.name }}</h3>
-            <p>{{ customer.locker_code }}</p>
-            <label class="field"
-              >Paquete para añadir<select
-                [(ngModel)]="candidateId"
-                [disabled]="busy() || looking()"
+        @for (candidate of candidates(); track candidate.id) {
+          @if (candidate.id === candidateId) {
+            <section class="detail-section">
+              <h3>
+                {{
+                  candidate.carrier_tracking || candidate.receipt?.number || 'Paquete seleccionado'
+                }}
+              </h3>
+              <p>{{ candidate.locker_code }} · {{ candidate.description }}</p>
+              @if (exclusion(candidate)) {
+                <p class="alert">{{ exclusion(candidate) }}</p>
+              }
+              <button
+                class="button primary"
+                (click)="add()"
+                [disabled]="busy() || looking() || !!exclusion(candidate)"
               >
-                <option value="">Selecciona un paquete</option>
-                @for (item of candidates(); track item.id) {
-                  <option [value]="item.id" [disabled]="!!exclusion(item)">
-                    {{ item.receipt?.number || item.carrier_tracking || item.id }} ·
-                    {{ item.description }}{{ exclusion(item) ? ' · ' + exclusion(item) : '' }}
-                  </option>
-                }
-              </select></label
-            ><button
-              class="button primary actions"
-              (click)="add()"
-              [disabled]="!candidateId || busy() || looking()"
-            >
-              Añadir al bulto
-            </button>
-            @if (!looking() && !candidates().length) {
-              <p class="muted">Este cliente no tiene paquetes registrados.</p>
-            }
-          </section>
+                Añadir al bulto
+              </button>
+            </section>
+          }
         }
         <section class="detail-section">
           <h3>Cerrar bulto</h3>
@@ -321,7 +326,7 @@
       }
     </aside>
   </div>
-} @else if (!loading()) {
+} @else if (creating() && !loading()) {
   <section class="surface surface-body">
     <h2>Crear bulto</h2>
     <p>Selecciona la sede donde se encuentran físicamente los paquetes.</p>
@@ -359,10 +364,6 @@
         No hay almacenes activos en USA. Administración debe registrar o activar una sede.
       </p>
     }
-    <p class="fine-print actions">
-      Para retomar un bulto existente, abre su enlace guardado o pega su referencia en la búsqueda
-      superior.
-    </p>
   </section>
 }
 <dialog

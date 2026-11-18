@@ -33,6 +33,11 @@ async function setup(
       },
     }),
   );
+  await page.route('**/api/v1/mawbs?**', (route) =>
+    route.fulfill({
+      json: { mawbs: [{ id: mid, number: '001-12345675', flight_number: 'LA2471' }], total: 1 },
+    }),
+  );
   await page.route('**/api/v1/mawbs/**', (route) =>
     route.fulfill({
       json: {
@@ -49,6 +54,8 @@ async function setup(
     const req = route.request(),
       path = new URL(req.url()).pathname;
     if (req.method() === 'GET') {
+      if (path === '/api/v1/receptions')
+        return route.fulfill({ json: { receptions: [], total: 0 } });
       if (failRead) {
         failRead = false;
         return route.fulfill({
@@ -121,8 +128,7 @@ async function open(page: Page) {
   await navigate(page, 'Recepción en Lima', 'receptions');
   await page.getByRole('button', { name: 'Nueva recepción', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Nueva recepción', exact: true });
-  await dialog.getByLabel('Referencia o enlace de MAWB', { exact: true }).fill(mid);
-  await dialog.getByRole('button', { name: 'Comprobar MAWB', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Seleccionar 001-12345675', exact: true }).click();
   await expect(dialog.getByRole('heading', { name: '001-12345675', exact: true })).toBeVisible();
   await expect(dialog.getByRole('option')).toHaveCount(2);
   await dialog.getByRole('button', { name: 'Abrir sesión', exact: true }).click();

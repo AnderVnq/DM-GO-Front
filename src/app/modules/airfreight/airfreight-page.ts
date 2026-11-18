@@ -1,3 +1,4 @@
+import { RecordBrowser } from '../../shared/record-browser';
 import {
   Component,
   Injector,
@@ -22,11 +23,28 @@ import { flightReference, limaDeparture, normalizeMawb } from './airfreight-rule
 
 @Component({
   selector: 'app-airfreight-page',
-  imports: [ReactiveFormsModule, RouterLink, Icon],
+  imports: [RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './airfreight-page.html',
   styleUrl: './airfreight-page.scss',
 })
 export class AirfreightPage {
+  readonly listRevision = signal(0);
+  readonly lotStatuses = [
+    { value: 'open', label: 'Abierto' },
+    { value: 'closed', label: 'Cerrado' },
+  ];
+
+  backToList() {
+    if (this.busy() || this.loading()) return;
+    this.mawb.set(null);
+    this.listRevision.update((v) => v + 1);
+    void this.router.navigate([], { queryParams: {}, replaceUrl: true });
+  }
+  selectRecord(id: string) {
+    if (this.busy() || this.loading()) return;
+    this.reference.setValue(id);
+    this.open();
+  }
   readonly auth = inject(AuthService);
   private readonly api = inject(AirfreightApi);
   private readonly injector = inject(Injector);
@@ -390,6 +408,7 @@ export class AirfreightPage {
   }
   private apply(mawb: Mawb) {
     this.mawb.set(mawb);
+    this.listRevision.update((v) => v + 1);
     this.reference.setValue(mawb.id);
     void this.router.navigate([], {
       queryParams: { mawb_id: mawb.id },

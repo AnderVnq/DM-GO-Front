@@ -1,5 +1,15 @@
+import { RecordBrowser } from '../../shared/record-browser';
 import { normalizeWeightKg, weightKgHint, formatMeasuredWeight } from '../../shared/weight';
-import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  afterNextRender,
+  Injector,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, type NgForm } from '@angular/forms';
@@ -18,10 +28,18 @@ import type { Bulk, BulkClosure } from './consolidation.model';
 
 @Component({
   selector: 'app-bulks-page',
-  imports: [FormsModule, RouterLink, Status],
+  imports: [RecordBrowser, FormsModule, RouterLink, Status],
   templateUrl: './bulks-page.html',
 })
 export class BulksPage {
+  private readonly injector = inject(Injector);
+  readonly detailHeading = viewChild<ElementRef<HTMLHeadingElement>>('detailHeading');
+  readonly listRevision = signal(0);
+  readonly lotStatuses = [
+    { value: 'open', label: 'Abierto' },
+    { value: 'closed', label: 'Cerrado' },
+  ];
+
   private readonly api = inject(ConsolidationApi);
   private readonly shipments = inject(ShipmentsApi);
   private readonly customers = inject(CustomersApi);
@@ -54,6 +72,32 @@ export class BulksPage {
   readonly validWeight = normalizeWeightKg;
   readonly weightHint = weightKgHint;
   readonly weightError = signal('');
+  readonly creating = signal(false);
+  selectRecord(id: string) {
+    if (this.busy() || this.loading()) return;
+    this.creating.set(false);
+    this.reference = id;
+    this.open();
+  }
+  backToList() {
+    if (this.busy() || this.loading()) return;
+    this.newBulk();
+    this.creating.set(false);
+    this.listRevision.update((v) => v + 1);
+  }
+  selectPackage(id: string) {
+    if (this.busy() || this.looking()) return;
+    this.clearLookup();
+    this.looking.set(true);
+    this.lookupRequest = this.shipments.get(id).subscribe({
+      next: (item) => {
+        this.candidates.set([item]);
+        this.candidateId = item.id;
+        this.looking.set(false);
+      },
+      error: (error: unknown) => this.lookupFailure(error),
+    });
+  }
   reference = '';
   warehouseCode = '';
   locker = '';
@@ -102,6 +146,7 @@ export class BulksPage {
   }
   newBulk() {
     if (this.busy() || this.loading()) return;
+    this.creating.set(true);
     this.clearLookup();
     this.detailRequest?.unsubscribe();
     this.bulk.set(null);
@@ -165,6 +210,8 @@ export class BulksPage {
       });
   }
   private setBulk(bulk: Bulk) {
+    this.creating.set(false);
+    this.listRevision.update((v) => v + 1);
     this.bulk.set({ ...bulk, package_ids: bulk.package_ids ?? [] });
     this.reference = bulk.id;
     this.removing.set('');
@@ -175,6 +222,7 @@ export class BulksPage {
       replaceUrl: true,
     });
     this.loadContents();
+    afterNextRender(() => this.detailHeading()?.nativeElement.focus(), { injector: this.injector });
   }
   loadContents() {
     this.detailRequest?.unsubscribe();

@@ -1,3 +1,4 @@
+import { RecordBrowser } from '../../shared/record-browser';
 import {
   afterNextRender,
   Component,
@@ -34,11 +35,34 @@ import {
 
 @Component({
   selector: 'app-receptions-page',
-  imports: [ReactiveFormsModule, RouterLink, Icon],
+  imports: [RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './receptions-page.html',
   styleUrl: './receptions-page.scss',
 })
 export class ReceptionsPage {
+  readonly listRevision = signal(0);
+  readonly lotStatuses = [
+    { value: 'open', label: 'Abierto' },
+    { value: 'closed', label: 'Cerrado' },
+  ];
+
+  readonly choosingMawb = signal(false);
+  backToList() {
+    if (this.busy() || this.loading()) return;
+    this.session.set(null);
+    this.listRevision.update((v) => v + 1);
+    void this.router.navigate([], { queryParams: {}, replaceUrl: true });
+  }
+  selectRecord(id: string) {
+    if (this.busy() || this.loading()) return;
+    this.lookup.controls.reference.setValue(id);
+    this.openSession();
+  }
+  selectMawb(id: string) {
+    if (this.busy() || this.mawbLoading()) return;
+    this.newForm.controls.mawb_reference.setValue(id);
+    this.checkMawb();
+  }
   readonly auth = inject(AuthService);
   private readonly api = inject(ReceptionsApi);
   private readonly catalog = inject(WarehousesApi);
@@ -173,7 +197,9 @@ export class ReceptionsPage {
     });
     this.checkedMawb.set(null);
     this.createError.set('');
+    this.choosingMawb.set(true);
     this.createDialog().nativeElement.showModal();
+    if (this.newForm.controls.mawb_reference.value) this.checkMawb();
   }
   cancelNew(event?: Event) {
     event?.preventDefault();
@@ -181,6 +207,7 @@ export class ReceptionsPage {
     this.mawbRequest?.unsubscribe();
     this.mawbLoading.set(false);
     this.checkedMawb.set(null);
+    this.choosingMawb.set(false);
     this.createDialog().nativeElement.close();
     this.newForm.reset();
     this.createError.set('');
@@ -288,6 +315,7 @@ export class ReceptionsPage {
       this.uncertainScan.set(false);
     }
     this.session.set(session);
+    this.listRevision.update((v) => v + 1);
     this.stale.set(false);
     this.lookup.controls.reference.setValue(session.id);
     if (session.status === 'closed') this.uncertainScan.set(false);

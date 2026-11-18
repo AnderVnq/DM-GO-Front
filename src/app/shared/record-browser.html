@@ -1,0 +1,110 @@
+<section class="surface records" [attr.aria-label]="title()" [attr.aria-busy]="loading()">
+  <div class="surface-body">
+    <h2>{{ title() }}</h2>
+    <div class="record-filters">
+      <div class="field">
+        <label [for]="uid + '-search'">{{ hint() }}</label>
+        <input
+          [id]="uid + '-search'"
+          [(ngModel)]="query"
+          [ngModelOptions]="{ standalone: true }"
+          (keydown.enter)="search($event)"
+          [disabled]="disabled()"
+          type="search"
+        />
+      </div>
+      @if (statuses().length && !filters()['status']) {
+        <div class="field">
+          <label [for]="uid + '-status'">Estado</label>
+          <select
+            [id]="uid + '-status'"
+            [(ngModel)]="status"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="disabled()"
+            (ngModelChange)="search()"
+          >
+            <option value="">Todos</option>
+            @for (status of statuses(); track status.value) {
+              <option [value]="status.value">{{ status.label }}</option>
+            }
+          </select>
+        </div>
+      }
+      <button class="button" type="button" (click)="search()" [disabled]="disabled() || loading()">
+        Buscar
+      </button>
+    </div>
+  </div>
+  @if (loading()) {
+    <p class="surface-body" role="status">Cargando registros…</p>
+  } @else if (error()) {
+    <div class="surface-body">
+      <p class="alert error" role="alert">{{ error() }}</p>
+      <button class="button" type="button" (click)="load()" [disabled]="disabled()">
+        Reintentar listado
+      </button>
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="data-table">
+        <caption class="sr-only">
+          {{
+            title()
+          }}
+        </caption>
+        <thead>
+          <tr>
+            @for (column of columns(); track column.key) {
+              <th scope="col">{{ column.label }}</th>
+            }
+            <th scope="col">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr>
+              @for (column of columns(); track column.key) {
+                <td [class.record-status]="column.key === 'status'">{{ value(row, column) }}</td>
+              }
+              <td>
+                <button
+                  class="button compact"
+                  type="button"
+                  (click)="choose(row.id)"
+                  [disabled]="disabled()"
+                  [attr.aria-label]="action() + ' ' + value(row, columns()[0])"
+                >
+                  {{ action() }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!rows().length) {
+      <p class="surface-body" role="status">{{ empty() }}</p>
+    }
+    <div class="table-footer record-pagination">
+      <span role="status">{{ total() }} registros · Página {{ offset() / limit + 1 }}</span>
+      <div class="actions">
+        <button
+          class="button compact"
+          type="button"
+          (click)="load(offset() - limit)"
+          [disabled]="disabled() || offset() === 0"
+        >
+          Anterior
+        </button>
+        <button
+          class="button compact"
+          type="button"
+          (click)="load(offset() + limit)"
+          [disabled]="disabled() || offset() + limit >= total()"
+        >
+          Siguiente
+        </button>
+      </div>
+    </div>
+  }
+</section>

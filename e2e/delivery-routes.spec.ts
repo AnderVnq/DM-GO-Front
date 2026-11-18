@@ -162,10 +162,24 @@ async function create(page: Page) {
   return modal;
 }
 async function assigned(page: Page) {
+  await page.route('**/api/v1/packages?**', (route) =>
+    route.fulfill({
+      json: {
+        packages: [
+          {
+            id: pid,
+            carrier_tracking: 'TRACK-ROUTE',
+            locker_code: 'PE00042',
+            description: 'Contenido para reparto',
+          },
+        ],
+        total: 1,
+      },
+    }),
+  );
   await create(page);
   await expect(page.getByRole('heading', { name: 'Ruta RT-42', exact: true })).toBeVisible();
-  await page.getByLabel('Referencia UUID del paquete', { exact: true }).fill(pid);
-  await page.getByRole('button', { name: 'Comprobar paquete', exact: true }).click();
+  await page.getByRole('button', { name: 'Seleccionar TRACK-ROUTE', exact: true }).click();
   await expect(page.getByText('Audífonos', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Asignar a RT-42', exact: true }).click();
   await expect(

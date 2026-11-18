@@ -1,3 +1,4 @@
+import { RecordBrowser } from '../../shared/record-browser';
 import {
   afterNextRender,
   Component,
@@ -40,11 +41,16 @@ import {
 } from './delivery-route-rules';
 @Component({
   selector: 'app-delivery-routes-page',
-  imports: [ReactiveFormsModule, Icon, Status],
+  imports: [RecordBrowser, ReactiveFormsModule, Icon, Status],
   templateUrl: './delivery-routes-page.html',
   styleUrl: './delivery-routes-page.scss',
 })
 export class DeliveryRoutesPage {
+  selectPackage(id: string) {
+    if (!this.canOperate || this.packageLoading()) return;
+    this.packageForm.controls.reference.setValue(id);
+    this.checkPackage();
+  }
   readonly auth = inject(AuthService);
   private readonly api = inject(DeliveryRoutesApi);
   private readonly warehousesApi = inject(WarehousesApi);

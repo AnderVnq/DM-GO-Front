@@ -1,6 +1,17 @@
+import { RecordBrowser } from '../../shared/record-browser';
 import { Icon } from '../../shared/icon';
 import { formatMeasuredWeight } from '../../shared/weight';
-import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  computed,
+  afterNextRender,
+  Injector,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -16,10 +27,18 @@ import type { Bulk, Consolidation } from './consolidation.model';
 
 @Component({
   selector: 'app-consolidations-page',
-  imports: [Icon, FormsModule, RouterLink, Status],
+  imports: [RecordBrowser, Icon, FormsModule, RouterLink, Status],
   templateUrl: './consolidations-page.html',
 })
 export class ConsolidationsPage {
+  private readonly injector = inject(Injector);
+  readonly detailHeading = viewChild<ElementRef<HTMLHeadingElement>>('detailHeading');
+  readonly listRevision = signal(0);
+  readonly lotStatuses = [
+    { value: 'open', label: 'Abierto' },
+    { value: 'closed', label: 'Cerrado' },
+  ];
+
   private readonly api = inject(ConsolidationApi);
   private readonly catalog = inject(WarehousesApi);
   private readonly destroyRef = inject(DestroyRef);
@@ -45,6 +64,29 @@ export class ConsolidationsPage {
   readonly success = signal('');
   readonly date = formatDate;
   readonly measuredWeight = formatMeasuredWeight;
+  readonly creating = signal(false);
+  selectRecord(id: string) {
+    if (this.busy() || this.loading()) return;
+    this.creating.set(false);
+    this.reference = id;
+    this.open();
+  }
+  backToList() {
+    if (this.busy() || this.loading()) return;
+    this.newConsolidation();
+    this.creating.set(false);
+    this.listRevision.update((v) => v + 1);
+  }
+  readonly availableBulkFilters = computed<Record<string, string>>(() => ({
+    status: 'closed',
+    free: 'true',
+    warehouse_code: this.consolidation()?.warehouse_code ?? '',
+  }));
+  selectBulk(id: string) {
+    if (this.busy() || this.looking()) return;
+    this.changeBulkReference(id);
+    this.lookupBulk();
+  }
   reference = '';
   bulkReference = '';
   warehouseCode = '';
@@ -68,6 +110,7 @@ export class ConsolidationsPage {
       this.open();
     }
     if (bulkId) {
+      if (!consolidationId) this.creating.set(true);
       this.bulkReference = bulkId;
       this.lookupBulk();
     }
@@ -100,6 +143,7 @@ export class ConsolidationsPage {
   }
   newConsolidation() {
     if (this.busy() || this.loading()) return;
+    this.creating.set(true);
     this.detailRequest?.unsubscribe();
     this.previewRequest?.unsubscribe();
     this.consolidation.set(null);
@@ -157,6 +201,8 @@ export class ConsolidationsPage {
       });
   }
   private setConsolidation(item: Consolidation) {
+    this.creating.set(false);
+    this.listRevision.update((v) => v + 1);
     this.consolidation.set({ ...item, bulk_ids: item.bulk_ids ?? [], hawbs: item.hawbs ?? [] });
     this.reference = item.id;
     void this.router.navigate([], {
@@ -166,6 +212,7 @@ export class ConsolidationsPage {
       replaceUrl: true,
     });
     this.loadContents();
+    afterNextRender(() => this.detailHeading()?.nativeElement.focus(), { injector: this.injector });
   }
   loadContents() {
     this.detailRequest?.unsubscribe();
@@ -268,6 +315,8 @@ export class ConsolidationsPage {
         this.busy.set(false);
         this.closeDialog().nativeElement.close();
         this.error.set(requestMessage(error));
+        this.preview.set(null);
+        this.listRevision.update((v) => v + 1);
       },
     });
   }

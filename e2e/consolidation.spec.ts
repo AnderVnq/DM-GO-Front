@@ -71,9 +71,15 @@ async function logistics(page: Page, role = 'supervisor', failClose = false) {
           },
         });
       if (path === '/packages') {
-        expect(url.searchParams.get('customer_id')).toBe(fixture.customer.id);
+        if (!url.searchParams.has('customer_id')) {
+          expect(url.searchParams.get('status')).toBe('RECEIVED_USA');
+          expect(url.searchParams.get('mode')).toBe('courier');
+        }
         return route.fulfill({
           json: {
+            total: 2,
+            limit: 10,
+            offset: 0,
             packages: [
               pack,
               { ...pack, id: 'missing-invoice', description: 'Sin factura', has_invoice: false },
@@ -82,6 +88,27 @@ async function logistics(page: Page, role = 'supervisor', failClose = false) {
         });
       }
       if (path === '/packages/package-test') return route.fulfill({ json: pack });
+      if (path === '/bulks' && req.method() === 'GET') {
+        const available =
+          !url.searchParams.has('free') || (bulk.status === 'closed' && !bulk.consolidation_id);
+        return route.fulfill({
+          json: {
+            bulks: available ? [{ ...bulk, package_count: bulk.package_ids.length }] : [],
+            total: available ? 1 : 0,
+            limit: 10,
+            offset: 0,
+          },
+        });
+      }
+      if (path === '/consolidations' && req.method() === 'GET')
+        return route.fulfill({
+          json: {
+            consolidations: [{ ...consolidation, bulk_count: consolidation.bulk_ids.length }],
+            total: 1,
+            limit: 10,
+            offset: 0,
+          },
+        });
       if (path === '/bulks' && req.method() === 'POST') {
         expect(body).toEqual({ warehouse_code: 'USA-01' });
         return route.fulfill({ status: 201, json: bulk });
@@ -157,13 +184,9 @@ async function logistics(page: Page, role = 'supervisor', failClose = false) {
 }
 
 async function filledBulk(page: Page) {
+  await page.getByRole('button', { name: 'Nuevo bulto', exact: true }).click();
   await page.getByRole('button', { name: 'Crear bulto', exact: true }).click();
-  await page.getByLabel('Casillero del cliente').fill('PE00042');
-  await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
-  await expect(page.getByRole('option', { name: /Sin factura/ })).toBeDisabled();
-  await page
-    .getByRole('combobox', { name: 'Paquete para añadir', exact: true })
-    .selectOption('package-test');
+  await page.getByRole('button', { name: 'Seleccionar TRACK-42', exact: true }).first().click();
   await page.getByRole('button', { name: 'Añadir al bulto', exact: true }).click();
   await expect(page.locator('.alert.success[role="status"]')).toContainText(
     'Paquete añadido al bulto',
@@ -193,9 +216,7 @@ test('flujo físico: bulto, retiro con motivo, precinto y guías del consolidado
   await page.getByLabel('Motivo del retiro').fill('Corregir el embalaje');
   await page.getByRole('button', { name: 'Confirmar retiro' }).click();
   await expect(page.locator('.alert.success[role="status"]')).toContainText('Paquete retirado');
-  await page
-    .getByRole('combobox', { name: 'Paquete para añadir', exact: true })
-    .selectOption('package-test');
+  await page.getByRole('button', { name: 'Seleccionar TRACK-42', exact: true }).first().click();
   await page.getByRole('button', { name: 'Añadir al bulto', exact: true }).click();
   await expect(page.locator('.alert.success[role="status"]')).toContainText('Paquete añadido');
   await closeBulk(page);
@@ -218,7 +239,6 @@ test('flujo físico: bulto, retiro con motivo, precinto y guías del consolidado
     animations: 'disabled',
   });
   await page.getByRole('link', { name: 'Preparar consolidado', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'BLK-000042', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Crear consolidado', exact: true }).click();
   await page.getByRole('button', { name: 'Añadir bulto al consolidado' }).click();
   await expect(page.locator('.alert.success[role="status"]')).toContainText('Bulto añadido');
@@ -241,28 +261,22 @@ test('flujo físico: bulto, retiro con motivo, precinto y guías del consolidado
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('referencias: retoma enlace conocido y descarta selecciones al cambiar búsqueda', async ({
-  page,
-}) => {
-  const { calls } = await logistics(page);
+test('retoma bultos desde el listado y conserva enlaces directos', async ({ page }, info) => {
+  await logistics(page);
   await login(page);
   await navigate(page, 'Bultos', 'bulks');
-  await filledBulk(page);
-  await page.getByLabel('Casillero del cliente').fill('PE00043');
-  await expect(page.getByRole('combobox', { name: 'Paquete para añadir' })).toHaveCount(0);
-  await page
-    .getByLabel('Referencia o enlace del bulto')
-    .fill(`https://example.com/internal/bulks?bulk_id=${bulkId}`);
-  const before = calls.length;
-  await page.getByRole('button', { name: 'Abrir bulto', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Pega la referencia');
-  expect(calls).toHaveLength(before);
-  await page
-    .getByLabel('Referencia o enlace del bulto')
-    .fill(`http://localhost:3000/internal/bulks?bulk_id=${bulkId}`);
-  await page.getByRole('button', { name: 'Abrir bulto', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Bultos registrados' })).toBeVisible();
+  await expect(page.getByLabel('Referencia o enlace del bulto')).toHaveCount(0);
+  expect(
+    (await page.getByRole('button', { name: 'Abrir BLK-000042', exact: true }).boundingBox())!
+      .height,
+  ).toBeGreaterThanOrEqual(44);
+  await page.screenshot({ path: info.outputPath('bulk-list.png'), fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Abrir BLK-000042', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'BLK-000042', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Retirar paquete', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Volver al listado', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Abrir BLK-000042', exact: true })).toBeVisible();
 });
 
 test('ventas no accede a bultos ni consolidados', async ({ page }) => {
