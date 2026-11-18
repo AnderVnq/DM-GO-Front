@@ -101,3 +101,50 @@ test('conserva la vista previa y la extensión de una factura de imagen', async 
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
 });
+
+test('explica una factura PDF incompleta y conserva el original descargable', async ({ page }) => {
+  await mockPanel(page, 'supervisor', {
+    package: { has_invoice: true, invoice_document_id: 'invoice-test' },
+  });
+  // Cabecera reconocible, pero sin árbol de páginas: reproduce un adjunto incompleto.
+  const invalidPdf = '%PDF-1.4\n1 0 obj <</Type/Catalog>> endobj\ntrailer <</Root 1 0 R>>\n%%EOF\n';
+  await page.context().route('https://files.example.test/**', (route) =>
+    route.fulfill({
+      contentType: 'application/pdf',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: invalidPdf,
+    }),
+  );
+  await login(page);
+  await navigate(page, 'Clientes', 'customers');
+  await page.getByRole('button', { name: 'Ver ficha de Cliente de prueba', exact: true }).click();
+  await page.getByRole('link', { name: 'Ver paquetes', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver factura adjunta', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('alert')).toHaveText(
+    'El archivo recibido es un PDF inválido o incompleto. Solicita una copia válida del documento original para corregir el adjunto.',
+  );
+  await expect(dialog.getByRole('status')).toHaveCount(0);
+  const pendingDownload = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Descargar PDF', exact: true }).click();
+  const download = await pendingDownload;
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+  expect(Buffer.concat(chunks).toString()).toBe(invalidPdf);
+});
+
+test('lee una factura PDF válida desde el enlace firmado del paquete', async ({ page }) => {
+  await mockPanel(page, 'supervisor', {
+    package: { has_invoice: true, invoice_document_id: 'invoice-test' },
+  });
+  await login(page);
+  await navigate(page, 'Clientes', 'customers');
+  await page.getByRole('button', { name: 'Ver ficha de Cliente de prueba', exact: true }).click();
+  await page.getByRole('link', { name: 'Ver paquetes', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver factura adjunta', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('img', { name: /Página 1 de 2/ })).toBeVisible();
+  await expect(dialog.getByRole('status')).toHaveCount(0);
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+});

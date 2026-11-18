@@ -201,7 +201,7 @@ export class PdfPreviewDialog {
       name === 'PasswordException'
         ? 'El PDF está protegido con contraseña. Descárgalo para abrirlo.'
         : name === 'InvalidPDFException'
-          ? 'No se pudo leer este PDF. Puedes descargarlo o volver a intentarlo.'
+          ? 'El archivo recibido es un PDF inválido o incompleto. Solicita una copia válida del documento original para corregir el adjunto.'
           : requestMessage(error),
     );
   }
