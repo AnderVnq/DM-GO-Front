@@ -1,6 +1,11 @@
-<section class="surface records" [attr.aria-label]="title()" [attr.aria-busy]="loading()">
+<section
+  class="surface records"
+  [class.embedded]="embedded()"
+  [attr.aria-label]="title()"
+  [attr.aria-busy]="loading()"
+>
   <div class="surface-body">
-    <h2>{{ title() }}</h2>
+    <h2 [class.sr-only]="embedded()">{{ title() }}</h2>
     <div class="record-filters">
       <div class="field">
         <label [for]="uid + '-search'">{{ hint() }}</label>
@@ -45,51 +50,56 @@
       </button>
     </div>
   } @else {
-    <div class="table-scroll">
-      <table class="data-table">
-        <caption class="sr-only">
-          {{
-            title()
-          }}
-        </caption>
-        <thead>
-          <tr>
-            @for (column of columns(); track column.key) {
-              <th scope="col">{{ column.label }}</th>
-            }
-            <th scope="col">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rows(); track row.id) {
+    @if (rows().length) {
+      <div class="table-scroll">
+        <table class="data-table">
+          <caption class="sr-only">
+            {{
+              title()
+            }}
+          </caption>
+          <thead>
             <tr>
               @for (column of columns(); track column.key) {
-                <td [class.record-status]="column.key === 'status'">{{ value(row, column) }}</td>
+                <th scope="col">{{ column.label }}</th>
               }
-              <td>
-                <button
-                  [class]="
-                    action() === 'Seleccionar' ? 'button compact' : 'icon-button action-icon'
-                  "
-                  type="button"
-                  (click)="choose(row.id)"
-                  [disabled]="disabled()"
-                  [attr.aria-label]="action() + ' ' + value(row, columns()[0])"
-                  [attr.title]="action() + ' ' + value(row, columns()[0])"
-                >
-                  <app-icon [name]="action() === 'Seleccionar' ? 'check' : 'eye'" />
-                  @if (action() === 'Seleccionar') {
-                    {{ action() }}
-                  }
-                </button>
-              </td>
+              <th scope="col">Acción</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.id) {
+              <tr>
+                @for (column of columns(); track column.key) {
+                  <td [class.record-status]="column.key === 'status'">{{ value(row, column) }}</td>
+                }
+                <td>
+                  <button
+                    [class]="
+                      action() === 'Seleccionar' ? 'button compact' : 'icon-button action-icon'
+                    "
+                    type="button"
+                    (click)="choose(row.id)"
+                    [disabled]="disabled()"
+                    [attr.aria-label]="action() + ' ' + value(row, columns()[0])"
+                    [attr.title]="action() + ' ' + value(row, columns()[0])"
+                  >
+                    <app-icon [name]="action() === 'Seleccionar' ? 'check' : 'eye'" />
+                    @if (action() === 'Seleccionar') {
+                      {{ action() }}
+                    }
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
     @if (!rows().length) {
-      <p class="surface-body" role="status">{{ empty() }}</p>
+      <div class="record-empty" role="status">
+        <app-icon name="packages" />
+        <p>{{ empty() }}</p>
+      </div>
     }
     <div class="table-footer record-pagination">
       <span role="status">{{ total() }} registros · Página {{ offset() / limit + 1 }}</span>

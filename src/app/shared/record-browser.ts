@@ -40,6 +40,7 @@ export class RecordBrowser {
   readonly columns = input.required<readonly RecordColumn[]>();
   readonly filters = input<Record<string, string>>({});
   readonly statuses = input<readonly { value: string; label: string }[]>([]);
+  readonly embedded = input(false);
   readonly disabled = input(false);
   readonly refresh = input(0);
   readonly action = input('Abrir');

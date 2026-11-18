@@ -29,7 +29,7 @@
     empty="Todavía no hay registros para estos filtros. Puedes crear uno desde el botón superior."
   />
 } @else {
-  <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
+  <button class="button page-back" (click)="backToList()" [disabled]="busy() || loading()">
     <app-icon name="back" />Volver al listado
   </button>
 }
@@ -195,6 +195,7 @@
           [refresh]="listRevision()"
           [disabled]="busy() || looking()"
           action="Seleccionar"
+          [embedded]="true"
           hint="Buscar paquete o cliente"
           (selected)="selectPackage($event)"
         />

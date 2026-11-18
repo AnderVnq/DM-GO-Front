@@ -27,7 +27,7 @@
     (selected)="selectRecord($event)"
   />
 } @else {
-  <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
+  <button class="button page-back" (click)="backToList()" [disabled]="busy() || loading()">
     <app-icon name="back" />Volver al listado
   </button>
 }
@@ -136,6 +136,7 @@
         <app-record-browser
           resource="consolidations"
           title="Consolidados disponibles"
+          [embedded]="true"
           [columns]="[
             { key: 'code', label: 'Consolidado' },
             { key: 'warehouse_code', label: 'Almacén' },

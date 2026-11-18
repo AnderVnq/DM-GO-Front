@@ -32,7 +32,7 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
   @if (!customer()) {
-    <button class="button" (click)="backToList()" [disabled]="saving()">
+    <button class="button page-back" (click)="backToList()" [disabled]="saving()">
       <app-icon name="back" />Volver al listado
     </button>
   }
@@ -157,7 +157,7 @@
 }
 @if (customer(); as item) {
   <div class="actions">
-    <button class="button" (click)="backToList()" [disabled]="saving()">
+    <button class="button page-back" (click)="backToList()" [disabled]="saving()">
       <app-icon name="back" />Volver al listado
     </button>
   </div>

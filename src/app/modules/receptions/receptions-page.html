@@ -24,7 +24,7 @@
     (selected)="selectRecord($event)"
   />
 } @else {
-  <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
+  <button class="button page-back" (click)="backToList()" [disabled]="busy() || loading()">
     <app-icon name="back" />Volver al listado
   </button>
 }
@@ -362,6 +362,7 @@
             [filters]="{ status: 'closed' }"
             [disabled]="busy() || mawbLoading()"
             action="Seleccionar"
+            [embedded]="true"
             hint="Buscar por MAWB o vuelo"
             (selected)="selectMawb($event)"
           />

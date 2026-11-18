@@ -1,0 +1,172 @@
+// Jerarquía del área de trabajo: navegación, cabecera, secciones y herramientas.
+// Se limita al panel y al portal; la portada conserva su composición editorial.
+.workspace {
+  .page-header {
+    align-items: center;
+    gap: 1.5rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
+    border-bottom: 1px solid var(--line-subtle);
+  }
+  .page-header > .actions {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .page-header h1,
+  .page-header h2 {
+    margin: 0;
+  }
+  .page-header h1 {
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    letter-spacing: -0.03em;
+  }
+  .page-header p {
+    max-width: 65ch;
+    margin-top: 0.5rem;
+  }
+  .page-back {
+    margin: 0 0 1.5rem;
+    padding-inline: 0.25rem 0.75rem;
+    background: transparent;
+    border-color: transparent;
+    color: var(--muted);
+  }
+  .split-view {
+    gap: 1.5rem;
+  }
+  .surface-body,
+  .inspector {
+    padding: clamp(1.25rem, 2vw, 1.75rem);
+  }
+  .surface .surface,
+  .inspector .surface {
+    border-radius: 0;
+    border-inline: 0;
+    background: transparent;
+  }
+  .inspector > p {
+    color: var(--muted);
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+  .detail-section {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+  }
+  .detail-section + .line-list {
+    margin-top: 0.75rem;
+  }
+  .line-list li {
+    align-items: center;
+    min-height: 3rem;
+    padding-block: 0.875rem;
+  }
+  .section-heading {
+    gap: 1.25rem;
+  }
+  .actions + .actions {
+    margin-top: 0.75rem;
+  }
+  .form-grid {
+    gap: 1.25rem;
+  }
+}
+.record-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line-subtle);
+}
+.record-heading h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+.record-heading p {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.record-heading-end,
+.record-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.record-heading-end {
+  gap: 1rem;
+}
+.record-tools .action-icon {
+  background: transparent;
+  border-color: transparent;
+}
+.panel-heading {
+  margin-bottom: 1.5rem;
+}
+.panel-heading h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+}
+.panel-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.section-count {
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.line-list .record-empty {
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem 0;
+  color: var(--muted);
+}
+.record-empty > app-icon {
+  flex-shrink: 0;
+}
+.record-empty strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.record-empty p {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+}
+.workspace .consolidation-workspace.split-view {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+}
+.selection-panel app-record-browser {
+  margin-block: 0;
+}
+@media (max-width: 1400px) {
+  .workspace .consolidation-workspace.split-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .workspace .page-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+  }
+  .workspace .page-header > .actions {
+    flex-shrink: 1;
+    width: 100%;
+  }
+  .record-heading-end {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

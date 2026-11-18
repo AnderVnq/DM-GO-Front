@@ -29,7 +29,7 @@
     empty="Todavía no hay registros para estos filtros. Puedes crear uno desde el botón superior."
   />
 } @else {
-  <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
+  <button class="button page-back" (click)="backToList()" [disabled]="busy() || loading()">
     <app-icon name="back" />Volver al listado
   </button>
 }
@@ -43,34 +43,36 @@
   <p role="status">Cargando consolidado…</p>
 }
 @if (consolidation() || creating()) {
-  <div [class.split-view]="consolidation()?.status === 'open'">
+  <div class="consolidation-workspace" [class.split-view]="consolidation()?.status === 'open'">
     <section class="surface surface-body">
       @if (consolidation(); as item) {
-        <div class="page-header">
+        <div class="record-heading">
           <div>
             <h2 #detailHeading tabindex="-1">{{ item.code }}</h2>
             <p>{{ item.warehouse_code }} · {{ date(item.created_at) }}</p>
           </div>
-          <app-status [value]="item.status" />
-        </div>
-        <div class="actions">
-          <button
-            class="icon-button action-icon"
-            (click)="open()"
-            [disabled]="busy() || loading()"
-            aria-label="Actualizar consolidado"
-            title="Actualizar consolidado"
-          >
-            <app-icon name="refresh" /></button
-          ><button
-            class="icon-button action-icon"
-            (click)="copyLink()"
-            [disabled]="busy()"
-            aria-label="Copiar enlace"
-            title="Copiar enlace"
-          >
-            <app-icon name="copy" />
-          </button>
+          <div class="record-heading-end">
+            <app-status [value]="item.status" />
+            <div class="record-tools">
+              <button
+                class="icon-button action-icon"
+                (click)="open()"
+                [disabled]="busy() || loading()"
+                aria-label="Actualizar consolidado"
+                title="Actualizar consolidado"
+              >
+                <app-icon name="refresh" /></button
+              ><button
+                class="icon-button action-icon"
+                (click)="copyLink()"
+                [disabled]="busy()"
+                aria-label="Copiar enlace"
+                title="Copiar enlace"
+              >
+                <app-icon name="copy" />
+              </button>
+            </div>
+          </div>
         </div>
         <div class="actions">
           <a class="button" [routerLink]="['/internal/consolidations', item.id, 'guide-groups']">{{
@@ -87,7 +89,9 @@
             >
           </div>
         }
-        <h3 class="detail-section">Bultos incluidos</h3>
+        <h3 class="detail-section">
+          Bultos incluidos <span class="section-count">{{ item.bulk_ids.length }}</span>
+        </h3>
         <ul class="line-list">
           @for (id of item.bulk_ids; track id) {
             <li>
@@ -98,7 +102,13 @@
               }}</span>
             </li>
           } @empty {
-            <li>Este consolidado todavía no tiene bultos.</li>
+            <li class="record-empty">
+              <app-icon name="packages" />
+              <div>
+                <strong>Este consolidado todavía no tiene bultos.</strong>
+                <p>Selecciona un bulto disponible para preparar el envío.</p>
+              </div>
+            </li>
           }
         </ul>
         @if (detailLoading()) {
@@ -193,12 +203,15 @@
       }
     </section>
     @if (consolidation()?.status === 'open') {
-      <aside class="inspector">
-        <h2>Añadir bultos</h2>
-        <p>Selecciona un bulto cerrado y sin consolidado del mismo almacén.</p>
+      <aside class="inspector selection-panel">
+        <div class="panel-heading">
+          <h2>Añadir bultos</h2>
+          <p>Selecciona un bulto cerrado y sin consolidado del mismo almacén.</p>
+        </div>
         <app-record-browser
           resource="bulks"
           title="Bultos disponibles"
+          [embedded]="true"
           [columns]="[
             { key: 'code', label: 'Bulto' },
             { key: 'package_count', label: 'Paquetes' },

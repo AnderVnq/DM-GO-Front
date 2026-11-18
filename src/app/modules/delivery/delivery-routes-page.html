@@ -150,6 +150,7 @@
           [disabled]="!canOperate || packageLoading()"
           hint="Buscar paquete o cliente"
           action="Seleccionar"
+          [embedded]="true"
           (selected)="selectPackage($event)"
         />
 

@@ -240,6 +240,17 @@ test('flujo físico: bulto, retiro con motivo, precinto y guías del consolidado
   });
   await page.getByRole('link', { name: 'Preparar consolidado', exact: true }).click();
   await page.getByRole('button', { name: 'Crear consolidado', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Añadir bulto al consolidado' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Seleccionar BLK-000042' })).toHaveCSS(
+    'white-space',
+    'nowrap',
+  );
+  await page.screenshot({
+    path: info.outputPath('consolidation-open.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Añadir bulto al consolidado' }).click();
   await expect(page.locator('.alert.success[role="status"]')).toContainText('Bulto añadido');
   await page.getByRole('button', { name: 'Revisar cierre y generar guías' }).click();

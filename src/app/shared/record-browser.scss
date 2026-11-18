@@ -45,3 +45,47 @@ td {
 .record-status {
   white-space: nowrap;
 }
+
+.embedded {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.embedded > .surface-body {
+  padding: 0 0 1.25rem;
+}
+.embedded .table-footer {
+  padding-inline: 0;
+  background: transparent;
+}
+.record-empty {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2.5rem 1.5rem;
+  border-block: 1px solid var(--line-subtle);
+  color: var(--muted);
+  text-align: center;
+}
+.record-empty app-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.record-empty p {
+  max-width: 42ch;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.data-table {
+  min-width: 30rem;
+}
+td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+td .button {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
