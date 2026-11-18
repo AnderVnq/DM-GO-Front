@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import { RecordBrowser } from '../../shared/record-browser';
 import { normalizeWeightKg, weightKgHint, formatMeasuredWeight } from '../../shared/weight';
 import {
@@ -28,7 +29,7 @@ import type { Bulk, BulkClosure } from './consolidation.model';
 
 @Component({
   selector: 'app-bulks-page',
-  imports: [RecordBrowser, FormsModule, RouterLink, Status],
+  imports: [Icon, RecordBrowser, FormsModule, RouterLink, Status],
   templateUrl: './bulks-page.html',
 })
 export class BulksPage {

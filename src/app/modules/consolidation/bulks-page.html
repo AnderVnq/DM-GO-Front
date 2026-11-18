@@ -6,7 +6,7 @@
   <div class="actions">
     <a class="button" routerLink="/internal/consolidations">Consolidados</a
     ><button class="button primary" (click)="newBulk()" [disabled]="busy() || loading()">
-      Nuevo bulto
+      <app-icon name="plus" />Nuevo bulto
     </button>
   </div>
 </div>
@@ -30,7 +30,7 @@
   />
 } @else {
   <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
-    Volver al listado
+    <app-icon name="back" />Volver al listado
   </button>
 }
 @if (error()) {
@@ -50,18 +50,29 @@
     </div>
     <div class="actions">
       <app-status [value]="bulk.status" /><button
-        class="button compact"
+        class="icon-button action-icon"
         (click)="open()"
         [disabled]="busy() || loading()"
+        aria-label="Actualizar bulto"
+        title="Actualizar bulto"
       >
-        Actualizar bulto</button
-      ><button class="button compact" (click)="copyLink()" [disabled]="busy()">Copiar enlace</button
+        <app-icon name="refresh" /></button
       ><button
-        class="button compact"
+        class="icon-button action-icon"
+        (click)="copyLink()"
+        [disabled]="busy()"
+        aria-label="Copiar enlace"
+        title="Copiar enlace"
+      >
+        <app-icon name="copy" /></button
+      ><button
+        class="icon-button action-icon"
         (click)="label()"
         [disabled]="busy() || !bulk.package_ids.length"
+        aria-label="Descargar etiqueta PDF"
+        title="Descargar etiqueta PDF"
       >
-        Descargar etiqueta PDF
+        <app-icon name="download" />
       </button>
     </div>
   </div>
@@ -94,8 +105,14 @@
                 <td>{{ contents()[id]?.description || 'Detalle no disponible' }}</td>
                 <td>
                   @if (bulk.status === 'open') {
-                    <button class="text-button" (click)="beginRemove(id)" [disabled]="busy()">
-                      Retirar paquete
+                    <button
+                      class="icon-button action-icon"
+                      (click)="beginRemove(id)"
+                      [disabled]="busy()"
+                      aria-label="Retirar paquete"
+                      title="Retirar paquete"
+                    >
+                      <app-icon name="close" />
                     </button>
                   }
                 </td>

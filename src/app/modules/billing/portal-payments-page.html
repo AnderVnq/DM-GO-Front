@@ -3,7 +3,15 @@
     <h1>Mis pagos</h1>
     <p>Consulta tus notas de salida, saldos y pagos enviados a revisión.</p>
   </div>
-  <button class="button" (click)="reload()" [disabled]="busy() || loading()">Actualizar</button>
+  <button
+    class="icon-button action-icon"
+    (click)="reload()"
+    [disabled]="busy() || loading()"
+    aria-label="Actualizar"
+    title="Actualizar"
+  >
+    <app-icon name="refresh" />
+  </button>
 </div>
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
@@ -101,11 +109,17 @@
         <p role="status">Actualizando el detalle…</p>
       }
       <div class="actions">
-        <button class="button compact" (click)="viewPdf()" [disabled]="busy() || detailLoading()">
-          Ver PDF
+        <button
+          class="icon-button action-icon"
+          (click)="viewPdf()"
+          [disabled]="busy() || detailLoading()"
+          aria-label="Ver PDF"
+          title="Ver PDF"
+        >
+          <app-icon name="eye" />
         </button>
         <button class="button compact" (click)="download()" [disabled]="busy() || detailLoading()">
-          Descargar PDF
+          <app-icon name="download" />Descargar PDF
         </button>
         @if (note.status === 'pending_payment') {
           <button

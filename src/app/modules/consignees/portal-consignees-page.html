@@ -3,7 +3,15 @@
     <h1>Mis destinatarios</h1>
     <p>Gestiona quién figurará como consignatario de tus importaciones.</p>
   </div>
-  <button class="button" (click)="reload()" [disabled]="busy() || loading()">Actualizar</button>
+  <button
+    class="icon-button action-icon"
+    (click)="reload()"
+    [disabled]="busy() || loading()"
+    aria-label="Actualizar"
+    title="Actualizar"
+  >
+    <app-icon name="refresh" />
+  </button>
 </div>
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>

@@ -3,7 +3,15 @@
     <h1>Mis avisos</h1>
     <p>Consulta las novedades de tus paquetes y pagos.</p>
   </div>
-  <button class="button" (click)="reload()" [disabled]="loading()">Actualizar</button>
+  <button
+    class="icon-button action-icon"
+    (click)="reload()"
+    [disabled]="loading()"
+    aria-label="Actualizar"
+    title="Actualizar"
+  >
+    <app-icon name="refresh" />
+  </button>
 </div>
 <div class="customer-strip search-bar">
   <label class="field"

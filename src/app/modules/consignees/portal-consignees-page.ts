@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, type NgForm } from '@angular/forms';
@@ -10,7 +11,7 @@ import type { Consignee, ConsigneeInput, ConsigneeUsage } from './consignee.mode
 
 @Component({
   selector: 'app-portal-consignees-page',
-  imports: [FormsModule],
+  imports: [Icon, FormsModule],
   templateUrl: './portal-consignees-page.html',
   styleUrl: './portal-consignees-page.scss',
 })

@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
@@ -9,7 +10,7 @@ import { notificationTarget, type PortalNotification } from './notification.mode
 
 @Component({
   selector: 'app-portal-notifications-page',
-  imports: [RouterLink],
+  imports: [Icon, RouterLink],
   templateUrl: './portal-notifications-page.html',
   styleUrl: './portal-notifications-page.scss',
 })

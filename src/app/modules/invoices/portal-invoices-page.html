@@ -3,7 +3,15 @@
     <h1>Mis comprobantes</h1>
     <p>Consulta tus boletas, facturas y notas de crédito emitidas.</p>
   </div>
-  <button class="button" (click)="reload()" [disabled]="loading() || busy()">Actualizar</button>
+  <button
+    class="icon-button action-icon"
+    (click)="reload()"
+    [disabled]="loading() || busy()"
+    aria-label="Actualizar"
+    title="Actualizar"
+  >
+    <app-icon name="refresh" />
+  </button>
 </div>
 <div class="customer-strip search-bar">
   <label class="field"
@@ -136,30 +144,32 @@
         <h3>Archivos disponibles</h3>
         <div class="actions">
           <button
-            class="button primary compact"
+            class="icon-button action-icon"
             (click)="viewPdf()"
             [disabled]="busy() || !invoice.has_pdf"
+            aria-label="Ver PDF"
+            title="Ver PDF"
           >
-            Ver PDF
+            <app-icon name="eye" />
           </button>
           <button
             class="button compact"
             (click)="download('pdf')"
             [disabled]="busy() || !invoice.has_pdf"
           >
-            Descargar PDF</button
+            <app-icon name="download" />Descargar PDF</button
           ><button
             class="button compact"
             (click)="download('xml')"
             [disabled]="busy() || !invoice.has_xml"
           >
-            Descargar XML</button
+            <app-icon name="download" />Descargar XML</button
           ><button
             class="button compact"
             (click)="download('cdr')"
             [disabled]="busy() || !invoice.has_cdr"
           >
-            Descargar CDR
+            <app-icon name="download" />Descargar CDR
           </button>
         </div>
         <p class="fine-print actions">

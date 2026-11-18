@@ -3,8 +3,14 @@
     <h1>Mis entregas</h1>
     <p>Elige cómo recibir cada paquete en Perú.</p>
   </div>
-  <button class="button" (click)="reload()" [disabled]="loading() || busy() || editing()">
-    Actualizar
+  <button
+    class="icon-button action-icon"
+    (click)="reload()"
+    [disabled]="loading() || busy() || editing()"
+    aria-label="Actualizar"
+    title="Actualizar"
+  >
+    <app-icon name="refresh" />
   </button>
 </div>
 @if (error()) {

@@ -6,8 +6,14 @@
   <div class="actions">
     <a class="button" routerLink="/internal/consolidations" [queryParams]="{ consolidation_id: id }"
       >Volver al consolidado</a
-    ><button class="button" (click)="reload()" [disabled]="busy() || loading()">
-      Actualizar tablero
+    ><button
+      class="icon-button action-icon"
+      (click)="reload()"
+      [disabled]="busy() || loading()"
+      aria-label="Actualizar tablero"
+      title="Actualizar tablero"
+    >
+      <app-icon name="refresh" />
     </button>
   </div>
 </div>
@@ -126,7 +132,7 @@
                   [disabled]="!editable()"
                   (click)="deleteGroup(group.id)"
                 >
-                  Eliminar grupo
+                  <app-icon name="trash" />Eliminar grupo
                 </button>
               </div>
             }

@@ -14,7 +14,14 @@
       <option value="paid">Pagado</option>
       <option value="cancelled">Anulado</option>
     </select></label
-  ><button class="button" [disabled]="loading()">Actualizar</button>
+  ><button
+    class="icon-button action-icon"
+    [disabled]="loading()"
+    aria-label="Actualizar"
+    title="Actualizar"
+  >
+    <app-icon name="refresh" />
+  </button>
 </form>
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
@@ -150,9 +157,17 @@
         <p class="alert error" role="alert">{{ destinationReadError() }}</p>
       }
       <div class="actions">
-        <button class="button compact" (click)="viewPdf()" [disabled]="busy()">Ver PDF</button>
+        <button
+          class="icon-button action-icon"
+          (click)="viewPdf()"
+          [disabled]="busy()"
+          aria-label="Ver PDF"
+          title="Ver PDF"
+        >
+          <app-icon name="eye" />
+        </button>
         <button class="button compact" (click)="download()" [disabled]="busy()">
-          Descargar PDF
+          <app-icon name="download" />Descargar PDF
         </button>
         @if (auth.manager() && note.status === 'draft') {
           <button class="button primary compact" (click)="liquidate()" [disabled]="busy()">
@@ -176,11 +191,13 @@
               >
               @if (editable(note.status)) {
                 <button
-                  class="text-button"
+                  class="icon-button action-icon"
                   (click)="removePackage(guide.package_id)"
                   [disabled]="busy()"
+                  aria-label="Retirar"
+                  title="Retirar"
                 >
-                  Retirar
+                  <app-icon name="close" />
                 </button>
               }
             </li>
@@ -222,11 +239,13 @@
                     </button>
                     @if (line.manual) {
                       <button
-                        class="text-button"
+                        class="icon-button action-icon"
                         (click)="removeCharge(line.id)"
                         [disabled]="busy()"
+                        aria-label="Retirar"
+                        title="Retirar"
                       >
-                        Retirar
+                        <app-icon name="close" />
                       </button>
                     }
                   </div>

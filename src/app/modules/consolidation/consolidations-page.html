@@ -6,7 +6,7 @@
   <div class="actions">
     <a class="button" routerLink="/internal/bulks">Bultos</a
     ><button class="button primary" (click)="newConsolidation()" [disabled]="busy() || loading()">
-      Nuevo consolidado
+      <app-icon name="plus" />Nuevo consolidado
     </button>
   </div>
 </div>
@@ -30,7 +30,7 @@
   />
 } @else {
   <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
-    Volver al listado
+    <app-icon name="back" />Volver al listado
   </button>
 }
 @if (error()) {
@@ -54,10 +54,22 @@
           <app-status [value]="item.status" />
         </div>
         <div class="actions">
-          <button class="button compact" (click)="open()" [disabled]="busy() || loading()">
-            Actualizar consolidado</button
-          ><button class="button compact" (click)="copyLink()" [disabled]="busy()">
-            Copiar enlace
+          <button
+            class="icon-button action-icon"
+            (click)="open()"
+            [disabled]="busy() || loading()"
+            aria-label="Actualizar consolidado"
+            title="Actualizar consolidado"
+          >
+            <app-icon name="refresh" /></button
+          ><button
+            class="icon-button action-icon"
+            (click)="copyLink()"
+            [disabled]="busy()"
+            aria-label="Copiar enlace"
+            title="Copiar enlace"
+          >
+            <app-icon name="copy" />
           </button>
         </div>
         <div class="actions">

@@ -1,3 +1,4 @@
+import { Icon } from './icon';
 import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -26,7 +27,7 @@ let nextBrowserId = 0;
 /** Tabla remota reutilizable. Los filtros y columnas pertenecen a la pantalla consumidora. */
 @Component({
   selector: 'app-record-browser',
-  imports: [FormsModule],
+  imports: [FormsModule, Icon],
   templateUrl: './record-browser.html',
   styleUrl: './record-browser.scss',
 })

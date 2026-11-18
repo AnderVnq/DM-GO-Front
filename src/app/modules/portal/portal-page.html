@@ -96,7 +96,14 @@
               <h2>Tu código de casillero</h2>
               <strong>{{ customer.locker_code }}</strong>
             </div>
-            <button class="button" (click)="copy(customer.locker_code)">Copiar código</button>
+            <button
+              class="icon-button action-icon"
+              (click)="copy(customer.locker_code)"
+              aria-label="Copiar código"
+              title="Copiar código"
+            >
+              <app-icon name="copy" />
+            </button>
           </section>
           <p class="fine-print locker-instructions">
             Incluye tu código de casillero en los datos de envío para identificar correctamente tus
@@ -133,7 +140,14 @@
                   <dd>{{ address.country }}</dd>
                 </div>
               </dl>
-              <button class="button" (click)="copy(addressText(address))">Copiar dirección</button>
+              <button
+                class="icon-button action-icon"
+                (click)="copy(addressText(address))"
+                aria-label="Copiar dirección"
+                title="Copiar dirección"
+              >
+                <app-icon name="copy" />
+              </button>
             </section>
           } @empty {
             <p class="alert">

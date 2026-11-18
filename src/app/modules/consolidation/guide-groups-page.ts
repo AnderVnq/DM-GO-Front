@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import { DOCUMENT } from '@angular/common';
 import {
   Component,
@@ -18,7 +19,7 @@ import { requestCode, requestMessage } from '../../core/api-problem';
 
 @Component({
   selector: 'app-guide-groups-page',
-  imports: [RouterLink, GuidePackageCard],
+  imports: [Icon, RouterLink, GuidePackageCard],
   templateUrl: './guide-groups-page.html',
   styleUrl: './guide-groups-page.scss',
 })

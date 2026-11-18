@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import { formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,7 +13,7 @@ import { formatDate } from '../../shared/amount';
 
 @Component({
   selector: 'app-unidentified-page',
-  imports: [FormsModule, RouterLink],
+  imports: [Icon, FormsModule, RouterLink],
   templateUrl: './unidentified-page.html',
 })
 export class UnidentifiedPage {

@@ -68,13 +68,19 @@
               }
               <td>
                 <button
-                  class="button compact"
+                  [class]="
+                    action() === 'Seleccionar' ? 'button compact' : 'icon-button action-icon'
+                  "
                   type="button"
                   (click)="choose(row.id)"
                   [disabled]="disabled()"
                   [attr.aria-label]="action() + ' ' + value(row, columns()[0])"
+                  [attr.title]="action() + ' ' + value(row, columns()[0])"
                 >
-                  {{ action() }}
+                  <app-icon [name]="action() === 'Seleccionar' ? 'check' : 'eye'" />
+                  @if (action() === 'Seleccionar') {
+                    {{ action() }}
+                  }
                 </button>
               </td>
             </tr>

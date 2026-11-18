@@ -81,7 +81,15 @@
   <p role="status">Actualizando ruta…</p>
 }
 @if (canReloadDetail && stale() && !detailLoading() && !selected()) {
-  <button class="button" (click)="reload()" [disabled]="busy()">Actualizar detalle de ruta</button>
+  <button
+    class="icon-button action-icon"
+    (click)="reload()"
+    [disabled]="busy()"
+    aria-label="Actualizar detalle de ruta"
+    title="Actualizar detalle de ruta"
+  >
+    <app-icon name="refresh" />
+  </button>
 }
 @if (selected(); as route) {
   <section class="surface surface-body route-detail" aria-labelledby="route-detail-title">
@@ -90,8 +98,14 @@
         <h2 #routeHeading id="route-detail-title" tabindex="-1">Ruta {{ route.code }}</h2>
         <p>{{ statuses[route.status] }} · {{ day(route.date) }}</p>
       </div>
-      <button class="button" (click)="reload()" [disabled]="busy() || detailLoading()">
-        Actualizar detalle de ruta
+      <button
+        class="icon-button action-icon"
+        (click)="reload()"
+        [disabled]="busy() || detailLoading()"
+        aria-label="Actualizar detalle de ruta"
+        title="Actualizar detalle de ruta"
+      >
+        <app-icon name="refresh" />
       </button>
     </div>
     <dl class="detail-grid">
@@ -344,8 +358,15 @@
     <p class="alert error" role="alert">{{ error() }}</p>
   }
   @if (stale()) {
-    <button type="button" class="button" (click)="reload()" [disabled]="busy() || detailLoading()">
-      Actualizar ruta
+    <button
+      type="button"
+      class="icon-button action-icon"
+      (click)="reload()"
+      [disabled]="busy() || detailLoading()"
+      aria-label="Actualizar ruta"
+      title="Actualizar ruta"
+    >
+      <app-icon name="refresh" />
     </button>
   }
   <div class="actions dialog-footer">
@@ -382,8 +403,15 @@
     <p class="alert" role="status">{{ failureNotice() }}</p>
   }
   @if (stale()) {
-    <button type="button" class="button" (click)="reload()" [disabled]="busy() || detailLoading()">
-      Actualizar ruta
+    <button
+      type="button"
+      class="icon-button action-icon"
+      (click)="reload()"
+      [disabled]="busy() || detailLoading()"
+      aria-label="Actualizar ruta"
+      title="Actualizar ruta"
+    >
+      <app-icon name="refresh" />
     </button>
   }
   <form [formGroup]="failure" (ngSubmit)="fail()">

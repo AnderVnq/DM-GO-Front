@@ -33,8 +33,13 @@
         [readOnly]="busy()"
       /><span class="field-hint">Día operativo en Perú. Solo se muestran tus rutas.</span>
     </div>
-    <button class="button" [disabled]="busy() || loading() || !validDate">
-      Actualizar mis rutas
+    <button
+      class="icon-button action-icon"
+      [disabled]="busy() || loading() || !validDate"
+      aria-label="Actualizar mis rutas"
+      title="Actualizar mis rutas"
+    >
+      <app-icon name="refresh" />
     </button>
   </form>
   @if (loading()) {
@@ -165,8 +170,15 @@
     <p class="alert" role="status">{{ changedNotice() }}</p>
   }
   @if (stale()) {
-    <button type="button" class="button" (click)="load()" [disabled]="busy() || loading()">
-      Actualizar rutas
+    <button
+      type="button"
+      class="icon-button action-icon"
+      (click)="load()"
+      [disabled]="busy() || loading()"
+      aria-label="Actualizar rutas"
+      title="Actualizar rutas"
+    >
+      <app-icon name="refresh" />
     </button>
   }
   <form [formGroup]="resolution" (ngSubmit)="resolve()">

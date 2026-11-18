@@ -5,11 +5,13 @@
   </div>
   <div class="actions">
     <button
-      class="button"
+      class="icon-button action-icon"
       (click)="refresh()"
       [disabled]="busy() || currentLoading() || historyLoading()"
+      aria-label="Actualizar tarifas"
+      title="Actualizar tarifas"
     >
-      Actualizar tarifas
+      <app-icon name="refresh" />
     </button>
     @if (auth.admin()) {
       <button class="button primary" (click)="startPublish()" [disabled]="!canOpenPublish">
@@ -244,11 +246,13 @@
     <p class="alert error" role="alert">{{ currentError() || historyError() }}</p>
     <button
       type="button"
-      class="button"
+      class="icon-button action-icon"
       (click)="refresh()"
       [disabled]="busy() || currentLoading() || historyLoading()"
+      aria-label="Actualizar tarifas"
+      title="Actualizar tarifas"
     >
-      Actualizar tarifas
+      <app-icon name="refresh" />
     </button>
   }
   <form [formGroup]="rateForm" (ngSubmit)="publish()">

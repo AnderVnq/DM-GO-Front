@@ -5,7 +5,15 @@
   </div>
   <div class="actions">
     <a class="button" routerLink="/internal/warehouses/receiving">Recibir paquete</a
-    ><button class="button" (click)="reload()" [disabled]="busy() || loading()">Actualizar</button>
+    ><button
+      class="icon-button action-icon"
+      (click)="reload()"
+      [disabled]="busy() || loading()"
+      aria-label="Actualizar"
+      title="Actualizar"
+    >
+      <app-icon name="refresh" />
+    </button>
   </div>
 </div>
 @if (error()) {

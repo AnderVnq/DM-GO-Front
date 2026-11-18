@@ -17,7 +17,14 @@
         <option value="rejected">Rechazada</option>
         <option value="expired">Vencida</option>
       </select></label
-    ><button class="button" [disabled]="loading()">Actualizar</button>
+    ><button
+      class="icon-button action-icon"
+      [disabled]="loading()"
+      aria-label="Actualizar"
+      title="Actualizar"
+    >
+      <app-icon name="refresh" />
+    </button>
   </form>
   @if (error()) {
     <p class="alert error" role="alert">{{ error() }}</p>
@@ -172,8 +179,15 @@
         >
           {{ sending() ? 'Enviando…' : 'Enviar por correo' }}
         </button>
-        <button type="button" class="button primary" (click)="previewPdf()" [disabled]="busy()">
-          Ver PDF
+        <button
+          type="button"
+          class="icon-button action-icon"
+          (click)="previewPdf()"
+          [disabled]="busy()"
+          aria-label="Ver PDF"
+          title="Ver PDF"
+        >
+          <app-icon name="eye" />
         </button>
         <button type="button" class="button" (click)="download()" [disabled]="busy()">
           {{ busy() ? 'Preparando…' : 'Descargar PDF' }}

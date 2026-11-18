@@ -218,11 +218,23 @@
         }
         <div class="actions">
           @if (item.invoice_document_id) {
-            <button class="button compact" (click)="viewInvoice()" [disabled]="busy()">
-              Ver factura adjunta
+            <button
+              class="icon-button action-icon"
+              (click)="viewInvoice()"
+              [disabled]="busy()"
+              aria-label="Ver factura adjunta"
+              title="Ver factura adjunta"
+            >
+              <app-icon name="eye" />
             </button>
-            <button class="button compact" (click)="download()" [disabled]="busy()">
-              Descargar factura
+            <button
+              class="icon-button action-icon"
+              (click)="download()"
+              [disabled]="busy()"
+              aria-label="Descargar factura"
+              title="Descargar factura"
+            >
+              <app-icon name="download" />
             </button>
           }
           <button

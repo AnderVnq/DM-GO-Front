@@ -17,7 +17,15 @@
       [value]="filter()"
       (input)="filter.set($any($event.target).value)"
       placeholder="Compañía, contenido o tracking" /></label
-  ><button class="button" (click)="reload()" [disabled]="loading() || busy()">Actualizar</button>
+  ><button
+    class="icon-button action-icon"
+    (click)="reload()"
+    [disabled]="loading() || busy()"
+    aria-label="Actualizar"
+    title="Actualizar"
+  >
+    <app-icon name="refresh" />
+  </button>
 </div>
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>

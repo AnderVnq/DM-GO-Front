@@ -32,7 +32,9 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
   @if (!customer()) {
-    <button class="button" (click)="backToList()" [disabled]="saving()">Volver al listado</button>
+    <button class="button" (click)="backToList()" [disabled]="saving()">
+      <app-icon name="back" />Volver al listado
+    </button>
   }
 }
 @if (success()) {

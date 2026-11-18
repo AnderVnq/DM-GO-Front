@@ -25,7 +25,7 @@
   />
 } @else {
   <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
-    Volver al listado
+    <app-icon name="back" />Volver al listado
   </button>
 }
 
@@ -63,9 +63,22 @@
       </div>
     </dl>
     <div class="actions">
-      <button class="button" (click)="reload()" [disabled]="busy() || loading()">
-        Actualizar recepción</button
-      ><button class="button" (click)="copyLink()">Copiar enlace</button>
+      <button
+        class="icon-button action-icon"
+        (click)="reload()"
+        [disabled]="busy() || loading()"
+        aria-label="Actualizar recepción"
+        title="Actualizar recepción"
+      >
+        <app-icon name="refresh" /></button
+      ><button
+        class="icon-button action-icon"
+        (click)="copyLink()"
+        aria-label="Copiar enlace"
+        title="Copiar enlace"
+      >
+        <app-icon name="copy" />
+      </button>
       @if (item.status === 'closed') {
         <a class="button primary" routerLink="/internal/customs">Continuar en Aduanas</a>
       }

@@ -51,8 +51,8 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.5rem;
-  min-width: 2.5rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
   border: 0;
   border-radius: 0.5rem;
   background: transparent;
@@ -263,4 +263,16 @@ dialog .actions {
   .document-actions .icon-button:hover:not(:disabled) {
     color: var(--accent);
   }
+}
+
+// Acciones secundarias: misma superficie y área táctil en tablas y fichas.
+.action-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 2.75rem;
+  padding: 0.625rem;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  vertical-align: middle;
 }

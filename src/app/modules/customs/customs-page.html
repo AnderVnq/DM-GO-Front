@@ -64,8 +64,14 @@
         Hasta 200 guías pendientes devueltas por la API. Las liberadas se consultan con su enlace.
       </p>
     </div>
-    <button class="button" (click)="load()" [disabled]="busy() || loading()">
-      Actualizar pendientes
+    <button
+      class="icon-button action-icon"
+      (click)="load()"
+      [disabled]="busy() || loading()"
+      aria-label="Actualizar pendientes"
+      title="Actualizar pendientes"
+    >
+      <app-icon name="refresh" />
     </button>
   </div>
   <div class="field pending-filter" [formGroup]="filters">
@@ -134,7 +140,15 @@
   <p role="status">Actualizando detalle de Aduanas…</p>
 }
 @if (lastDetailAvailable && stale() && !detailLoading()) {
-  <button class="button" (click)="reloadDetail()" [disabled]="busy()">Actualizar detalle</button>
+  <button
+    class="icon-button action-icon"
+    (click)="reloadDetail()"
+    [disabled]="busy()"
+    aria-label="Actualizar detalle"
+    title="Actualizar detalle"
+  >
+    <app-icon name="refresh" />
+  </button>
 }
 @if (selected(); as line) {
   <section class="surface surface-body customs-detail" aria-labelledby="customs-detail-title">
@@ -143,8 +157,14 @@
         <h2 id="customs-detail-title" #detailHeading tabindex="-1">Guía {{ line.guide }}</h2>
         <p>{{ status[line.status] }} · {{ line.customs_manifest }}</p>
       </div>
-      <button class="button" (click)="reloadDetail()" [disabled]="busy() || detailLoading()">
-        Actualizar detalle
+      <button
+        class="icon-button action-icon"
+        (click)="reloadDetail()"
+        [disabled]="busy() || detailLoading()"
+        aria-label="Actualizar detalle"
+        title="Actualizar detalle"
+      >
+        <app-icon name="refresh" />
       </button>
     </div>
     <dl class="detail-grid">

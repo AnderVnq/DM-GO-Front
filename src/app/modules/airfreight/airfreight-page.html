@@ -28,7 +28,7 @@
   />
 } @else {
   <button class="button" (click)="backToList()" [disabled]="busy() || loading()">
-    Volver al listado
+    <app-icon name="back" />Volver al listado
   </button>
 }
 
@@ -63,9 +63,22 @@
           </div>
         </dl>
         <div class="actions">
-          <button class="button" (click)="open()" [disabled]="busy() || loading()">
-            Actualizar MAWB</button
-          ><button class="button" (click)="copyLink()">Copiar enlace</button>
+          <button
+            class="icon-button action-icon"
+            (click)="open()"
+            [disabled]="busy() || loading()"
+            aria-label="Actualizar MAWB"
+            title="Actualizar MAWB"
+          >
+            <app-icon name="refresh" /></button
+          ><button
+            class="icon-button action-icon"
+            (click)="copyLink()"
+            aria-label="Copiar enlace"
+            title="Copiar enlace"
+          >
+            <app-icon name="copy" />
+          </button>
         </div>
         @if (item.status === 'closed') {
           <div class="actions">
