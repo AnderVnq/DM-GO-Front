@@ -142,6 +142,11 @@ export const routes: Routes = [
           import('./modules/warehouses/warehouses-page').then((m) => m.WarehousesPage),
       },
       {
+        path: 'rates',
+        title: 'Tarifas courier · DM48',
+        loadComponent: () => import('./modules/shipments/rates-page').then((m) => m.RatesPage),
+      },
+      {
         path: 'agencies',
         title: 'Agencias y sucursales · DM48',
         loadComponent: () => import('./modules/delivery/agencies-page').then((m) => m.AgenciesPage),

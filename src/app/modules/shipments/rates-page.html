@@ -1,0 +1,331 @@
+<div class="page-header">
+  <div>
+    <h1 #ratesHeading tabindex="-1">Tarifas courier</h1>
+    <p>Consulta el flete por libra, su vigencia y el cálculo de un paquete medido.</p>
+  </div>
+  <div class="actions">
+    <button
+      class="button"
+      (click)="refresh()"
+      [disabled]="busy() || currentLoading() || historyLoading()"
+    >
+      Actualizar tarifas
+    </button>
+    @if (auth.admin()) {
+      <button class="button primary" (click)="startPublish()" [disabled]="!canOpenPublish">
+        <app-icon name="plus" />Publicar nueva tarifa
+      </button>
+    }
+  </div>
+</div>
+@if (notice()) {
+  <p class="alert success" role="status">{{ notice() }}</p>
+}
+<p class="rate-context">
+  La recepción en USA conserva la tarifa vigente en ese momento. Esta pantalla corresponde al flete
+  courier por libra, separado de la cotización de compra asistida.
+</p>
+<div class="rate-workspace">
+  <section class="surface surface-body current-rate" aria-labelledby="current-rate-title">
+    <h2 id="current-rate-title">Tarifa vigente</h2>
+    @if (currentLoading()) {
+      <p role="status">Consultando tarifa vigente…</p>
+    }
+    @if (currentError()) {
+      <p class="alert error" role="alert">{{ currentError() }}</p>
+      <button class="button" (click)="loadCurrent()" [disabled]="busy()">
+        Reintentar tarifa vigente
+      </button>
+    }
+    @if (noCurrent()) {
+      <p class="alert">
+        No hay una tarifa vigente en este momento. Administración puede publicar una nueva versión.
+      </p>
+    }
+    @if (currentReady() && current(); as rate) {
+      <dl class="current-details">
+        <div>
+          <dt>Precio en USD por libra</dt>
+          <dd class="rate-price">{{ usd(rate.price_per_lb_cents) }} / lb</dd>
+        </div>
+        <div>
+          <dt>Mínimo facturable</dt>
+          <dd>{{ rate.min_lb }} lb</dd>
+        </div>
+        <div>
+          <dt>Divisor volumétrico</dt>
+          <dd>{{ rate.volumetric_divisor }} in³/lb</dd>
+        </div>
+        <div>
+          <dt>Desde · hora de Perú</dt>
+          <dd>{{ date(rate.valid_from) }}</dd>
+        </div>
+        <div>
+          <dt>Hasta · hora de Perú</dt>
+          <dd>{{ rate.valid_to ? date(rate.valid_to) : 'Sin fecha de fin' }}</dd>
+        </div>
+      </dl>
+      <p class="field-hint">El instante de fin no está incluido en la vigencia.</p>
+    }
+  </section>
+  <section
+    class="surface surface-body freight-calculator"
+    aria-labelledby="freight-calculator-title"
+  >
+    <h2 id="freight-calculator-title">Simular flete vigente</h2>
+    <p class="muted">
+      El servidor calcula el flete con la tarifa vigente al solicitarlo. No incluye compra del
+      producto, tributos ni otros servicios.
+    </p>
+    <form [formGroup]="measurements" (ngSubmit)="calculate()">
+      <fieldset class="form-grid" [disabled]="busy()">
+        <legend class="sr-only">Medidas del paquete</legend>
+        <div class="field full">
+          <label for="rate-weight">Peso real (kg)</label
+          ><input
+            id="rate-weight"
+            formControlName="weight_kg"
+            inputmode="decimal"
+            required
+            aria-describedby="rate-weight-hint"
+            placeholder="Ej. 1.250"
+          /><span id="rate-weight-hint" class="field-hint">{{ weightHint }}</span>
+        </div>
+        <div class="dimensions full">
+          <div class="field">
+            <label for="rate-length">Largo (mm)</label
+            ><input
+              id="rate-length"
+              type="number"
+              min="1"
+              max="3000"
+              step="1"
+              formControlName="length_mm"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="rate-width">Ancho (mm)</label
+            ><input
+              id="rate-width"
+              type="number"
+              min="1"
+              max="3000"
+              step="1"
+              formControlName="width_mm"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="rate-height">Alto (mm)</label
+            ><input
+              id="rate-height"
+              type="number"
+              min="1"
+              max="3000"
+              step="1"
+              formControlName="height_mm"
+              required
+            />
+          </div>
+        </div>
+        <p class="field-hint full">
+          Cada dimensión debe ser un entero entre 1 y 3000 mm. 10 mm equivalen a 1 cm.
+        </p>
+      </fieldset>
+      <button class="button primary" [disabled]="!canCalculate">
+        {{ calculating() ? 'Calculando…' : 'Calcular flete' }}
+      </button>
+    </form>
+    @if (calculationError()) {
+      <p class="alert error" role="alert">{{ calculationError() }}</p>
+    }
+    @if (calculation(); as quote) {
+      <section class="quote-result" aria-labelledby="freight-result-title">
+        <h3 id="freight-result-title">Resultado del flete</h3>
+        <p class="muted">
+          Peso consultado: {{ measured()?.weight_kg }} kg · {{ measured()?.length_mm }} ×
+          {{ measured()?.width_mm }} × {{ measured()?.height_mm }} mm.
+        </p>
+        <dl class="detail-grid">
+          <div>
+            <dt>Peso real</dt>
+            <dd>{{ quote.real_lb }} lb</dd>
+          </div>
+          <div>
+            <dt>Peso volumétrico</dt>
+            <dd>{{ quote.volumetric_lb }} lb</dd>
+          </div>
+          <div>
+            <dt>Peso facturable</dt>
+            <dd>{{ quote.billable_lb }} lb · {{ quote.billable_kg }} kg</dd>
+          </div>
+          <div>
+            <dt>Precio aplicado</dt>
+            <dd>{{ usd(quote.price_per_lb_cents) }} / lb</dd>
+          </div>
+        </dl>
+        <div class="freight-total">
+          <span>Flete calculado</span><strong>{{ usd(quote.freight_cents) }}</strong>
+        </div>
+      </section>
+    }
+  </section>
+</div>
+<section class="surface rates-history" aria-labelledby="rates-history-title">
+  <div class="section-heading">
+    <div>
+      <h2 id="rates-history-title">Historial de tarifas</h2>
+      <p class="muted">
+        Las versiones anteriores se conservan. Publicar una nueva tarifa cierra la que estaba
+        abierta desde la fecha indicada.
+      </p>
+    </div>
+  </div>
+  @if (historyLoading()) {
+    <p class="empty-state" role="status">Consultando historial…</p>
+  }
+  @if (historyError()) {
+    <p class="alert error" role="alert">{{ historyError() }}</p>
+    <button class="button history-retry" (click)="loadHistory()" [disabled]="busy()">
+      Reintentar historial
+    </button>
+  }
+  <div class="table-scroll" tabindex="0" aria-label="Historial de tarifas courier">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Desde · hora de Perú</th>
+          <th scope="col">Hasta · hora de Perú</th>
+          <th scope="col">USD / lb</th>
+          <th scope="col">Mínimo</th>
+          <th scope="col">Divisor</th>
+          <th scope="col">Vigencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (rate of history(); track rate.id) {
+          <tr>
+            <td>{{ date(rate.valid_from) }}</td>
+            <td>{{ rate.valid_to ? date(rate.valid_to) : 'Sin fecha de fin' }}</td>
+            <td class="amount">{{ usd(rate.price_per_lb_cents) }}</td>
+            <td>{{ rate.min_lb }} lb</td>
+            <td>{{ rate.volumetric_divisor }} in³/lb</td>
+            <td>{{ phase(rate) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (historyReady() && !history().length) {
+    <p class="empty-state">Todavía no hay tarifas publicadas.</p>
+  }
+</section>
+<dialog #publishDialog aria-labelledby="publish-rate-title" (cancel)="cancelPublish($event)">
+  <div class="dialog-header">
+    <h2 id="publish-rate-title">Publicar nueva tarifa</h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar publicación"
+      (click)="cancelPublish()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <p class="alert">
+    Se creará una nueva versión. La tarifa abierta terminará desde la fecha de inicio de esta
+    publicación; las recepciones anteriores conservarán su tarifa.
+  </p>
+  @if (formError()) {
+    <p class="alert error" role="alert">{{ formError() }}</p>
+  }
+  @if (currentError() || historyError()) {
+    <p class="alert error" role="alert">{{ currentError() || historyError() }}</p>
+    <button
+      type="button"
+      class="button"
+      (click)="refresh()"
+      [disabled]="busy() || currentLoading() || historyLoading()"
+    >
+      Actualizar tarifas
+    </button>
+  }
+  <form [formGroup]="rateForm" (ngSubmit)="publish()">
+    <fieldset class="form-grid" [disabled]="busy() || uncertain()">
+      <legend class="sr-only">Datos de la nueva tarifa courier</legend>
+      <div class="field full">
+        <label for="new-rate-price">Precio en USD por libra</label
+        ><input
+          id="new-rate-price"
+          formControlName="price"
+          inputmode="decimal"
+          required
+          placeholder="Ej. 5.50"
+          aria-describedby="new-price-hint"
+        /><span id="new-price-hint" class="field-hint"
+          >Mayor que cero, con hasta dos decimales.</span
+        >
+        @if (fieldErrors()['price_per_lb_cents']) {
+          <span class="field-error">{{ fieldErrors()['price_per_lb_cents'] }}</span>
+        }
+      </div>
+      <div class="field">
+        <label for="new-rate-min">Mínimo facturable (lb)</label
+        ><input
+          id="new-rate-min"
+          type="number"
+          formControlName="min_lb"
+          min="1"
+          step="1"
+          required
+        />
+        @if (fieldErrors()['min_lb']) {
+          <span class="field-error">{{ fieldErrors()['min_lb'] }}</span>
+        }
+      </div>
+      <div class="field">
+        <label for="new-rate-divisor">Divisor volumétrico (in³/lb)</label
+        ><input
+          id="new-rate-divisor"
+          type="number"
+          formControlName="volumetric_divisor"
+          min="1"
+          step="1"
+          required
+        /><span class="field-hint">166 es la referencia estándar indicada por el servicio.</span>
+        @if (fieldErrors()['volumetric_divisor']) {
+          <span class="field-error">{{ fieldErrors()['volumetric_divisor'] }}</span>
+        }
+      </div>
+      <div class="field full">
+        <label for="new-rate-from">Inicio · hora de Perú (opcional)</label
+        ><input
+          id="new-rate-from"
+          type="datetime-local"
+          formControlName="valid_from"
+          aria-describedby="new-rate-date-hint"
+          [attr.aria-invalid]="invalidStart ? 'true' : null"
+        /><span id="new-rate-date-hint" class="field-hint"
+          >Deja vacío para aplicar al publicar. Para programarla, indica una fecha futura en hora de
+          Perú.</span
+        >
+        @if (invalidStart) {
+          <span class="field-error"
+            >El inicio debe ser una fecha válida y no estar en el pasado.</span
+          >
+        }
+        @if (fieldErrors()['valid_from']) {
+          <span class="field-error">{{ fieldErrors()['valid_from'] }}</span>
+        }
+      </div>
+    </fieldset>
+    <div class="actions dialog-footer">
+      <button type="button" class="button" (click)="cancelPublish()" [disabled]="busy()">
+        Cancelar</button
+      ><button class="button primary" [disabled]="!canPublish">
+        {{ busy() ? 'Publicando…' : 'Confirmar publicación' }}
+      </button>
+    </div>
+  </form>
+</dialog>

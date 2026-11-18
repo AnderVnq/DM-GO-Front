@@ -57,6 +57,7 @@ export class InternalShell {
     { path: 'overview', label: 'Resumen', icon: 'overview' },
     { path: 'customers', label: 'Clientes', icon: 'customers' },
     { path: 'quotes', label: 'Cotizaciones', icon: 'quotes' },
+    { path: 'rates', label: 'Tarifas courier', icon: 'quotes' },
     { path: 'dispatch-notes', label: 'Notas de salida', icon: 'billing' },
     { path: 'packages', label: 'Paquetes', icon: 'packages' },
     { path: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
