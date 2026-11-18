@@ -60,6 +60,7 @@ export class InternalShell {
     { path: 'dispatch-notes', label: 'Notas de salida', icon: 'billing' },
     { path: 'packages', label: 'Paquetes', icon: 'packages' },
     { path: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
+    { path: 'agencies', label: 'Agencias', icon: 'delivery' },
     { path: 'bulks', label: 'Bultos', icon: 'packages', managerOnly: true },
     { path: 'consolidations', label: 'Consolidados', icon: 'plane', managerOnly: true },
     { path: 'airfreight', label: 'Operación aérea', icon: 'plane', managerOnly: true },

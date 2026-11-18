@@ -1,0 +1,303 @@
+<div class="page-header">
+  <div>
+    <h1>Agencias y sucursales</h1>
+    <p>Consulta dónde se entregan los paquetes en Lima y dónde se recogen en destino.</p>
+  </div>
+  @if (auth.admin()) {
+    <button
+      class="button primary"
+      (click)="startAgency()"
+      [disabled]="busy() || loading() || stale()"
+    >
+      <app-icon name="plus" />Nueva agencia
+    </button>
+  }
+</div>
+@if (notice()) {
+  <p class="alert success" role="status">{{ notice() }}</p>
+}
+@if (error()) {
+  <p class="alert error" role="alert">{{ error() }}</p>
+}
+<section class="surface agencies-list" aria-labelledby="agencies-list-title">
+  <div class="section-heading">
+    <div>
+      <h2 id="agencies-list-title">Catálogo de agencias</h2>
+      <p class="muted">
+        {{
+          includeInactive()
+            ? 'Incluye agencias y sucursales inactivas.'
+            : 'Solo agencias y sucursales activas.'
+        }}
+      </p>
+    </div>
+    <button class="button" (click)="load()" [disabled]="busy() || loading()">
+      Actualizar catálogo
+    </button>
+  </div>
+  <div class="agency-filters">
+    <div class="field" [formGroup]="filter">
+      <label for="agency-filter">Buscar en el catálogo cargado</label
+      ><input
+        id="agency-filter"
+        formControlName="query"
+        placeholder="Código, nombre o dirección del counter"
+      />
+    </div>
+    <label class="inactive-filter"
+      ><input
+        type="checkbox"
+        [checked]="includeInactive()"
+        (change)="toggleInactive($event)"
+        [disabled]="busy() || !!mode()"
+      />Incluir inactivas</label
+    >
+  </div>
+  @if (loading()) {
+    <p class="empty-state" role="status">Consultando agencias…</p>
+  }
+  <div class="table-scroll" tabindex="0" aria-label="Catálogo de agencias">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Agencia</th>
+          <th scope="col">Counter en Lima</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Sucursales</th>
+          <th scope="col">Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (agency of filtered; track agency.id) {
+          <tr>
+            <td>
+              <strong>{{ agency.name }}</strong><small>{{ agency.code }}</small>
+            </td>
+            <td>
+              {{ agency.dropoff_address }}<small>Ubigeo {{ agency.dropoff_ubigeo }}</small>
+            </td>
+            <td>{{ agency.active ? 'Activa' : 'Inactiva' }}</td>
+            <td>{{ agency.branches.length }}</td>
+            <td>
+              <button
+                class="icon-button"
+                (click)="select(agency)"
+                [disabled]="busy() || loading()"
+                [attr.aria-label]="'Ver agencia ' + agency.name"
+                [attr.title]="'Ver agencia ' + agency.name"
+              >
+                <app-icon name="eye" />
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (!loading() && !error() && !filtered.length) {
+    <p class="empty-state">
+      {{
+        items().length
+          ? 'No hay coincidencias en el catálogo cargado.'
+          : 'Todavía no hay agencias en este listado.'
+      }}
+    </p>
+  }
+</section>
+@if (selected; as agency) {
+  <section class="surface surface-body agency-detail" aria-labelledby="agency-detail-title">
+    <div class="page-header">
+      <div>
+        <h2 #agencyHeading id="agency-detail-title" tabindex="-1">{{ agency.name }}</h2>
+        <p>{{ agency.code }} · {{ agency.active ? 'Activa' : 'Inactiva' }}</p>
+      </div>
+      @if (auth.admin() && agency.active) {
+        <button
+          class="button primary"
+          (click)="startBranch()"
+          [disabled]="busy() || loading() || stale()"
+        >
+          <app-icon name="plus" />Nueva sucursal
+        </button>
+      }
+    </div>
+    <h3>Counter de entrega en Lima</h3>
+    <p>El repartidor lleva los paquetes a esta dirección antes del traslado a destino.</p>
+    <dl class="detail-grid">
+      <div>
+        <dt>Dirección del counter</dt>
+        <dd>{{ agency.dropoff_address }}</dd>
+      </div>
+      <div>
+        <dt>Ubigeo del counter</dt>
+        <dd>{{ agency.dropoff_ubigeo }}</dd>
+      </div>
+    </dl>
+    @if (!agency.active) {
+      <p class="alert">
+        Esta agencia está inactiva y no está disponible para nuevas preferencias de entrega.
+      </p>
+    }
+    <h3>Sucursales de destino</h3>
+    <p class="muted">
+      Son los puntos donde el cliente recoge sus paquetes al elegir recojo en agencia.
+    </p>
+    @if (agency.branches.length) {
+      <div class="table-scroll" tabindex="0" aria-label="Sucursales de destino">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Sucursal</th>
+              <th scope="col">Ubigeo</th>
+              <th scope="col">Dirección</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (branch of agency.branches; track branch.id) {
+              <tr>
+                <td>{{ branch.name }}</td>
+                <td>{{ branch.ubigeo }}</td>
+                <td>{{ branch.address }}</td>
+                <td>{{ branch.active ? 'Activa' : 'Inactiva' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-branches">
+        Esta agencia todavía no tiene sucursales en el listado consultado.
+      </p>
+    }
+  </section>
+}
+<dialog #createDialog aria-labelledby="agency-create-title" (cancel)="cancel($event)">
+  <div class="dialog-header">
+    <h2 id="agency-create-title">
+      {{ mode() === 'agency' ? 'Nueva agencia' : 'Nueva sucursal de destino' }}
+    </h2>
+    <button class="icon-button" aria-label="Cerrar alta" (click)="cancel()" [disabled]="busy()">
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (modalError()) {
+    <p class="alert error" role="alert">{{ modalError() }}</p>
+  }
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  @if (stale()) {
+    <button type="button" class="button" (click)="load()" [disabled]="busy() || loading()">
+      Actualizar catálogo
+    </button>
+  }
+  @if (mode() === 'agency') {
+    <p>Registra la agencia y el counter en Lima donde recibirá los paquetes del repartidor.</p>
+    <form [formGroup]="agencyForm" (ngSubmit)="save()">
+      <fieldset class="form-grid" [disabled]="busy() || uncertain()">
+        <legend class="sr-only">Datos de la agencia y su counter</legend>
+        <div class="field">
+          <label for="new-agency-code">Código de agencia</label
+          ><input
+            id="new-agency-code"
+            formControlName="code"
+            required
+            maxlength="20"
+            autocomplete="off"
+            aria-describedby="agency-code-hint"
+          /><span id="agency-code-hint" class="field-hint"
+            >De 2 a 20 letras, números o guion bajo. Se guarda en mayúsculas.</span
+          >
+          @if (fieldErrors()['code']) {
+            <span class="field-error">{{ fieldErrors()['code'] }}</span>
+          }
+        </div>
+        <div class="field">
+          <label for="new-agency-name">Nombre de agencia</label
+          ><input id="new-agency-name" formControlName="name" required />
+          @if (fieldErrors()['name']) {
+            <span class="field-error">{{ fieldErrors()['name'] }}</span>
+          }
+        </div>
+        <div class="field full">
+          <label for="new-agency-address">Dirección del counter en Lima</label
+          ><input id="new-agency-address" formControlName="dropoff_address" required />
+          @if (fieldErrors()['dropoff.address']) {
+            <span class="field-error">{{ fieldErrors()['dropoff.address'] }}</span>
+          }
+        </div>
+        <div class="field full">
+          <label for="new-agency-ubigeo">Ubigeo del counter</label
+          ><input
+            id="new-agency-ubigeo"
+            formControlName="dropoff_ubigeo"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            required
+            aria-describedby="agency-ubigeo-hint"
+          /><span id="agency-ubigeo-hint" class="field-hint"
+            >Código INEI de seis dígitos; conserva los ceros iniciales.</span
+          >
+          @if (fieldErrors()['dropoff.ubigeo']) {
+            <span class="field-error">{{ fieldErrors()['dropoff.ubigeo'] }}</span>
+          }
+        </div>
+      </fieldset>
+      <div class="actions dialog-footer">
+        <button type="button" class="button" (click)="cancel()" [disabled]="busy()">Cancelar</button
+        ><button class="button primary" [disabled]="!canSave">
+          {{ busy() ? 'Creando…' : 'Crear agencia' }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <p>
+      Agencia <strong>{{ modalParent()?.name }}</strong>. Esta dirección corresponde al punto de
+      recojo del cliente en destino.
+    </p>
+    <form [formGroup]="branchForm" (ngSubmit)="save()">
+      <fieldset class="form-grid" [disabled]="busy() || uncertain()">
+        <legend class="sr-only">Datos de la sucursal de destino</legend>
+        <div class="field full">
+          <label for="new-branch-name">Nombre de sucursal</label
+          ><input id="new-branch-name" formControlName="name" required />
+          @if (fieldErrors()['name']) {
+            <span class="field-error">{{ fieldErrors()['name'] }}</span>
+          }
+        </div>
+        <div class="field full">
+          <label for="new-branch-address">Dirección de recojo en destino</label
+          ><input id="new-branch-address" formControlName="address" required />
+          @if (fieldErrors()['address']) {
+            <span class="field-error">{{ fieldErrors()['address'] }}</span>
+          }
+        </div>
+        <div class="field full">
+          <label for="new-branch-ubigeo">Ubigeo de destino</label
+          ><input
+            id="new-branch-ubigeo"
+            formControlName="ubigeo"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            required
+            aria-describedby="branch-ubigeo-hint"
+          /><span id="branch-ubigeo-hint" class="field-hint"
+            >Código INEI de seis dígitos; conserva los ceros iniciales.</span
+          >
+          @if (fieldErrors()['ubigeo']) {
+            <span class="field-error">{{ fieldErrors()['ubigeo'] }}</span>
+          }
+        </div>
+      </fieldset>
+      <div class="actions dialog-footer">
+        <button type="button" class="button" (click)="cancel()" [disabled]="busy()">Cancelar</button
+        ><button class="button primary" [disabled]="!canSave">
+          {{ busy() ? 'Creando…' : 'Crear sucursal' }}
+        </button>
+      </div>
+    </form>
+  }
+</dialog>

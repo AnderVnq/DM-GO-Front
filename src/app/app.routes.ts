@@ -142,6 +142,11 @@ export const routes: Routes = [
           import('./modules/warehouses/warehouses-page').then((m) => m.WarehousesPage),
       },
       {
+        path: 'agencies',
+        title: 'Agencias y sucursales · DM48',
+        loadComponent: () => import('./modules/delivery/agencies-page').then((m) => m.AgenciesPage),
+      },
+      {
         path: 'delivery-routes',
         title: 'Rutas de reparto · DM48',
         canActivate: [managerGuard],
