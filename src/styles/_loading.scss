@@ -56,3 +56,15 @@ progress.loading-spinner::-moz-progress-bar {
 .loading-placeholder span:last-child {
   width: 65%;
 }
+
+// El contenedor inmediato define el área de carga, no el viewport.
+:where(*:has(> app-loading-indicator)) {
+  position: relative;
+}
+app-loading-indicator {
+  min-height: 2rem;
+}
+app-loading-indicator.loading-active {
+  display: block;
+  border-radius: inherit;
+}

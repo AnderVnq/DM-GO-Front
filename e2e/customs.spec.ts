@@ -30,9 +30,7 @@ async function setup(
       path = new URL(req.url()).pathname;
     if (req.method() === 'GET')
       return route.fulfill({
-        json: path.endsWith('/lines')
-          ? { pending: line.status === 'released' ? [] : [line] }
-          : line,
+        json: path.endsWith('/lines') ? { lines: line.status === 'released' ? [] : [line] } : line,
       });
     const body = req.headers()['content-type']?.includes('application/json')
       ? req.postDataJSON()

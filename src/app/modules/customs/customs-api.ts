@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs';
+import { map, timeout } from 'rxjs';
 import { RuntimeConfig } from '../../core/runtime-config';
 import type { CustomsLine, CustomsImportResult, DocumentKind } from './customs.model';
 @Injectable({ providedIn: 'root' })
@@ -12,8 +12,17 @@ export class CustomsApi {
   }
   pending() {
     return this.http
-      .get<{ pending: CustomsLine[] }>(`${this.base}/lines`)
-      .pipe(map((r) => r.pending));
+      .get<{ lines: CustomsLine[] }>(`${this.base}/lines`, {
+        params: { pending: 'true', limit: 200 },
+      })
+      .pipe(
+        timeout(20000),
+        map((r) => {
+          if (!Array.isArray(r.lines))
+            throw new Error('No se pudo interpretar el listado de Aduanas. Vuelve a intentarlo.');
+          return r.lines;
+        }),
+      );
   }
   get(id: string) {
     return this.http.get<CustomsLine>(`${this.base}/lines/${encodeURIComponent(id)}`);
