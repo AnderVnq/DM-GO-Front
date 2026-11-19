@@ -19,9 +19,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando tus notas…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando tus notas…'"
+/>
 <div class="split-view">
   <section class="surface">
     <div class="table-scroll">
@@ -39,7 +40,7 @@
           @for (note of notes(); track note.id) {
             <tr [class.selected]="selected()?.id === note.id">
               <td>
-                <button class="row-button" (click)="select(note)" [disabled]="busy()">
+                <button class="row-button" (click)="select(note)" [disabled]="busy() || loading()">
                   {{ note.number }}<small>{{ date(note.created_at) }}</small>
                 </button>
               </td>
@@ -105,9 +106,7 @@
           <dd>{{ note.liquidation_number || 'En preparación' }}</dd>
         </div>
       </dl>
-      @if (detailLoading()) {
-        <p role="status">Actualizando el detalle…</p>
-      }
+      <app-loading-indicator [active]="detailLoading()" label="Actualizando el detalle…" />
       <div class="actions">
         <button
           class="icon-button action-icon"
@@ -181,7 +180,7 @@
       class="icon-button"
       aria-label="Cerrar"
       (click)="paymentDialog.close()"
-      [disabled]="busy()"
+      [disabled]="busy() || loading()"
     >
       <app-icon name="close" />
     </button>
@@ -216,7 +215,7 @@
           type="file"
           accept="application/pdf,image/jpeg,image/png,image/webp"
           (change)="attach($event)"
-          [disabled]="busy()"
+          [disabled]="busy() || loading()"
       /></label>
     </div>
     <p class="fine-print actions">
@@ -227,7 +226,12 @@
       <p class="alert error" role="alert">{{ formError() }}</p>
     }
     <div class="actions">
-      <button type="button" class="button" (click)="paymentDialog.close()" [disabled]="busy()">
+      <button
+        type="button"
+        class="button"
+        (click)="paymentDialog.close()"
+        [disabled]="busy() || loading()"
+      >
         Cancelar</button
       ><button
         class="button primary"

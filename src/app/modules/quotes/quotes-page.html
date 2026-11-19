@@ -34,9 +34,10 @@
       {{ emailNotice() }}
     </p>
   }
-  @if (loading()) {
-    <p role="status" class="muted">Cargando cotizaciones…</p>
-  }
+  <app-loading-indicator
+    [active]="loading() || busy()"
+    [label]="busy() ? 'Procesando solicitud…' : 'Cargando cotizaciones…'"
+  />
   <div class="split-view quote-history-layout">
     <section class="surface quote-history" aria-labelledby="quote-history-heading">
       <div class="history-heading">
@@ -395,9 +396,7 @@
               <app-icon name="plus" />Añadir servicio
             </button>
           </div>
-          @if (catalogLoading()) {
-            <p class="muted" role="status">Cargando servicios…</p>
-          }
+          <app-loading-indicator [active]="catalogLoading()" label="Cargando servicios…" />
           @if (catalogError()) {
             <p class="alert error" role="alert">
               {{ catalogError() }}

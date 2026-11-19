@@ -40,9 +40,7 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status" class="muted">Buscando cliente…</p>
-}
+<app-loading-indicator [active]="loading()" label="Buscando cliente…" />
 @if (!customer() && !loading()) {
   <form
     class="customer-strip search-bar customer-list-filters"
@@ -74,9 +72,7 @@
     </button>
   </form>
   <section class="surface" aria-label="Listado de clientes" [attr.aria-busy]="listLoading()">
-    @if (listLoading()) {
-      <p class="surface-body" role="status">Cargando clientes…</p>
-    }
+    <app-loading-indicator [active]="listLoading()" label="Cargando clientes…" />
     @if (listError()) {
       <div class="surface-body">
         <p class="alert error" role="alert">{{ listError() }}</p>

@@ -19,9 +19,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando tus opciones de entrega…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando tus opciones de entrega…'"
+/>
 <div class="split-view">
   <section class="surface surface-body">
     <h2>Preferencia por paquete</h2>
@@ -122,7 +123,7 @@
       type="button"
       aria-label="Cerrar"
       (click)="cancelEdit()"
-      [disabled]="busy()"
+      [disabled]="busy() || loading()"
     >
       <app-icon name="close" />
     </button>
@@ -133,7 +134,7 @@
   }
   @if (selected(); as item) {
     <form (ngSubmit)="save()">
-      <fieldset class="form-grid" [disabled]="busy()">
+      <fieldset class="form-grid" [disabled]="busy() || loading()">
         @if (exhausted) {
           <p class="full muted">
             Se agotaron los intentos de entrega. Solo está disponible el recojo en oficina.
@@ -217,7 +218,12 @@
         }
 
         <div class="actions full">
-          <button class="button" type="button" (click)="cancelEdit()" [disabled]="busy()">
+          <button
+            class="button"
+            type="button"
+            (click)="cancelEdit()"
+            [disabled]="busy() || loading()"
+          >
             Cancelar
           </button>
           <button class="button primary" type="submit" [disabled]="busy() || !changed || !valid">

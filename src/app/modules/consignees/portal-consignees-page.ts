@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,7 +12,7 @@ import type { Consignee, ConsigneeInput, ConsigneeUsage } from './consignee.mode
 
 @Component({
   selector: 'app-portal-consignees-page',
-  imports: [Icon, FormsModule],
+  imports: [LoadingIndicator, Icon, FormsModule],
   templateUrl: './portal-consignees-page.html',
   styleUrl: './portal-consignees-page.scss',
 })
@@ -54,9 +55,6 @@ export class PortalConsigneesPage {
     this.loading.set(true);
     this.error.set('');
     this.success.set('');
-    this.consignees.set([]);
-    this.packages.set([]);
-    this.selected.set(null);
     this.usage.set(null);
     this.consent.set('');
     forkJoin({ book: this.api.list(), packages: this.shipments.list() })
@@ -66,10 +64,14 @@ export class PortalConsigneesPage {
           this.consignees.set(data.book.consignees);
           this.consent.set(data.book.consent_text);
           this.packages.set(data.packages);
-          const id = this.route.snapshot.queryParamMap.get('package_id');
+          const id = this.packageId || this.route.snapshot.queryParamMap.get('package_id');
           this.packageId = data.packages.find((p) => p.id === id)?.id ?? '';
           this.loading.set(false);
-          if (data.book.consignees[0]) this.select(data.book.consignees[0]);
+          const current =
+            data.book.consignees.find((item) => item.id === this.selected()?.id) ??
+            data.book.consignees[0];
+          if (current) this.select(current);
+          else this.selected.set(null);
         },
         error: (error: unknown) => {
           this.loading.set(false);

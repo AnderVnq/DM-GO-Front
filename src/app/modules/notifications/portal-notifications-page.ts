@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -10,7 +11,7 @@ import { notificationTarget, type PortalNotification } from './notification.mode
 
 @Component({
   selector: 'app-portal-notifications-page',
-  imports: [Icon, RouterLink],
+  imports: [LoadingIndicator, Icon, RouterLink],
   templateUrl: './portal-notifications-page.html',
   styleUrl: './portal-notifications-page.scss',
 })
@@ -40,15 +41,15 @@ export class PortalNotificationsPage {
     if (this.loading()) return;
     this.loading.set(true);
     this.error.set('');
-    this.selected.set(null);
-    this.notifications.set([]);
     this.api
       .list()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (items) => {
           this.notifications.set(items);
-          this.selected.set(items[0] ?? null);
+          this.selected.set(
+            items.find((item) => item.id === this.selected()?.id) ?? items[0] ?? null,
+          );
           this.loading.set(false);
         },
         error: (error: unknown) => {

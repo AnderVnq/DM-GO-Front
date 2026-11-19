@@ -22,9 +22,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando paquetes sin identificar…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando paquetes sin identificar…'"
+/>
 <div class="split-view">
   <section class="surface">
     <div class="table-scroll">
@@ -41,7 +42,7 @@
           @for (item of packages(); track item.id) {
             <tr [class.selected]="selected()?.id === item.id">
               <td>
-                <button class="row-button" (click)="select(item)" [disabled]="busy()">
+                <button class="row-button" (click)="select(item)" [disabled]="busy() || loading()">
                   {{ item.receipt?.number || item.carrier_tracking || item.id
                   }}<small>{{ item.carrier_tracking || 'Sin tracking' }}</small>
                 </button>
@@ -67,7 +68,7 @@
       <p>{{ item.receipt?.number || item.carrier_tracking }}</p>
       <p>{{ item.description }}</p>
       <form (ngSubmit)="lookup()">
-        <fieldset class="form-grid" [disabled]="busy()">
+        <fieldset class="form-grid" [disabled]="busy() || loading()">
           <legend class="sr-only">Buscar propietario</legend>
           <label class="field full"
             >Casillero del cliente<input
@@ -85,9 +86,7 @@
           </div>
         </fieldset>
       </form>
-      @if (looking()) {
-        <p role="status">Buscando cliente…</p>
-      }
+      <app-loading-indicator [active]="looking()" label="Buscando cliente…" />
       @if (lookupError()) {
         <p class="alert error" role="alert">{{ lookupError() }}</p>
       }

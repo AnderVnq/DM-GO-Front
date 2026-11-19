@@ -31,9 +31,10 @@
   @if (listError()) {
     <p class="alert error" role="alert">{{ listError() }}</p>
   }
-  @if (loading()) {
-    <p class="empty-state" role="status">Consultando rutas…</p>
-  }
+  <app-loading-indicator
+    [active]="loading() || busy()"
+    [label]="busy() ? 'Procesando solicitud…' : 'Consultando rutas…'"
+  />
   <div class="table-scroll" tabindex="0" aria-label="Rutas de reparto por fecha">
     <table class="data-table">
       <thead>
@@ -77,9 +78,7 @@
   }
 </section>
 
-@if (detailLoading()) {
-  <p role="status">Actualizando ruta…</p>
-}
+<app-loading-indicator [active]="detailLoading()" label="Actualizando ruta…" />
 @if (canReloadDetail && stale() && !detailLoading() && !selected()) {
   <button
     class="icon-button action-icon"
@@ -154,9 +153,7 @@
           (selected)="selectPackage($event)"
         />
 
-        @if (packageLoading()) {
-          <p role="status">Consultando paquete…</p>
-        }
+        <app-loading-indicator [active]="packageLoading()" label="Consultando paquete…" />
         @if (packageError()) {
           <p class="alert error" role="alert">{{ packageError() }}</p>
         }

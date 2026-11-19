@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   afterNextRender,
   Component,
@@ -21,7 +22,7 @@ import type { CourierRate, FreightQuote, RateMeasurement } from './rate.model';
 import { rateInput, measurementInput } from './rate-rules';
 @Component({
   selector: 'app-rates-page',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [LoadingIndicator, ReactiveFormsModule, Icon],
   templateUrl: './rates-page.html',
   styleUrl: './rates-page.scss',
 })

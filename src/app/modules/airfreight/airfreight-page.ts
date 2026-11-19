@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import {
   Component,
@@ -23,7 +24,7 @@ import { flightReference, limaDeparture, normalizeMawb } from './airfreight-rule
 
 @Component({
   selector: 'app-airfreight-page',
-  imports: [RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
+  imports: [LoadingIndicator, RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './airfreight-page.html',
   styleUrl: './airfreight-page.scss',
 })
@@ -199,7 +200,7 @@ export class AirfreightPage {
       return;
     }
     this.detailRequest?.unsubscribe();
-    this.mawb.set(null);
+    if (this.mawb()?.id !== id) this.mawb.set(null);
     this.error.set('');
     this.success.set('');
     this.loading.set(true);

@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   ChangeDetectorRef,
   Component,
@@ -19,7 +20,7 @@ import { warehouseError } from './warehouse-error';
 
 @Component({
   selector: 'app-warehouses-page',
-  imports: [FormsModule, RouterLink, Icon],
+  imports: [LoadingIndicator, FormsModule, RouterLink, Icon],
   templateUrl: './warehouses-page.html',
 })
 export class WarehousesPage {
@@ -59,8 +60,6 @@ export class WarehousesPage {
     this.error.set('');
     this.success.set('');
     this.creating.set(false);
-    this.selected.set(null);
-    this.warehouses.set([]);
     this.api
       .list(true)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -68,8 +67,10 @@ export class WarehousesPage {
         next: (items) => {
           this.warehouses.set(items);
           this.loading.set(false);
-          const first = this.filtered()[0];
+          const first =
+            this.filtered().find((item) => item.id === this.selected()?.id) ?? this.filtered()[0];
           if (first) this.select(first);
+          else this.selected.set(null);
         },
         error: (error: unknown) => {
           this.loading.set(false);

@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import { formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
@@ -13,7 +14,7 @@ import { formatDate } from '../../shared/amount';
 
 @Component({
   selector: 'app-unidentified-page',
-  imports: [Icon, FormsModule, RouterLink],
+  imports: [LoadingIndicator, Icon, FormsModule, RouterLink],
   templateUrl: './unidentified-page.html',
 })
 export class UnidentifiedPage {
@@ -42,8 +43,6 @@ export class UnidentifiedPage {
   reload() {
     if (this.busy() || this.loading()) return;
     this.clearLookup();
-    this.selected.set(null);
-    this.packages.set([]);
     this.loading.set(true);
     this.error.set('');
     this.success.set('');
@@ -54,9 +53,10 @@ export class UnidentifiedPage {
         next: (items) => {
           this.packages.set(items);
           this.loading.set(false);
-          const id = this.route.snapshot.queryParamMap.get('package_id');
+          const id = this.selected()?.id ?? this.route.snapshot.queryParamMap.get('package_id');
           const first = items.find((p) => p.id === id) ?? items[0];
           if (first) this.select(first);
+          else this.selected.set(null);
         },
         error: (error: unknown) => {
           this.loading.set(false);

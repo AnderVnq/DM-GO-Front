@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import { Icon } from '../../shared/icon';
 import { formatMeasuredWeight } from '../../shared/weight';
@@ -27,7 +28,7 @@ import type { Bulk, Consolidation } from './consolidation.model';
 
 @Component({
   selector: 'app-consolidations-page',
-  imports: [RecordBrowser, Icon, FormsModule, RouterLink, Status],
+  imports: [LoadingIndicator, RecordBrowser, Icon, FormsModule, RouterLink, Status],
   templateUrl: './consolidations-page.html',
 })
 export class ConsolidationsPage {
@@ -183,7 +184,10 @@ export class ConsolidationsPage {
       return;
     }
     this.loading.set(true);
-    this.consolidation.set(null);
+    if (this.consolidation()?.id !== id) {
+      this.consolidation.set(null);
+      this.contents.set({});
+    }
     this.error.set('');
     this.success.set('');
     this.api
@@ -201,6 +205,7 @@ export class ConsolidationsPage {
       });
   }
   private setConsolidation(item: Consolidation) {
+    const changed = this.consolidation()?.id !== item.id;
     this.creating.set(false);
     this.listRevision.update((v) => v + 1);
     this.consolidation.set({ ...item, bulk_ids: item.bulk_ids ?? [], hawbs: item.hawbs ?? [] });
@@ -212,11 +217,13 @@ export class ConsolidationsPage {
       replaceUrl: true,
     });
     this.loadContents();
-    afterNextRender(() => this.detailHeading()?.nativeElement.focus(), { injector: this.injector });
+    if (changed)
+      afterNextRender(() => this.detailHeading()?.nativeElement.focus(), {
+        injector: this.injector,
+      });
   }
   loadContents() {
     this.detailRequest?.unsubscribe();
-    this.contents.set({});
     this.detailError.set('');
     const ids = this.consolidation()?.bulk_ids ?? [];
     if (!ids.length) {

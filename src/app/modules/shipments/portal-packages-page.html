@@ -30,9 +30,10 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando tus paquetes…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando tus paquetes…'"
+/>
 <div class="split-view">
   <section class="surface">
     <div class="table-scroll">
@@ -49,7 +50,7 @@
           @for (item of filtered(); track item.id) {
             <tr [class.selected]="selected()?.id === item.id">
               <td>
-                <button class="row-button" (click)="select(item)" [disabled]="busy()">
+                <button class="row-button" (click)="select(item)" [disabled]="busy() || loading()">
                   {{ item.store || 'Sin compañía' }}<small>{{ item.description }}</small>
                 </button>
               </td>
@@ -173,12 +174,10 @@
       </section>
       <section class="detail-section">
         <h3>Seguimiento</h3>
-        @if (trackingLoading()) {
-          <p role="status">Cargando seguimiento…</p>
-        }
+        <app-loading-indicator [active]="trackingLoading()" label="Cargando seguimiento…" />
         @if (trackingError()) {
           <p class="alert error" role="alert">{{ trackingError() }}</p>
-          <button class="button compact" (click)="loadTracking()" [disabled]="busy()">
+          <button class="button compact" (click)="loadTracking()" [disabled]="busy() || loading()">
             Reintentar seguimiento
           </button>
         }
@@ -210,7 +209,7 @@
       class="icon-button"
       aria-label="Cerrar"
       (click)="createDialog.close()"
-      [disabled]="busy()"
+      [disabled]="busy() || loading()"
     >
       <app-icon name="close" />
     </button>

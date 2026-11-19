@@ -39,9 +39,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando consolidado…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando consolidado…'"
+/>
 @if (consolidation() || creating()) {
   <div class="consolidation-workspace" [class.split-view]="consolidation()?.status === 'open'">
     <section class="surface surface-body">
@@ -111,9 +112,7 @@
             </li>
           }
         </ul>
-        @if (detailLoading()) {
-          <p role="status">Cargando detalle de bultos…</p>
-        }
+        <app-loading-indicator [active]="detailLoading()" label="Cargando detalle de bultos…" />
         @if (detailError()) {
           <p class="alert error" role="alert">{{ detailError() }}</p>
           <button
@@ -164,9 +163,7 @@
       } @else if (creating() && !loading()) {
         <h2>Crear consolidado</h2>
         <p>Selecciona el almacén de origen de los bultos que vas a despachar.</p>
-        @if (catalogLoading()) {
-          <p role="status">Cargando almacenes…</p>
-        }
+        <app-loading-indicator [active]="catalogLoading()" label="Cargando almacenes…" />
         @if (catalogError()) {
           <p class="alert error" role="alert">{{ catalogError() }}</p>
           <button class="button" (click)="loadWarehouses()" [disabled]="busy() || catalogLoading()">
@@ -225,9 +222,7 @@
           (selected)="selectBulk($event)"
           empty="No hay bultos cerrados disponibles en este almacén. Prepara y cierra un bulto desde Bultos."
         />
-        @if (looking()) {
-          <p role="status">Consultando bulto…</p>
-        }
+        <app-loading-indicator [active]="looking()" label="Consultando bulto…" />
         @if (previewError()) {
           <p class="alert error" role="alert">{{ previewError() }}</p>
         }

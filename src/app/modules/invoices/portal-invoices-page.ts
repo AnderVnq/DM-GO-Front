@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,7 +14,7 @@ import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-invoices-page',
-  imports: [Status, Icon],
+  imports: [LoadingIndicator, Status, Icon],
   templateUrl: './portal-invoices-page.html',
 })
 export class PortalInvoicesPage {
@@ -47,15 +48,14 @@ export class PortalInvoicesPage {
     this.reading?.unsubscribe();
     this.loading.set(true);
     this.error.set('');
-    this.selected.set(null);
-    this.invoices.set([]);
     this.reading = this.api.list().subscribe({
       next: (items) => {
         this.invoices.set(items);
         this.loading.set(false);
-        const id = this.route.snapshot.queryParamMap.get('invoice_id');
+        const id = this.selected()?.id ?? this.route.snapshot.queryParamMap.get('invoice_id');
         const selected = items.find((item) => item.id === id) ?? items[0];
         if (selected) this.select(selected);
+        else this.selected.set(null);
       },
       error: (error: unknown) => {
         this.loading.set(false);

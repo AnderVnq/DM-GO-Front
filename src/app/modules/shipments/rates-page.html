@@ -30,9 +30,7 @@
 <div class="rate-workspace">
   <section class="surface surface-body current-rate" aria-labelledby="current-rate-title">
     <h2 id="current-rate-title">Tarifa vigente</h2>
-    @if (currentLoading()) {
-      <p role="status">Consultando tarifa vigente…</p>
-    }
+    <app-loading-indicator [active]="currentLoading()" label="Consultando tarifa vigente…" />
     @if (currentError()) {
       <p class="alert error" role="alert">{{ currentError() }}</p>
       <button class="button" (click)="loadCurrent()" [disabled]="busy()">
@@ -184,9 +182,7 @@
       </p>
     </div>
   </div>
-  @if (historyLoading()) {
-    <p class="empty-state" role="status">Consultando historial…</p>
-  }
+  <app-loading-indicator [active]="historyLoading()" label="Consultando historial…" />
   @if (historyError()) {
     <p class="alert error" role="alert">{{ historyError() }}</p>
     <button class="button history-retry" (click)="loadHistory()" [disabled]="busy()">

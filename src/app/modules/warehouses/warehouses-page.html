@@ -46,9 +46,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando almacenes…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando almacenes…'"
+/>
 <div class="split-view">
   <section class="surface">
     <div class="table-scroll">
@@ -65,7 +66,11 @@
           @for (warehouse of filtered(); track warehouse.id) {
             <tr [class.selected]="selected()?.id === warehouse.id">
               <td>
-                <button class="row-button" (click)="select(warehouse)" [disabled]="busy()">
+                <button
+                  class="row-button"
+                  (click)="select(warehouse)"
+                  [disabled]="busy() || loading()"
+                >
                   {{ warehouse.code }}<small>{{ warehouse.name }}</small>
                 </button>
               </td>
@@ -107,7 +112,7 @@
       </div>
       @if (creating() && admin()) {
         <form #warehouseForm="ngForm" (ngSubmit)="save(warehouseForm)">
-          <fieldset class="form-grid" [disabled]="busy()">
+          <fieldset class="form-grid" [disabled]="busy() || loading()">
             <legend class="sr-only">Datos del almacén</legend>
             <label class="field"
               >Código<input
@@ -218,7 +223,7 @@
       type="button"
       aria-label="Cerrar edición"
       (click)="cancelEdit()"
-      [disabled]="busy()"
+      [disabled]="busy() || loading()"
     >
       <app-icon name="close" />
     </button>
@@ -229,7 +234,7 @@
       <p class="alert error" role="alert">{{ error() }}</p>
     }
     <form #editForm="ngForm" (ngSubmit)="save(editForm)" [attr.aria-busy]="busy()">
-      <fieldset class="form-grid" [disabled]="busy()">
+      <fieldset class="form-grid" [disabled]="busy() || loading()">
         <legend class="sr-only">Datos del almacén</legend>
         <label class="field full"
           >Nombre<input name="name" [(ngModel)]="input.name" required autofocus
@@ -269,7 +274,12 @@
           </p>
         }
         <div class="actions full">
-          <button class="button" type="button" (click)="cancelEdit()" [disabled]="busy()">
+          <button
+            class="button"
+            type="button"
+            (click)="cancelEdit()"
+            [disabled]="busy() || loading()"
+          >
             Cancelar
           </button>
           <button

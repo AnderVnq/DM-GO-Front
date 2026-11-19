@@ -42,9 +42,10 @@
       <app-icon name="refresh" />
     </button>
   </form>
-  @if (loading()) {
-    <p role="status">Consultando tus rutas…</p>
-  }
+  <app-loading-indicator
+    [active]="loading() || busy()"
+    [label]="busy() ? 'Procesando solicitud…' : 'Consultando tus rutas…'"
+  />
   @if (stale() && routes().length) {
     <p class="alert">Actualiza las rutas antes de registrar entregas o intentos fallidos.</p>
   }

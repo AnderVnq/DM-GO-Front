@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   afterNextRender,
   Component,
@@ -20,7 +21,7 @@ import type { TransitAgency, AgencyBranch } from './agency.model';
 import { normalizeAgency, normalizeBranch, validAgency, validBranch } from './agency-rules';
 @Component({
   selector: 'app-agencies-page',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [LoadingIndicator, ReactiveFormsModule, Icon],
   templateUrl: './agencies-page.html',
   styleUrl: './agencies-page.scss',
 })

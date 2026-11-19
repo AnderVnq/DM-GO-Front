@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { formatMeasuredWeight } from '../../shared/weight';
 import {
   Component,
@@ -28,7 +29,7 @@ import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 @Component({
   selector: 'app-packages-page',
-  imports: [ReactiveFormsModule, PrealertForm, Icon, Status, RouterLink],
+  imports: [LoadingIndicator, ReactiveFormsModule, PrealertForm, Icon, Status, RouterLink],
   templateUrl: './packages-page.html',
 })
 export class PackagesPage {
@@ -164,10 +165,12 @@ export class PackagesPage {
     this.filter.set('');
     this.loading.set(true);
     this.error.set('');
-    this.packages.set([]);
-    this.selected.set(null);
-    this.timeline.set(null);
-    this.customer.set(null);
+    if (this.customer()?.id !== id) {
+      this.packages.set([]);
+      this.selected.set(null);
+      this.timeline.set(null);
+      this.customer.set(null);
+    }
     this.request = forkJoin({
       customer: this.customers.get(id),
       packages: this.api.list(id),

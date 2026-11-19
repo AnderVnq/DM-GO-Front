@@ -29,9 +29,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p class="muted" role="status">Cargando notas de salida…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando notas de salida…'"
+/>
 <div class="split-view">
   <section class="surface">
     <div class="table-scroll">

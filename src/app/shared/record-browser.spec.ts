@@ -79,3 +79,28 @@ it('impide seleccionar mientras hay una operación en curso', () => {
   expect(selected).toHaveBeenCalledWith('a');
   http.verify();
 });
+it('conserva las filas y el nodo de tabla durante una recarga y ante un error', () => {
+  const { page, fixture, http } = setup();
+  http
+    .expectOne((r) => r.url === '/api/v1/bulks')
+    .flush({
+      bulks: [{ id: 'a', code: 'BLK-01' }],
+      total: 1,
+    });
+  fixture.detectChanges();
+  const table = fixture.nativeElement.querySelector('table');
+  page.load();
+  fixture.detectChanges();
+  expect(page.rows()).toHaveLength(1);
+  expect(fixture.nativeElement.querySelector('table')).toBe(table);
+  expect(fixture.nativeElement.querySelector('tbody button').disabled).toBe(true);
+  http
+    .expectOne((r) => r.url === '/api/v1/bulks')
+    .flush({ detail: 'Servicio no disponible' }, { status: 503, statusText: 'Unavailable' });
+  fixture.detectChanges();
+  expect(fixture.nativeElement.querySelector('table')).toBe(table);
+  expect(fixture.nativeElement.querySelector('[role=alert]').textContent).toContain(
+    'Servicio no disponible',
+  );
+  http.verify();
+});

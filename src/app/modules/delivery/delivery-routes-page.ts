@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import {
   afterNextRender,
@@ -41,7 +42,7 @@ import {
 } from './delivery-route-rules';
 @Component({
   selector: 'app-delivery-routes-page',
-  imports: [RecordBrowser, ReactiveFormsModule, Icon, Status],
+  imports: [LoadingIndicator, RecordBrowser, ReactiveFormsModule, Icon, Status],
   templateUrl: './delivery-routes-page.html',
   styleUrl: './delivery-routes-page.scss',
 })
@@ -253,7 +254,6 @@ export class DeliveryRoutesPage {
     this.listRequest?.unsubscribe();
     this.loading.set(true);
     this.listError.set('');
-    this.routes.set([]);
     this.listRequest = this.api.list(date).subscribe({
       next: (routes) => {
         this.routes.set(routes);

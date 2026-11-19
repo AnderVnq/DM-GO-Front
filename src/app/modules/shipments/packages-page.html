@@ -47,9 +47,10 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (loading()) {
-  <p role="status" class="muted">Cargando paquetes…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando paquetes…'"
+/>
 @if (customer() || pendingOnly()) {
   <div class="split-view">
     <section class="surface">
@@ -259,9 +260,7 @@
         }
         <section class="detail-section">
           <h3>Seguimiento del paquete</h3>
-          @if (trackingLoading()) {
-            <p role="status">Cargando seguimiento…</p>
-          }
+          <app-loading-indicator [active]="trackingLoading()" label="Cargando seguimiento…" />
           @if (trackingError()) {
             <p class="alert error" role="alert">{{ trackingError() }}</p>
             <button

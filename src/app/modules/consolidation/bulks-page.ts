@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import { RecordBrowser } from '../../shared/record-browser';
 import { normalizeWeightKg, weightKgHint, formatMeasuredWeight } from '../../shared/weight';
@@ -29,7 +30,7 @@ import type { Bulk, BulkClosure } from './consolidation.model';
 
 @Component({
   selector: 'app-bulks-page',
-  imports: [Icon, RecordBrowser, FormsModule, RouterLink, Status],
+  imports: [LoadingIndicator, Icon, RecordBrowser, FormsModule, RouterLink, Status],
   templateUrl: './bulks-page.html',
 })
 export class BulksPage {
@@ -193,7 +194,10 @@ export class BulksPage {
     this.loading.set(true);
     this.error.set('');
     this.success.set('');
-    this.bulk.set(null);
+    if (this.bulk()?.id !== id) {
+      this.bulk.set(null);
+      this.contents.set({});
+    }
     this.clearLookup();
     this.api
       .bulk(id)
@@ -211,6 +215,7 @@ export class BulksPage {
       });
   }
   private setBulk(bulk: Bulk) {
+    const changed = this.bulk()?.id !== bulk.id;
     this.creating.set(false);
     this.listRevision.update((v) => v + 1);
     this.bulk.set({ ...bulk, package_ids: bulk.package_ids ?? [] });
@@ -223,11 +228,13 @@ export class BulksPage {
       replaceUrl: true,
     });
     this.loadContents();
-    afterNextRender(() => this.detailHeading()?.nativeElement.focus(), { injector: this.injector });
+    if (changed)
+      afterNextRender(() => this.detailHeading()?.nativeElement.focus(), {
+        injector: this.injector,
+      });
   }
   loadContents() {
     this.detailRequest?.unsubscribe();
-    this.contents.set({});
     this.detailError.set('');
     const ids = this.bulk()?.package_ids ?? [];
     if (!ids.length) {

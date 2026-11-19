@@ -24,9 +24,10 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando tus comprobantes…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando tus comprobantes…'"
+/>
 <div class="split-view">
   <section class="surface">
     <div class="table-scroll">
@@ -44,7 +45,11 @@
           @for (invoice of filtered(); track invoice.id) {
             <tr [class.selected]="selected()?.id === invoice.id">
               <td>
-                <button class="row-button" (click)="select(invoice)" [disabled]="busy()">
+                <button
+                  class="row-button"
+                  (click)="select(invoice)"
+                  [disabled]="busy() || loading()"
+                >
                   {{ invoice.code
                   }}<small>{{ type(invoice.type) }} · {{ invoice.note_number }}</small>
                 </button>

@@ -19,9 +19,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando tu libreta…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando tu libreta…'"
+/>
 @if (consent()) {
   <details #createDetails class="surface surface-body consignee-create">
     <summary>Añadir destinatario</summary>
@@ -127,7 +128,7 @@
           @for (item of consignees(); track item.id) {
             <tr [class.selected]="selected()?.id === item.id">
               <td>
-                <button class="row-button" (click)="select(item)" [disabled]="busy()">
+                <button class="row-button" (click)="select(item)" [disabled]="busy() || loading()">
                   {{ item.name
                   }}<small>{{
                     item.verified ? 'Documento verificado' : 'Documento sin verificar'
@@ -160,12 +161,10 @@
       }
       <section class="detail-section">
         <h3>Uso del documento</h3>
-        @if (usageLoading()) {
-          <p role="status">Consultando importaciones…</p>
-        }
+        <app-loading-indicator [active]="usageLoading()" label="Consultando importaciones…" />
         @if (usageError()) {
           <p class="alert error" role="alert">{{ usageError() }}</p>
-          <button class="button compact" (click)="loadUsage()" [disabled]="busy()">
+          <button class="button compact" (click)="loadUsage()" [disabled]="busy() || loading()">
             Reintentar consulta
           </button>
         }
@@ -195,7 +194,7 @@
         <h3>Asignar a un paquete</h3>
         <p class="fine-print">Una vez emitida la guía, el consignatario ya no puede cambiarse.</p>
         <label class="field"
-          >Paquete para asignar<select [(ngModel)]="packageId" [disabled]="busy()">
+          >Paquete para asignar<select [(ngModel)]="packageId" [disabled]="busy() || loading()">
             <option value="">Selecciona tu paquete</option>
             @for (pack of packages(); track pack.id) {
               <option [value]="pack.id">
@@ -221,14 +220,18 @@
           @if (removing()) {
             <p>¿Quitar a {{ item.name }} de tu libreta? No podrás asignarlo a nuevos paquetes.</p>
             <div class="actions">
-              <button class="button" (click)="removing.set(false)" [disabled]="busy()">
+              <button class="button" (click)="removing.set(false)" [disabled]="busy() || loading()">
                 Cancelar</button
-              ><button class="button danger" (click)="remove()" [disabled]="busy()">
+              ><button class="button danger" (click)="remove()" [disabled]="busy() || loading()">
                 Confirmar baja
               </button>
             </div>
           } @else {
-            <button class="text-button" (click)="removing.set(true)" [disabled]="busy()">
+            <button
+              class="text-button"
+              (click)="removing.set(true)"
+              [disabled]="busy() || loading()"
+            >
               Quitar de mi libreta
             </button>
           }

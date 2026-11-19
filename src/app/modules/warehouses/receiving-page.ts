@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { requestFieldError } from '../../core/api-problem';
 import { normalizeWeightKg, weightKgHint, formatMeasuredWeight } from '../../shared/weight';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
@@ -17,7 +18,7 @@ import { warehouseError } from './warehouse-error';
 
 @Component({
   selector: 'app-receiving-page',
-  imports: [FormsModule, RouterLink, Status],
+  imports: [LoadingIndicator, FormsModule, RouterLink, Status],
   templateUrl: './receiving-page.html',
 })
 export class ReceivingPage {

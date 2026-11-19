@@ -18,9 +18,10 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando almacenes de USA…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando almacenes de USA…'"
+/>
 <div class="split-view">
   <section class="surface surface-body">
     <h2>Datos de llegada</h2>
@@ -178,9 +179,7 @@
           </button>
         </div>
       </fieldset>
-      @if (uploading()) {
-        <p role="status">Subiendo fotografías…</p>
-      }
+      <app-loading-indicator [active]="uploading()" label="Subiendo fotografías…" />
       @if (uploadError()) {
         <p class="alert error" role="alert">{{ uploadError() }}</p>
       }

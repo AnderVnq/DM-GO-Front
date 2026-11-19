@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { formatMeasuredWeight } from '../../shared/weight';
 import {
   Component,
@@ -23,7 +24,7 @@ import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-packages-page',
-  imports: [PrealertForm, Status, Icon, RouterLink],
+  imports: [LoadingIndicator, PrealertForm, Status, Icon, RouterLink],
   templateUrl: './portal-packages-page.html',
 })
 export class PortalPackagesPage {
@@ -68,19 +69,18 @@ export class PortalPackagesPage {
     this.reading?.unsubscribe();
     this.trackingRequest?.unsubscribe();
     this.loading.set(true);
-    this.packages.set([]);
     this.error.set('');
     this.detailError.set('');
     this.timeline.set(null);
     this.trackingError.set('');
-    this.selected.set(null);
     this.reading = this.api.list().subscribe({
       next: (items) => {
         this.packages.set(items);
         this.loading.set(false);
-        const id = this.route.snapshot.queryParamMap.get('package_id');
+        const id = this.selected()?.id ?? this.route.snapshot.queryParamMap.get('package_id');
         const item = items.find((entry) => entry.id === id) ?? items[0];
         if (item) this.select(item);
+        else this.selected.set(null);
       },
       error: (error: unknown) => {
         this.loading.set(false);

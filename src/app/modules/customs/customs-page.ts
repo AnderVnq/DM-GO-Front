@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   afterNextRender,
   Component,
@@ -36,7 +37,7 @@ import {
 } from './customs-rules';
 @Component({
   selector: 'app-customs-page',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [LoadingIndicator, ReactiveFormsModule, Icon],
   templateUrl: './customs-page.html',
   styleUrl: './customs-page.scss',
 })

@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +20,7 @@ import {
 
 @Component({
   selector: 'app-portal-delivery-page',
-  imports: [FormsModule, Status, Icon],
+  imports: [LoadingIndicator, FormsModule, Status, Icon],
   templateUrl: './portal-delivery-page.html',
 })
 export class PortalDeliveryPage {
@@ -121,10 +122,6 @@ export class PortalDeliveryPage {
     this.loading.set(true);
     this.error.set('');
     this.success.set('');
-    this.selected.set(null);
-    this.packages.set([]);
-    this.addresses.set([]);
-    this.agencies.set([]);
     forkJoin({
       profile: this.portal.me(),
       packages: this.shipments.list(),
@@ -137,9 +134,10 @@ export class PortalDeliveryPage {
           this.packages.set(data.packages);
           this.agencies.set(data.agencies);
           this.loading.set(false);
-          const id = this.route.snapshot.queryParamMap.get('package_id');
+          const id = this.selected()?.id ?? this.route.snapshot.queryParamMap.get('package_id');
           const item = data.packages.find((p) => p.id === id) ?? data.packages[0];
           if (item) this.select(item.id);
+          else this.selected.set(null);
         },
         error: (error: unknown) => {
           this.loading.set(false);

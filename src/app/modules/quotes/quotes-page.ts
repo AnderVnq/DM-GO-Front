@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { normalizeWeightKg, weightKgHint } from '../../shared/weight';
 import {
   afterRenderEffect,
@@ -45,7 +46,7 @@ const concepts: Record<string, string> = {
 
 @Component({
   selector: 'app-quotes-page',
-  imports: [ReactiveFormsModule, Icon, Status],
+  imports: [LoadingIndicator, ReactiveFormsModule, Icon, Status],
   templateUrl: './quotes-page.html',
   styleUrl: './quotes-page.scss',
 })

@@ -85,9 +85,10 @@
   @if (listError()) {
     <p class="alert error" role="alert">{{ listError() }}</p>
   }
-  @if (loading()) {
-    <p class="empty-state" role="status">Consultando pendientes…</p>
-  }
+  <app-loading-indicator
+    [active]="loading() || busy()"
+    [label]="busy() ? 'Procesando solicitud…' : 'Consultando pendientes…'"
+  />
   <div class="table-scroll" tabindex="0" aria-label="Guías pendientes de Aduanas">
     <table class="data-table">
       <thead>
@@ -136,9 +137,7 @@
     </p>
   }
 </section>
-@if (detailLoading()) {
-  <p role="status">Actualizando detalle de Aduanas…</p>
-}
+<app-loading-indicator [active]="detailLoading()" label="Actualizando detalle de Aduanas…" />
 @if (lastDetailAvailable && stale() && !detailLoading()) {
   <button
     class="icon-button action-icon"

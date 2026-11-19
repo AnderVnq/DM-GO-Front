@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, inject, signal, viewChild, type ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -16,7 +17,7 @@ import { formatDate } from '../../shared/amount';
 
 @Component({
   selector: 'app-customers-page',
-  imports: [ReactiveFormsModule, RouterLink, Icon],
+  imports: [LoadingIndicator, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './customers-page.html',
   styleUrl: './customers-page.scss',
 })
@@ -61,7 +62,6 @@ export class CustomersPage {
     this.listRequest?.unsubscribe();
     this.listLoading.set(true);
     this.listError.set('');
-    this.listPage.set(null);
     this.listRequest = this.api.list(this.listQuery).subscribe({
       next: (page) => {
         if (page.total > 0 && page.offset >= page.total) {

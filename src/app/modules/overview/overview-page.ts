@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BillingApi, type DispatchNote } from '../billing';
@@ -11,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-overview-page',
-  imports: [RouterLink, Icon, Status],
+  imports: [LoadingIndicator, RouterLink, Icon, Status],
   templateUrl: './overview-page.html',
   styleUrl: './overview-page.scss',
 })

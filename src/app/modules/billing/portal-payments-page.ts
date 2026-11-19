@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, inject, signal, viewChild, type ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -16,7 +17,7 @@ import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-payments-page',
-  imports: [ReactiveFormsModule, Status, Icon],
+  imports: [LoadingIndicator, ReactiveFormsModule, Status, Icon],
   templateUrl: './portal-payments-page.html',
 })
 export class PortalPaymentsPage {
@@ -70,15 +71,14 @@ export class PortalPaymentsPage {
     this.loading.set(true);
     this.error.set('');
     this.success.set('');
-    this.selected.set(null);
-    this.notes.set([]);
     this.reading = this.api.list().subscribe({
       next: (items) => {
         this.notes.set(items);
         this.loading.set(false);
-        const id = this.route.snapshot.queryParamMap.get('note_id');
+        const id = this.selected()?.id ?? this.route.snapshot.queryParamMap.get('note_id');
         const item = items.find((note) => note.id === id) ?? items[0];
         if (item) this.select(item);
+        else this.selected.set(null);
       },
       error: (error: unknown) => {
         this.loading.set(false);

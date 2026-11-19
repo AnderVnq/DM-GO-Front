@@ -39,9 +39,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando bulto…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Cargando bulto…'"
+/>
 @if (bulk(); as bulk) {
   <div class="page-header">
     <div>
@@ -160,9 +161,7 @@
         </div>
       }
       <div class="table-footer">{{ bulk.package_ids.length }} paquetes en el bulto</div>
-      @if (detailLoading()) {
-        <p class="surface-body" role="status">Cargando detalle de los paquetes…</p>
-      }
+      <app-loading-indicator [active]="detailLoading()" label="Cargando detalle de los paquetes…" />
       @if (detailError()) {
         <div class="surface-body">
           <p class="alert error" role="alert">{{ detailError() }}</p>
@@ -199,9 +198,7 @@
           hint="Buscar paquete o cliente"
           (selected)="selectPackage($event)"
         />
-        @if (looking()) {
-          <p role="status">Consultando paquete…</p>
-        }
+        <app-loading-indicator [active]="looking()" label="Consultando paquete…" />
         @if (lookupError()) {
           <p class="alert error" role="alert">{{ lookupError() }}</p>
         }
@@ -348,9 +345,7 @@
   <section class="surface surface-body">
     <h2>Crear bulto</h2>
     <p>Selecciona la sede donde se encuentran físicamente los paquetes.</p>
-    @if (catalogLoading()) {
-      <p role="status">Cargando almacenes…</p>
-    }
+    <app-loading-indicator [active]="catalogLoading()" label="Cargando almacenes…" />
     @if (catalogError()) {
       <p class="alert error" role="alert">{{ catalogError() }}</p>
       <button class="button" (click)="loadWarehouses()" [disabled]="busy() || catalogLoading()">

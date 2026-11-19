@@ -35,9 +35,10 @@
 @if (notice()) {
   <p class="alert success" role="status">{{ notice() }}</p>
 }
-@if (loading()) {
-  <p role="status">Actualizando recepción…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Actualizando recepción…'"
+/>
 @if (session(); as item) {
   <section class="surface surface-body reception-summary">
     <div class="page-header">
@@ -368,9 +369,7 @@
           />
         </div>
       }
-      @if (mawbLoading()) {
-        <p class="full" role="status">Consultando MAWB…</p>
-      }
+      <app-loading-indicator [active]="mawbLoading()" label="Consultando MAWB…" />
       @if (checkedMawb(); as mawb) {
         <div class="full">
           <h3>{{ mawb.number }}</h3>
@@ -389,9 +388,7 @@
           }
         </select>
       </div>
-      @if (catalogLoading()) {
-        <p class="full" role="status">Consultando almacenes…</p>
-      }
+      <app-loading-indicator [active]="catalogLoading()" label="Consultando almacenes…" />
       @if (catalogError()) {
         <div class="full">
           <p class="alert error" role="alert">{{ catalogError() }}</p>

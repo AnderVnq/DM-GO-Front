@@ -1,3 +1,4 @@
+import { LoadingIndicator } from './loading-indicator';
 import { Icon } from './icon';
 import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
@@ -27,7 +28,7 @@ let nextBrowserId = 0;
 /** Tabla remota reutilizable. Los filtros y columnas pertenecen a la pantalla consumidora. */
 @Component({
   selector: 'app-record-browser',
-  imports: [FormsModule, Icon],
+  imports: [FormsModule, Icon, LoadingIndicator],
   templateUrl: './record-browser.html',
   styleUrl: './record-browser.scss',
 })
@@ -78,8 +79,6 @@ export class RecordBrowser {
     this.request?.unsubscribe();
     this.loading.set(true);
     this.error.set('');
-    this.rows.set([]);
-    this.offset.set(offset);
     this.request = this.http
       .get<RecordPage>(`${this.config.value.apiBaseUrl}/${this.resource()}`, {
         params: {
@@ -99,6 +98,7 @@ export class RecordBrowser {
             this.load(Math.floor((page.total - 1) / this.limit) * this.limit);
             return;
           } else {
+            this.offset.set(offset);
             this.rows.set(rows);
             this.total.set(page.total);
           }
@@ -123,6 +123,6 @@ export class RecordBrowser {
     return typeof value === 'string' || typeof value === 'number' ? String(value) : '—';
   }
   choose(id: string) {
-    if (!this.disabled() && !this.loading()) this.selected.emit(id);
+    if (!this.disabled() && !this.loading() && !this.error()) this.selected.emit(id);
   }
 }

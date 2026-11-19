@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   Component,
   DestroyRef,
@@ -35,7 +36,7 @@ interface EvidenceItem {
 }
 @Component({
   selector: 'app-driver-page',
-  imports: [ReactiveFormsModule, RouterLink, ThemeToggle, Icon],
+  imports: [LoadingIndicator, ReactiveFormsModule, RouterLink, ThemeToggle, Icon],
   templateUrl: './driver-page.html',
   styleUrl: './driver-page.scss',
 })

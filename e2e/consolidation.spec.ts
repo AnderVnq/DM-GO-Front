@@ -307,3 +307,45 @@ test('ventas no accede a bultos ni consolidados', async ({ page }) => {
     ),
   ).toEqual([]);
 });
+
+test('actualiza el consolidado sin desmontar la ficha ni desplazar su encabezado', async ({
+  page,
+}, info) => {
+  await logistics(page);
+  await login(page);
+  await navigate(page, 'Consolidados', 'consolidations');
+  await page.getByRole('button', { name: 'Abrir Y-42', exact: true }).click();
+  const heading = page.getByRole('heading', { name: 'Y-42', exact: true });
+  await expect(heading).toBeVisible();
+  const original = await heading.elementHandle();
+  const before = await heading.boundingBox();
+  let release!: () => void;
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const requested = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  await page.route(`**/api/v1/consolidations/${consolidationId}`, async (route) => {
+    started();
+    await pending;
+    await route.fallback();
+  });
+  try {
+    await page.getByRole('button', { name: 'Actualizar consolidado', exact: true }).click();
+    await requested;
+    await expect(page.getByRole('progressbar', { name: 'Cargando consolidado…' })).toBeVisible();
+    expect(await original!.evaluate((node) => node.isConnected)).toBe(true);
+    expect((await heading.boundingBox())!.y).toBe(before!.y);
+    await page.screenshot({
+      path: info.outputPath('refresh-loading.png'),
+      fullPage: true,
+      animations: 'disabled',
+    });
+  } finally {
+    release();
+  }
+  await expect(page.getByRole('progressbar', { name: 'Cargando consolidado…' })).toHaveCount(0);
+  expect(await original!.evaluate((node) => node.isConnected)).toBe(true);
+});

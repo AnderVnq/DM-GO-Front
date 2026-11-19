@@ -20,9 +20,11 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-<p role="status" aria-live="polite">
-  {{ busy() ? 'Guardando agrupación…' : loading() ? 'Cargando tablero…' : notice() }}
-</p>
+<app-loading-indicator
+  [active]="busy() || loading()"
+  [label]="busy() ? 'Guardando agrupación…' : 'Cargando tablero…'"
+/>
+<p role="status">{{ notice() }}</p>
 @if (board(); as board) {
   <p>
     <strong>{{ board.code }}</strong> ·

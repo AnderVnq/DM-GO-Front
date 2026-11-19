@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   Component,
   DestroyRef,
@@ -34,7 +35,7 @@ import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 @Component({
   selector: 'app-notes-page',
-  imports: [ReactiveFormsModule, Icon, Status],
+  imports: [LoadingIndicator, ReactiveFormsModule, Icon, Status],
   templateUrl: './notes-page.html',
 })
 export class NotesPage {

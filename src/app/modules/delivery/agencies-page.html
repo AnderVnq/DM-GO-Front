@@ -59,9 +59,10 @@
       />Incluir inactivas</label
     >
   </div>
-  @if (loading()) {
-    <p class="empty-state" role="status">Consultando agencias…</p>
-  }
+  <app-loading-indicator
+    [active]="loading() || busy()"
+    [label]="busy() ? 'Procesando solicitud…' : 'Consultando agencias…'"
+  />
   <div class="table-scroll" tabindex="0" aria-label="Catálogo de agencias">
     <table class="data-table">
       <thead>

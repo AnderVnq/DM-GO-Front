@@ -57,15 +57,14 @@
       <h2>Notas de salida recientes</h2>
       <a class="text-button" routerLink="/internal/dispatch-notes">Ver notas</a>
     </div>
-    @if (notesLoading()) {
-      <p class="surface-body" role="status">Cargando notas…</p>
-    }
+    <app-loading-indicator [active]="notesLoading()" label="Cargando notas…" />
     @if (notesError()) {
       <div class="surface-body">
         <p class="alert error" role="alert">{{ notesError() }}</p>
         <button class="button" (click)="loadNotes()">Volver a intentar</button>
       </div>
-    } @else if (!notesLoading()) {
+    }
+    @if (notes().length || (!notesLoading() && !notesError())) {
       <div class="table-scroll">
         <table class="data-table">
           <thead>
@@ -101,15 +100,14 @@
       <h2>Cotizaciones recientes</h2>
       <a class="text-button" routerLink="/internal/quotes">Ver cotizaciones</a>
     </div>
-    @if (quotesLoading()) {
-      <p class="surface-body" role="status">Cargando cotizaciones…</p>
-    }
+    <app-loading-indicator [active]="quotesLoading()" label="Cargando cotizaciones…" />
     @if (quotesError()) {
       <div class="surface-body">
         <p class="alert error" role="alert">{{ quotesError() }}</p>
         <button class="button" (click)="loadQuotes()">Volver a intentar</button>
       </div>
-    } @else if (!quotesLoading()) {
+    }
+    @if (quotes().length || (!quotesLoading() && !quotesError())) {
       <div class="table-scroll">
         <table class="data-table">
           <thead>

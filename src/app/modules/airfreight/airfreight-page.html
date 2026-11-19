@@ -38,9 +38,10 @@
 @if (success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
-@if (loading()) {
-  <p role="status">Consultando MAWB…</p>
-}
+<app-loading-indicator
+  [active]="loading() || busy()"
+  [label]="busy() ? 'Procesando solicitud…' : 'Consultando MAWB…'"
+/>
 @if (mawb() || candidate() || loading()) {
   <div class="flight-layout">
     <section class="surface surface-body">
@@ -152,9 +153,10 @@
         />
       }
 
-      @if (manifestLoading()) {
-        <p role="status">Consultando consolidado y manifiesto…</p>
-      }
+      <app-loading-indicator
+        [active]="manifestLoading()"
+        label="Consultando consolidado y manifiesto…"
+      />
       @if (manifestError()) {
         <p class="alert error" role="alert">{{ manifestError() }}</p>
       }

@@ -24,9 +24,7 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (loading()) {
-  <p role="status">Cargando tus avisos…</p>
-}
+<app-loading-indicator [active]="loading()" label="Cargando tus avisos…" />
 <div class="split-view">
   <section class="surface">
     <ul class="notice-list" aria-label="Avisos recibidos">

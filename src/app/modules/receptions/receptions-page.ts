@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import {
   afterNextRender,
@@ -35,7 +36,7 @@ import {
 
 @Component({
   selector: 'app-receptions-page',
-  imports: [RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
+  imports: [LoadingIndicator, RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './receptions-page.html',
   styleUrl: './receptions-page.scss',
 })
