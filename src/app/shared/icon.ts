@@ -1,47 +1,75 @@
 import { Component, computed, input } from '@angular/core';
+import {
+  LucideDynamicIcon,
+  LucideRefreshCw,
+  LucideCopy,
+  LucideTrash2,
+  LucideSun,
+  LucideMoon,
+  LucideHouse,
+  LucideUsers,
+  LucidePackage,
+  LucideFileText,
+  LucideTag,
+  LucideEye,
+  LucideDownload,
+  LucideSearch,
+  LucidePlus,
+  LucidePencil,
+  LucideChevronRight,
+  LucideChevronLeft,
+  LucideX,
+  LucideCheck,
+  LucideLogOut,
+  LucideMenu,
+  LucidePlane,
+  LucideWarehouse,
+  LucideTruck,
+  LucideBell,
+  LucidePaperclip,
+} from '@lucide/angular';
 
-const paths = {
-  refresh: 'M20 7v5h-5M4 17v-5h5M6.1 6.1a8 8 0 0 1 13.2 2M4.7 15.9a8 8 0 0 0 13.2 2',
-  copy: 'M9 9h12v12H9ZM15 9V3H3v12h6',
-  trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',
-
-  sun: 'M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
-  moon: 'M21 13a9 9 0 0 1-10-10 9 9 0 1 0 10 10Z',
-  overview: 'M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z',
-  customers:
-    'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 4a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
-  packages: 'm12 3 9 5v9l-9 5-9-5V8Zm0 9v10M3 8l9 4 9-4M7.5 5.5l9 5',
-  billing: 'M14 2H5v20h14V7Zm0 0v6h5M8 12h8M8 16h8',
-  quotes: 'M20 13 11 22 2 13V3h10l8 8ZM7 7h.01',
-  eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Zm13 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
-  download: 'M12 3v12m-5-5 5 5 5-5M4 15v5h16v-5',
-  search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
-  plus: 'M12 5v14M5 12h14',
-  edit: 'm16 3 5 5L9 20l-6 1 1-6ZM14 5l5 5',
-  arrow: 'm9 5 7 7-7 7',
-  back: 'm14 5-7 7 7 7',
-  close: 'm6 6 12 12M6 18 18 6',
-  check: 'm5 12 4 4L19 6',
-  logout: 'M9 3H3v18h6M10 12h11m-4-4 4 4-4 4',
-  menu: 'M3 6h18M3 12h18M3 18h18',
-  plane: 'm22 2-7 20-4-9-9-4Zm0 0L11 13',
-  warehouse: 'm3 9 9-6 9 6v12H3Zm4 12V11h10v10M7 15h10M7 18h10',
-  delivery:
-    'M3 4h11v13H3Zm11 5h4l3 4v4h-7M7 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
-  bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
-  attachment: 'm8 12 6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l9-9',
+// Vocabulario compartido de la aplicación; solo se importan los iconos utilizados.
+const icons = {
+  refresh: LucideRefreshCw,
+  copy: LucideCopy,
+  trash: LucideTrash2,
+  sun: LucideSun,
+  moon: LucideMoon,
+  overview: LucideHouse,
+  customers: LucideUsers,
+  packages: LucidePackage,
+  billing: LucideFileText,
+  quotes: LucideTag,
+  eye: LucideEye,
+  download: LucideDownload,
+  search: LucideSearch,
+  plus: LucidePlus,
+  edit: LucidePencil,
+  arrow: LucideChevronRight,
+  back: LucideChevronLeft,
+  close: LucideX,
+  check: LucideCheck,
+  logout: LucideLogOut,
+  menu: LucideMenu,
+  plane: LucidePlane,
+  warehouse: LucideWarehouse,
+  delivery: LucideTruck,
+  bell: LucideBell,
+  attachment: LucidePaperclip,
 } as const;
-export type IconName = keyof typeof paths;
+export type IconName = keyof typeof icons;
 
 @Component({
   selector: 'app-icon',
+  imports: [LucideDynamicIcon],
   template:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="path()" /></svg>',
+    '<svg [lucideIcon]="icon()" [strokeWidth]="1.75" aria-hidden="true" focusable="false"></svg>',
   styles: [
-    ':host{display:inline-flex;flex:none;width:1.25rem;height:1.25rem}svg{width:100%;height:100%}',
+    ':host{display:inline-flex;flex:none;width:1.25rem;height:1.25rem;pointer-events:none}svg{width:100%;height:100%}',
   ],
 })
 export class Icon {
   readonly name = input<IconName>('packages');
-  readonly path = computed(() => paths[this.name()]);
+  readonly icon = computed(() => icons[this.name()]);
 }

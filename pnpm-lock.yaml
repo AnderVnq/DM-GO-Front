@@ -26,6 +26,9 @@ importers:
       '@angular/router':
         specifier: ^21.0.0
         version: 21.2.26(@angular/common@21.2.26(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))(@angular/platform-browser@21.2.26(@angular/common@21.2.26(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@lucide/angular':
+        specifier: ^1.74.0
+        version: 1.74.0(@angular/common@21.2.26(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))
       keycloak-js:
         specifier: ^26.2.1
         version: 26.2.5
@@ -924,6 +927,12 @@ packages:
     resolution: {integrity: sha512-qwosvPyl+zpUlp3gRb7UcJ3H8S28XHCzkv0Y0EgQToXjQP91ZD67EHSCDmaLjtKhe+GVIW5om1KUpzVLA0l6pg==}
     cpu: [x64]
     os: [win32]
+
+  '@lucide/angular@1.74.0':
+    resolution: {integrity: sha512-vTRJvo+bQ8IhuSBGlqR/QPlq7cAgD6lBlXRJgJytOJT66yoi4CPw7g3fsE/+6Lue5QNG5dRe7XzqJjzeaCSOMw==}
+    peerDependencies:
+      '@angular/common': '>=17.0.0'
+      '@angular/core': '>=17.0.0'
 
   '@modelcontextprotocol/sdk@1.32.1':
     resolution: {integrity: sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==}
@@ -3719,6 +3728,12 @@ snapshots:
 
   '@lmdb/lmdb-win32-x64@3.5.1':
     optional: true
+
+  '@lucide/angular@1.74.0(@angular/common@21.2.26(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))':
+    dependencies:
+      '@angular/common': 21.2.26(@angular/core@21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.26(@angular/compiler@21.2.26)(rxjs@7.8.2)
+      tslib: 2.9.1
 
   '@modelcontextprotocol/sdk@1.32.1(zod@4.6.6)':
     dependencies:
