@@ -238,7 +238,7 @@ test('crea, asigna, inicia, registra fallidos y finaliza con estado del servidor
     .getByRole('dialog', { name: 'Finalizar ruta', exact: true })
     .getByRole('button', { name: 'Confirmar cierre', exact: true })
     .click();
-  await expect(page.getByRole('status')).toContainText('Ruta finalizada');
+  await expect(page.locator('.alert.success[role=status]')).toContainText('Ruta finalizada');
   await expect(page.getByRole('button', { name: 'Finalizar ruta', exact: true })).toHaveCount(0);
   await expect(page).toHaveURL(new RegExp(`route_id=${rid}`));
   if (info.project.name === 'desktop') {
@@ -274,7 +274,7 @@ test('actualiza un conflicto de salida sin éxito falso', async ({ page }) => {
   const modal = page.getByRole('dialog', { name: 'Iniciar reparto', exact: true });
   await expect(modal.getByRole('alert')).toContainText('ya fue iniciada');
   await expect(modal.getByRole('button', { name: 'Confirmar salida', exact: true })).toBeDisabled();
-  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.locator('.alert.success[role=status]')).toHaveCount(0);
 });
 test('apertura incierta obliga a revisar el listado antes de crear otra ruta', async ({ page }) => {
   const { writes } = await setup(page, { createUncertain: true });

@@ -1,3 +1,5 @@
+import { RouteMap } from './route-map';
+import { RouteLive } from './route-live';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import {
@@ -42,7 +44,15 @@ import {
 } from './delivery-route-rules';
 @Component({
   selector: 'app-delivery-routes-page',
-  imports: [LoadingIndicator, RecordBrowser, ReactiveFormsModule, Icon, Status],
+  imports: [
+    RouteMap,
+    RouteLive,
+    LoadingIndicator,
+    RecordBrowser,
+    ReactiveFormsModule,
+    Icon,
+    Status,
+  ],
   templateUrl: './delivery-routes-page.html',
   styleUrl: './delivery-routes-page.scss',
 })

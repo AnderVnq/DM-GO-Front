@@ -21,6 +21,9 @@ export interface RouteStop {
   ubigeo: string;
   address: string;
   reference: string;
+  district?: { code: string; name: string; province: string; department: string } | null;
+  location?: { lat: number; lng: number; precision: 'address' | 'district' } | null;
+  navigation_url?: string;
   packages: RoutePackage[];
 }
 export interface DeliveryRoute {

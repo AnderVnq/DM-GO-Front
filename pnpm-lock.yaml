@@ -32,6 +32,9 @@ importers:
       keycloak-js:
         specifier: ^26.2.1
         version: 26.2.5
+      leaflet:
+        specifier: ^1.9.4
+        version: 1.9.4
       pdfjs-dist:
         specifier: 6.5.438
         version: 6.5.438
@@ -54,6 +57,9 @@ importers:
       '@playwright/test':
         specifier: ^1.56.1
         version: 1.65.0
+      '@types/leaflet':
+        specifier: ^1.9.22
+        version: 1.9.22
       jsdom:
         specifier: ^27.0.1
         version: 27.4.0
@@ -1574,6 +1580,12 @@ packages:
   '@types/estree@1.0.10':
     resolution: {integrity: sha512-lTyOMnOcmRBzdCv6/4zUZCrEhV0xrqQiUZBZtVcbmLHBXKLnN8q89v/wKRF/Q0HbwVsqbIG3o5HDoFl9sduM+g==}
 
+  '@types/geojson@7946.0.16':
+    resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
+
+  '@types/leaflet@1.9.22':
+    resolution: {integrity: sha512-h3lhECYEKDasG7LFHu+GiHqAvsgLuQvlJvVZzJDGONo3sEL+wUOqSFLnwkZlK0qVxnxbuGFW8iBlJNYs5wgndA==}
+
   '@vitejs/plugin-basic-ssl@2.1.4':
     resolution: {integrity: sha512-HXciTXN/sDBYWgeAD4V4s0DN0g72x5mlxQhHxtYu3Tt8BLa6MzcJZUyDVFCdtjNs3bfENVHVzOsmooTVuNgAAw==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -2196,6 +2208,9 @@ packages:
 
   keycloak-js@26.2.5:
     resolution: {integrity: sha512-iTR3hmYXlGZbBTskgr2PrGIfIzLrts8nwja2+D1gW6Q/S83C487rhM+WvPV9dxqXv81N0QwNG9BJAM60eDQ1Yw==}
+
+  leaflet@1.9.4:
+    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
   listr2@9.0.5:
     resolution: {integrity: sha512-ME4Fb83LgEgwNw96RKNvKV4VTLuXfoKudAmm2lP8Kk87KaMK0/Xrx/aAkMWmT8mDb+3MlFDspfbCs7adjRxA2g==}
@@ -4208,6 +4223,12 @@ snapshots:
 
   '@types/estree@1.0.10': {}
 
+  '@types/geojson@7946.0.16': {}
+
+  '@types/leaflet@1.9.22':
+    dependencies:
+      '@types/geojson': 7946.0.16
+
   '@vitejs/plugin-basic-ssl@2.1.4(vite@7.3.7(sass@1.97.3))':
     dependencies:
       vite: 7.3.7(sass@1.97.3)
@@ -4903,6 +4924,8 @@ snapshots:
   jsonparse@1.3.1: {}
 
   keycloak-js@26.2.5: {}
+
+  leaflet@1.9.4: {}
 
   listr2@9.0.5:
     dependencies:

@@ -26,6 +26,9 @@ async function setup(
         recipient_phone: '999999999',
         ubigeo: '150101',
         address: 'Av. Prueba 42',
+        district: { code: '150131', name: 'San Isidro', province: 'Lima', department: 'Lima' },
+        location: { lat: -12.09, lng: -77.03, precision: 'address' },
+        navigation_url: 'https://www.google.com/maps/dir/?api=1&destination=-12.09,-77.03',
         reference: 'Puerta principal',
         packages: [
           { package_id: pid, result: 'pending' },
@@ -283,4 +286,21 @@ test('ventas no puede abrir el área del repartidor', async ({ page }) => {
     page.getByRole('heading', { name: 'Acceso restringido', exact: true }),
   ).toBeVisible();
   expect(calls).toHaveLength(0);
+});
+
+test('muestra mapa, distrito y navegación de la parada sin geocodificar la dirección', async ({
+  page,
+}, info) => {
+  await setup(page);
+  await enter(page);
+  await expect(page.getByRole('heading', { name: 'Ruta RT-42', exact: true })).toBeVisible();
+  await expect(page.getByText('San Isidro · Lima · Lima', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Cómo llegar', exact: true })).toHaveAttribute(
+    'href',
+    'https://www.google.com/maps/dir/?api=1&destination=-12.09,-77.03',
+  );
+  await expect(page.locator('.leaflet-container')).toBeVisible();
+  await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText('Punto de dirección registrado.', { exact: true })).toBeVisible();
+  await page.screenshot({ path: info.outputPath('driver-map.png'), fullPage: true });
 });

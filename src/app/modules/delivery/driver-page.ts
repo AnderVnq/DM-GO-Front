@@ -1,3 +1,5 @@
+import { RouteMap } from './route-map';
+import { DriverTracking } from './driver-tracking';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   Component,
@@ -36,7 +38,15 @@ interface EvidenceItem {
 }
 @Component({
   selector: 'app-driver-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, RouterLink, ThemeToggle, Icon],
+  imports: [
+    RouteMap,
+    DriverTracking,
+    LoadingIndicator,
+    ReactiveFormsModule,
+    RouterLink,
+    ThemeToggle,
+    Icon,
+  ],
   templateUrl: './driver-page.html',
   styleUrl: './driver-page.scss',
 })

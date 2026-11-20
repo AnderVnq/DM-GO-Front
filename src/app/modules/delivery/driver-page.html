@@ -77,6 +77,13 @@
         @if (route.status === 'completed') {
           <p class="muted">Ruta finalizada. Los resultados se conservan para consulta.</p>
         }
+        @if (route.status === 'in_progress') {
+          <app-driver-tracking
+            [routeId]="route.id"
+            [active]="!stale() && route.status === 'in_progress'"
+          />
+        }
+        <app-route-map [stops]="route.stops" />
         <ol class="driver-stops">
           @for (stop of route.stops; track stop.id) {
             <li>
@@ -85,7 +92,32 @@
                 {{ stop.kind === 'agency' ? 'Counter de agencia' : 'Domicilio' }} ·
                 {{ pending(stop) }} paquetes pendientes
               </p>
-              <p>{{ stop.address }} · {{ stop.ubigeo }}</p>
+              <p>{{ stop.address }}</p>
+              @if (stop.district; as district) {
+                <p class="muted">
+                  {{ district.name }} · {{ district.province }} · {{ district.department }}
+                </p>
+              } @else {
+                <p class="muted">Ubigeo {{ stop.ubigeo }}</p>
+              }
+              <p class="fine-print">
+                {{
+                  stop.location?.precision === 'address'
+                    ? 'Punto de dirección registrado.'
+                    : stop.location
+                      ? 'Ubicación aproximada: centro del distrito. Confirma la dirección antes de llegar.'
+                      : 'Esta parada no tiene ubicación registrada. Usa la dirección escrita.'
+                }}
+              </p>
+              @if (stop.navigation_url) {
+                <a
+                  class="button"
+                  [href]="stop.navigation_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  ><app-icon name="plane" />Cómo llegar</a
+                >
+              }
               @if (stop.reference) {
                 <p class="muted">Referencia: {{ stop.reference }}</p>
               }

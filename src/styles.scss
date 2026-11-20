@@ -1,3 +1,4 @@
+@use 'leaflet/dist/leaflet.css';
 @use './styles/tokens';
 @use './styles/controls';
 @use './styles/layout';
@@ -169,4 +170,10 @@ small {
   :root:has(app-home-page):not([data-interaction='keyboard']) {
     scroll-behavior: smooth;
   }
+}
+
+.route-map .leaflet-control-zoom a {
+  min-width: 44px;
+  min-height: 44px;
+  line-height: 44px;
 }

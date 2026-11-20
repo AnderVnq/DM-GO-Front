@@ -107,6 +107,11 @@
         <app-icon name="refresh" />
       </button>
     </div>
+    @if (route.status === 'in_progress') {
+      <app-route-live [routeId]="route.id" [stops]="route.stops" />
+    } @else {
+      <app-route-map [stops]="route.stops" />
+    }
     <dl class="detail-grid">
       <div>
         <dt>Repartidor</dt>
