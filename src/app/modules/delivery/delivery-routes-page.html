@@ -140,12 +140,13 @@
         <app-record-browser
           resource="packages"
           title="Paquetes para reparto"
+          empty="No hay paquetes aptos para esta búsqueda. Deben tener liquidación pagada, entrega a domicilio o por agencia y estar disponibles para reparto."
           [columns]="[
             { key: 'carrier_tracking', label: 'Tracking' },
             { key: 'locker_code', label: 'Casillero' },
             { key: 'description', label: 'Contenido' },
           ]"
-          [filters]="{ status: 'READY_FOR_DELIVERY' }"
+          [filters]="{ route_ready: 'true' }"
           [disabled]="!canOperate || packageLoading()"
           hint="Buscar paquete o cliente"
           action="Seleccionar"

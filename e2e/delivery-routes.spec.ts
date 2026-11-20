@@ -162,8 +162,9 @@ async function create(page: Page) {
   return modal;
 }
 async function assigned(page: Page) {
-  await page.route('**/api/v1/packages?**', (route) =>
-    route.fulfill({
+  await page.route('**/api/v1/packages?**', (route) => {
+    expect(new URL(route.request().url()).searchParams.get('route_ready')).toBe('true');
+    return route.fulfill({
       json: {
         packages: [
           {
@@ -175,8 +176,8 @@ async function assigned(page: Page) {
         ],
         total: 1,
       },
-    }),
-  );
+    });
+  });
   await create(page);
   await expect(page.getByRole('heading', { name: 'Ruta RT-42', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Seleccionar TRACK-ROUTE', exact: true }).click();
@@ -317,4 +318,21 @@ test('actualiza el modal tras conflicto sin perder el motivo', async ({ page }) 
   ).toBeDisabled();
   await modal.getByRole('button', { name: 'Cancelar', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Finalizar ruta', exact: true })).toBeEnabled();
+});
+
+test('explica el listado vacío de paquetes aptos sin ofrecer candidatos rechazados', async ({
+  page,
+}) => {
+  await setup(page);
+  await page.route('**/api/v1/packages?**', (route) => {
+    expect(new URL(route.request().url()).searchParams.get('route_ready')).toBe('true');
+    return route.fulfill({ json: { packages: [], total: 0, limit: 10, offset: 0 } });
+  });
+  await login(page);
+  await navigate(page, 'Rutas de reparto', 'delivery-routes');
+  await create(page);
+  await expect(
+    page.getByText('No hay paquetes aptos para esta búsqueda.', { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Seleccionar / })).toHaveCount(0);
 });
