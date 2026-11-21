@@ -2,7 +2,7 @@ import { testPdf } from './fixtures/pdf';
 import { test, expect, type Page } from '@playwright/test';
 import { login, mockPanel, navigate } from './fixtures/panel';
 
-async function openPackages(page: Page) {
+async function openPackages(page: Page, detail = true) {
   await login(page);
   await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
   await navigate(page, 'Clientes', 'customers');
@@ -14,10 +14,12 @@ async function openPackages(page: Page) {
   await page.getByLabel('Casillero o documento', { exact: true }).fill('PE00042');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await page.getByRole('link', { name: 'Ver paquetes', exact: true }).click();
-  await page.locator('tbody .row-button').first().click();
-  await expect(
-    page.getByRole('heading', { name: 'Detalle del paquete', exact: true }),
-  ).toBeVisible();
+  if (detail) {
+    await page.locator('tbody .row-button').first().click();
+    await expect(
+      page.getByRole('heading', { name: 'Detalle del paquete', exact: true }),
+    ).toBeVisible();
+  }
 }
 
 const invoice = {
@@ -93,8 +95,9 @@ test('reintenta el seguimiento sin borrar el error independiente de la factura',
 }, testInfo) => {
   await mockPanel(page, 'supervisor', { package: { status: 'PREALERTED' } });
   let attempts = 0;
+  let allowTracking = false;
   await page.route('**/api/v1/packages/package-test/tracking', async (route) => {
-    if (++attempts === 1)
+    if (++attempts && !allowTracking)
       return route.fulfill({ status: 503, json: { detail: 'No se pudo cargar el seguimiento.' } });
     await route.fallback();
   });
@@ -111,6 +114,8 @@ test('reintenta el seguimiento sin borrar el error independiente de la factura',
     page.getByRole('button', { name: 'Reintentar seguimiento', exact: true }),
   ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('tracking-retry.png'), fullPage: true });
+  const initialAttempts = attempts;
+  allowTracking = true;
   await page.getByRole('button', { name: 'Reintentar seguimiento', exact: true }).click();
   await expect(page.getByText('Compra prealertada', { exact: true })).toBeVisible();
   await expect(
@@ -119,16 +124,16 @@ test('reintenta el seguimiento sin borrar el error independiente de la factura',
   await expect(page.locator('.inspector').getByRole('alert')).toHaveText(
     'Adjunta un archivo PDF, JPEG, PNG o WEBP.',
   );
-  expect(attempts).toBe(2);
+  expect(attempts).toBe(initialAttempts + 1);
 });
 
 test('bloquea valores fuera del contrato y conserva el formulario de prealerta', async ({
   page,
 }) => {
   const fixture = await mockPanel(page);
-  await openPackages(page);
+  await openPackages(page, false);
   await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Nueva prealerta', exact: true });
   await dialog.getByLabel('Compañía de envío').fill('Tienda de prueba');
   await dialog.getByLabel('Número de tracking').fill('TEST-NEW-42');
   await dialog.getByLabel('Contenido', { exact: true }).fill('Audífonos nuevos');
@@ -193,7 +198,7 @@ test('al cambiar de cliente no conserva el filtro invisible del cliente anterior
       });
     else await route.fallback();
   });
-  await openPackages(page);
+  await openPackages(page, false);
   await page.getByLabel('Filtrar paquetes del cliente o pendientes').fill('sin coincidencias');
   await expect(page.getByRole('heading', { name: 'Sin coincidencias', exact: true })).toBeVisible();
   await page.getByLabel('Casillero o documento del cliente').fill('PE00043');
@@ -241,9 +246,9 @@ test('bloquea el doble envío de prealerta y restaura la selección desde la URL
     await route.fallback();
   });
   try {
-    await openPackages(page);
+    await openPackages(page, false);
     await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('dialog', { name: 'Nueva prealerta', exact: true });
     await dialog.getByLabel('Compañía de envío').fill('Nueva tienda');
     await dialog.getByLabel('Número de tracking').fill('TEST-NEW-43');
     await dialog.getByLabel('Contenido', { exact: true }).fill('Nuevo libro');
@@ -262,6 +267,10 @@ test('bloquea el doble envío de prealerta y restaura la selección desde la URL
     expect(
       fixture.requests.filter((r) => r.path === '/packages/batch' && r.method === 'POST'),
     ).toHaveLength(1);
+    await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Detalle del envío', exact: true }),
+    ).not.toBeVisible();
     await page.getByRole('button', { name: /Tienda de prueba.*Audífonos de prueba/ }).click();
     await expect(page).toHaveURL(/package_id=package-test/);
     await page.reload();

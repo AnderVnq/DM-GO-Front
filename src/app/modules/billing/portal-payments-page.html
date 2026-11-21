@@ -88,6 +88,7 @@
     [locked]="busy()"
     (dismissed)="closeDetail()"
     [error]="error()"
+    [notice]="success()"
   >
     @if (selected(); as note) {
       <aside class="inspector">

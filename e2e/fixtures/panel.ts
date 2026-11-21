@@ -1,5 +1,5 @@
 import { testPdf } from './pdf';
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import type { Customer } from '../../src/app/modules/customers/customer.model';
 import type { Package } from '../../src/app/modules/shipments/package.model';
 import type { Quote } from '../../src/app/modules/quotes/quote.model';
@@ -23,7 +23,8 @@ export async function mockPanel(
       body: testPdf(),
     }),
   );
-  const issuer = 'http://localhost:3000/test-idp/realms/dm48';
+  const origin = new URL(test.info().project.use.baseURL ?? 'http://localhost:3000').origin;
+  const issuer = `${origin}/test-idp/realms/dm48`;
   let nonce = '';
   const identity = {
     id: 'staff-test',
@@ -105,7 +106,7 @@ export async function mockPanel(
     route.fulfill({
       json: {
         apiBaseUrl: '/api/v1',
-        oidcUrl: 'http://localhost:3000/test-idp',
+        oidcUrl: `${origin}/test-idp`,
         oidcRealm: 'dm48',
         oidcClientId: 'dm48-web',
       },

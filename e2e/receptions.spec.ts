@@ -55,7 +55,7 @@ async function setup(
       path = new URL(req.url()).pathname;
     if (req.method() === 'GET') {
       if (path === '/api/v1/receptions')
-        return route.fulfill({ json: { receptions: [], total: 0 } });
+        return route.fulfill({ json: { receptions: [session], total: 1 } });
       if (failRead) {
         failRead = false;
         return route.fulfill({

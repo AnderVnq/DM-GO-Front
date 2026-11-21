@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { mockPortal, loginPortal, navigatePortal } from './fixtures/portal';
 
 async function operations(page: Page) {
+  const origin = new URL(test.info().project.use.baseURL ?? 'http://localhost:3000').origin;
   await mockPortal(page, 'existing');
   const calls: { path: string; body: Record<string, unknown> | null }[] = [];
   const original = {
@@ -161,7 +162,7 @@ async function operations(page: Page) {
       return route.fulfill({
         status: 204,
         headers: {
-          'access-control-allow-origin': 'http://localhost:3000',
+          'access-control-allow-origin': origin,
           'access-control-allow-methods': 'PUT',
           'access-control-allow-headers': 'content-type',
         },
@@ -172,7 +173,7 @@ async function operations(page: Page) {
     calls.push({ path: 'storage-upload', body: null });
     await route.fulfill({
       status: 200,
-      headers: { 'access-control-allow-origin': 'http://localhost:3000' },
+      headers: { 'access-control-allow-origin': origin },
       body: '',
     });
   });
