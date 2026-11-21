@@ -209,16 +209,12 @@
       </div>
     </section>
     <aside class="inspector">
-      <h2>Direcciones del cliente</h2>
-      @for (address of item.addresses; track address.id) {
-        <div class="detail-section">
-          <h3>{{ address.primary ? 'Dirección principal' : 'Dirección de entrega' }}</h3>
-          <p>{{ address.line }}</p>
-          <small>{{ address.reference }}</small>
-        </div>
-      } @empty {
-        <p class="muted">El cliente todavía no tiene direcciones registradas.</p>
-      }
+      <app-address-book
+        title="Direcciones del cliente"
+        [customerId]="item.id"
+        [addresses]="item.addresses"
+        (changed)="updateAddresses($event)"
+      />
       @for (locker of item.locker_addresses; track locker.warehouse_code) {
         <div class="detail-section">
           <h3>Casillero en {{ locker.warehouse_code }}</h3>

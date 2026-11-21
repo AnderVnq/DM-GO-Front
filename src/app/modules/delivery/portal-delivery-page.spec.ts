@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { RuntimeConfig } from '../../core/runtime-config';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, Subject } from 'rxjs';
@@ -30,11 +32,13 @@ function setup() {
   const save = vi.fn(() => pending);
   TestBed.configureTestingModule({
     providers: [
+      provideHttpClient(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
       provideRouter([]),
       {
         provide: PortalApi,
         useValue: {
-          me: () => of({ addresses: [{ id: 'address-1', line: 'Dirección principal' }] }),
+          addresses: () => of({ addresses: [{ id: 'address-1', line: 'Dirección principal' }] }),
         },
       },
       { provide: PortalShipmentsApi, useValue: { list: () => of([item]) } },
@@ -43,7 +47,9 @@ function setup() {
   });
   const fixture = TestBed.createComponent(PortalDeliveryPage);
   fixture.detectChanges();
-  const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+  const dialog = fixture.nativeElement.querySelector(
+    'dialog[aria-labelledby=delivery-edit-title]',
+  ) as HTMLDialogElement;
   dialog.showModal = vi.fn();
   dialog.close = vi.fn();
   return { fixture, page: fixture.componentInstance, dialog, save, pending, item };
@@ -54,7 +60,11 @@ it('muestra la preferencia guardada y solo edita en el modal; cancelar descarta 
   expect(fixture.nativeElement.querySelector('section form')).toBeNull();
   page.openEdit();
   fixture.detectChanges();
-  expect(fixture.nativeElement.querySelector('button[type=submit]').disabled).toBe(true);
+  expect(
+    fixture.nativeElement.querySelector(
+      'dialog[aria-labelledby=delivery-edit-title] button[type=submit]',
+    ).disabled,
+  ).toBe(true);
   page.save();
   expect(save).not.toHaveBeenCalled();
   page.changeMethod('home');

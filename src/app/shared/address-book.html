@@ -1,0 +1,189 @@
+<div class="address-heading">
+  <h2>{{ title() }}</h2>
+  <button class="button" type="button" (click)="open()">
+    <app-icon name="plus" />Nueva dirección
+  </button>
+</div>
+@for (address of addresses(); track address.id) {
+  <section class="detail-section">
+    <div class="address-heading">
+      <h3>{{ address.primary ? 'Dirección principal' : 'Dirección de entrega' }}</h3>
+      <div class="document-actions">
+        <button
+          class="icon-button"
+          [attr.aria-label]="'Editar dirección ' + address.line"
+          [attr.title]="'Editar dirección ' + address.line"
+          (click)="open(address)"
+        >
+          <app-icon name="edit" />
+        </button>
+        <button
+          class="icon-button"
+          [attr.aria-label]="'Dar de baja dirección ' + address.line"
+          title="Dar de baja dirección"
+          (click)="open(address, true)"
+        >
+          <app-icon name="trash" />
+        </button>
+      </div>
+    </div>
+    <p>{{ address.line }}</p>
+    <p class="muted">{{ address.reference }}</p>
+    <p class="fine-print">
+      Ubigeo {{ address.ubigeo }} ·
+      {{
+        address.latitude != null
+          ? 'Punto exacto registrado'
+          : 'Sin punto exacto; se usará el distrito'
+      }}
+    </p>
+  </section>
+} @empty {
+  <p class="muted">Añade una dirección para elegir la entrega a domicilio.</p>
+}
+<dialog
+  #dialog
+  aria-labelledby="address-dialog-title"
+  (cancel)="cancel($event)"
+  [attr.closedby]="busy() ? 'none' : 'closerequest'"
+>
+  <div class="dialog-header">
+    <h2 id="address-dialog-title">
+      {{
+        removing() ? 'Dar de baja dirección' : editing() ? 'Editar dirección' : 'Nueva dirección'
+      }}
+    </h2>
+    <button
+      class="icon-button"
+      aria-label="Cerrar dirección"
+      (click)="cancel()"
+      [disabled]="busy()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  @if (error()) {
+    <p class="alert error" role="alert">{{ error() }}</p>
+  }
+  @if (removing()) {
+    <p>
+      La dirección {{ draft.line }} dejará de ofrecerse para nuevas entregas. Los paquetes que ya la
+      usan conservarán su referencia.
+    </p>
+    <div class="actions">
+      <button class="button" autofocus (click)="cancel()" [disabled]="busy()">Cancelar</button
+      ><button class="button danger" (click)="remove()" [disabled]="busy()">
+        {{ busy() ? 'Procesando…' : 'Dar de baja' }}
+      </button>
+    </div>
+  } @else {
+    <form
+      #addressForm="ngForm"
+      (ngSubmit)="save(addressForm)"
+      aria-labelledby="address-dialog-title"
+      [attr.aria-busy]="busy()"
+    >
+      <fieldset [disabled]="busy()">
+        <legend class="sr-only">Datos de dirección</legend>
+        <div class="district-search">
+          <label class="field"
+            >Buscar distrito<input
+              name="district-search"
+              [(ngModel)]="query"
+              placeholder="Nombre o código de distrito" /></label
+          ><button
+            class="button"
+            type="button"
+            (click)="search()"
+            [disabled]="searching() || !query.trim()"
+          >
+            {{ searching() ? 'Buscando…' : 'Buscar' }}
+          </button>
+        </div>
+        @if (searchError()) {
+          <p class="field-hint" role="status">{{ searchError() }}</p>
+        }
+        <label class="field"
+          >Distrito (obligatorio)<select
+            name="district"
+            [ngModel]="draft.ubigeo"
+            (ngModelChange)="chooseDistrict($event)"
+            required
+          >
+            <option value="">Selecciona un distrito</option>
+            @if (draft.ubigeo) {
+              <option [value]="draft.ubigeo">Distrito {{ draft.ubigeo }}</option>
+            }
+            @for (d of districts(); track d.code) {
+              <option [value]="d.code">{{ d.name }} · {{ d.province }} · {{ d.department }}</option>
+            }
+          </select></label
+        >
+        <label class="field"
+          >Dirección (obligatoria)<textarea
+            name="line"
+            [(ngModel)]="draft.line"
+            autocomplete="street-address"
+            required
+            minlength="3"
+            maxlength="300"
+          ></textarea>
+        </label>
+        <label class="field"
+          >Referencia (opcional)<input
+            name="reference"
+            [(ngModel)]="draft.reference"
+            maxlength="300"
+        /></label>
+        <label class="checkbox-row"
+          ><input name="primary" type="checkbox" [(ngModel)]="draft.primary" />Dirección
+          principal</label
+        >
+        @if (dialog.open) {
+          <app-address-point-picker
+            [point]="point"
+            [center]="center()"
+            [disabled]="busy()"
+            (picked)="mark($event)"
+          />
+        }
+        <div class="point-fields">
+          <label class="field"
+            >Latitud (opcional)<input
+              name="latitude"
+              type="number"
+              step="any"
+              [(ngModel)]="draft.latitude"
+              min="-18.5"
+              max="0.5" /></label
+          ><label class="field"
+            >Longitud (opcional)<input
+              name="longitude"
+              type="number"
+              step="any"
+              [(ngModel)]="draft.longitude"
+              min="-81.5"
+              max="-68"
+          /></label>
+        </div>
+        @if (point) {
+          <button class="button" type="button" (click)="clearPoint()">Quitar punto exacto</button>
+        }
+        <p class="field-hint">
+          El punto es opcional y debe estar dentro del Perú. Sin punto, el mapa de reparto usará el
+          centro del distrito.
+        </p>
+      </fieldset>
+      <div class="actions">
+        <button class="button" type="button" (click)="cancel()" [disabled]="busy()">Cancelar</button
+        ><button
+          class="button primary"
+          type="submit"
+          [disabled]="busy() || addressForm.invalid || !valid || (editing() && !dirty)"
+        >
+          {{ busy() ? 'Guardando…' : editing() ? 'Guardar cambios' : 'Guardar dirección' }}
+        </button>
+      </div>
+    </form>
+  }
+</dialog>

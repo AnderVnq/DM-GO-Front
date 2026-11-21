@@ -1,3 +1,4 @@
+import type { AddressRecord } from '../../shared/address.model';
 export interface Customer {
   id: string;
   locker_code: string;
@@ -5,7 +6,7 @@ export interface Customer {
   email: string;
   phone: string;
   document: { type: 'dni' | 'ruc'; number: string; verified: boolean };
-  addresses: { id: string; ubigeo: string; line: string; reference: string; primary: boolean }[];
+  addresses: AddressRecord[];
   locker_addresses?: {
     warehouse_code: string;
     recipient: string;

@@ -1,3 +1,4 @@
+import type { AddressRecord as DeliveryAddress } from '../../shared/address.model';
 export interface PortalProfile {
   id: string;
   locker_code: string;
@@ -31,10 +32,4 @@ export interface LinkRequest {
   created_at: string;
 }
 
-export interface DeliveryAddress {
-  id: string;
-  ubigeo: string;
-  line: string;
-  reference: string;
-  primary: boolean;
-}
+export type { AddressRecord as DeliveryAddress } from '../../shared/address.model';

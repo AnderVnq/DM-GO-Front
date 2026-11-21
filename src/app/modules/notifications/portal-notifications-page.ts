@@ -1,6 +1,14 @@
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  ElementRef,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
@@ -20,6 +28,11 @@ export class PortalNotificationsPage {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
+  readonly previewDialog = viewChild.required<ElementRef<HTMLDialogElement>>('previewDialog');
+  openNotice(notice: PortalNotification) {
+    this.selected.set(notice);
+    this.previewDialog().nativeElement.showModal();
+  }
   readonly notifications = signal<PortalNotification[]>([]);
   readonly selected = signal<PortalNotification | null>(null);
   readonly loading = signal(false);

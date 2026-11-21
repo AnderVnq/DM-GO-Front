@@ -91,7 +91,15 @@
                     [attr.aria-label]="action() + ' ' + value(row, columns()[0])"
                     [attr.title]="action() + ' ' + value(row, columns()[0])"
                   >
-                    <app-icon [name]="action() === 'Seleccionar' ? 'check' : 'eye'" />
+                    <app-icon
+                      [name]="
+                        action() === 'Seleccionar'
+                          ? 'check'
+                          : action() === 'Abrir'
+                            ? 'arrow'
+                            : 'eye'
+                      "
+                    />
                     @if (action() === 'Seleccionar') {
                       {{ action() }}
                     }

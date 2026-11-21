@@ -48,13 +48,27 @@ async function coordination(page: Page) {
   };
   let attempts = 0;
   await page.route(
-    /\/api\/v1\/portal\/(me|packages|agencies|consignees|notifications)(\/.*)?$/,
+    /\/api\/v1\/portal\/(me|addresses|packages|agencies|consignees|notifications)(\/.*)?$/,
     async (route) => {
       const req = route.request();
       const path = new URL(req.url()).pathname.replace('/api/v1/portal/', '');
       expect(req.headers()['authorization']).toMatch(/^Bearer /);
       const body = req.postData() ? (req.postDataJSON() as Record<string, unknown>) : null;
       if (req.method() !== 'GET') writes.push({ path, body });
+      if (path === 'addresses')
+        return route.fulfill({
+          json: {
+            addresses: [
+              {
+                id: 'own-address',
+                ubigeo: '130101',
+                line: 'Calle de prueba 42',
+                reference: 'Puerta azul',
+                primary: true,
+              },
+            ],
+          },
+        });
       if (path === 'me')
         return route.fulfill({
           json: {
@@ -258,10 +272,13 @@ test('libreta con autorización, asignación recuperable y avisos con enlace seg
   await page.getByRole('button', { name: 'Confirmar baja' }).click();
   await expect(page.getByRole('status')).toContainText('Destinatario quitado');
   await navigatePortal(page, 'Mis avisos');
+  await page.locator('.notice-button').first().click();
+  await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Ver paquete', exact: true })).toHaveAttribute(
     'href',
     '/portal/packages?package_id=own-package',
   );
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: /Aviso informativo/ }).click();
   await expect(page.locator('.notice-body')).toContainText('<script>');
   await expect(page.getByRole('link', { name: 'Ver paquete', exact: true })).toHaveCount(0);

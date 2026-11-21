@@ -1,3 +1,5 @@
+import { AddressBook } from '../../shared/address-book';
+import { RouteLive } from './route-live';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,7 +22,7 @@ import {
 
 @Component({
   selector: 'app-portal-delivery-page',
-  imports: [LoadingIndicator, FormsModule, Status, Icon],
+  imports: [AddressBook, RouteLive, LoadingIndicator, FormsModule, Status, Icon],
   templateUrl: './portal-delivery-page.html',
 })
 export class PortalDeliveryPage {
@@ -123,7 +125,7 @@ export class PortalDeliveryPage {
     this.error.set('');
     this.success.set('');
     forkJoin({
-      profile: this.portal.me(),
+      profile: this.portal.addresses(),
       packages: this.shipments.list(),
       agencies: this.api.agencies(),
     })

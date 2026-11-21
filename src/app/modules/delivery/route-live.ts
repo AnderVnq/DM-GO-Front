@@ -21,6 +21,7 @@ import type { RouteStop } from './delivery-route.model';
 })
 export class RouteLive {
   readonly routeId = input.required<string>();
+  readonly audience = input<'operations' | 'portal'>('operations');
   readonly stops = input<readonly RouteStop[]>([]);
   readonly status = signal('Conectando seguimiento…');
   readonly position = signal<LivePosition | null>(null);
@@ -33,21 +34,22 @@ export class RouteLive {
   constructor() {
     effect((cleanup) => {
       const id = this.routeId();
+      const audience = this.audience();
       this.retry();
       const controller = new AbortController();
       if (this.previousRoute !== id) this.position.set(null);
       this.previousRoute = id;
       this.status.set('Conectando seguimiento…');
-      void this.read(id, controller);
+      void this.read(id, controller, audience);
       cleanup(() => controller.abort());
     });
   }
-  private async read(id: string, controller: AbortController) {
+  private async read(id: string, controller: AbortController, audience: 'operations' | 'portal') {
     try {
       const token = await this.auth.validToken();
       if (controller.signal.aborted) return;
       const response = await fetch(
-        `${this.config.value.apiBaseUrl}/routes/${encodeURIComponent(id)}/live`,
+        `${this.config.value.apiBaseUrl}/${audience === 'portal' ? 'portal/packages' : 'routes'}/${encodeURIComponent(id)}/live`,
         {
           signal: controller.signal,
           headers: {

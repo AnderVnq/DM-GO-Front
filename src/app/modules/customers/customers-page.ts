@@ -1,3 +1,5 @@
+import { AddressBook } from '../../shared/address-book';
+import type { AddressRecord } from '../../shared/address.model';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, inject, signal, viewChild, type ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -17,7 +19,7 @@ import { formatDate } from '../../shared/amount';
 
 @Component({
   selector: 'app-customers-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, RouterLink, Icon],
+  imports: [AddressBook, LoadingIndicator, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './customers-page.html',
   styleUrl: './customers-page.scss',
 })
@@ -26,6 +28,9 @@ export class CustomersPage {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   readonly customer = signal<Customer | null>(null);
+  updateAddresses(addresses: AddressRecord[]) {
+    this.customer.update((item) => (item ? { ...item, addresses } : null));
+  }
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly searched = signal(false);

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { RuntimeConfig } from '../../core/runtime-config';
-import type { LinkRequest, OnboardingInput, PortalProfile } from './portal.model';
+import type { DeliveryAddress, LinkRequest, OnboardingInput, PortalProfile } from './portal.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortalApi {
@@ -9,6 +9,9 @@ export class PortalApi {
   private readonly config = inject(RuntimeConfig);
   private get base() {
     return `${this.config.value.apiBaseUrl}/portal`;
+  }
+  addresses() {
+    return this.http.get<{ addresses: DeliveryAddress[] }>(`${this.base}/addresses`);
   }
   me() {
     return this.http.get<PortalProfile>(`${this.base}/me`);

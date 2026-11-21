@@ -45,6 +45,9 @@
       </label>
       @if (selected(); as item) {
         <div class="actions"><app-status [value]="item.status" /></div>
+        @if (item.status === 'OUT_FOR_DELIVERY') {
+          <app-route-live [routeId]="item.id" audience="portal" />
+        }
         <dl class="detail-grid">
           <div>
             <dt>Forma de entrega</dt>
@@ -92,26 +95,7 @@
     }
   </section>
   <aside class="inspector">
-    <h2>Mis direcciones registradas</h2>
-    <p>Estas son las direcciones disponibles para tus entregas a domicilio.</p>
-    @for (address of addresses(); track address.id) {
-      <section class="detail-section">
-        <h3>{{ address.primary ? 'Dirección principal' : 'Dirección de entrega' }}</h3>
-        <p>{{ address.line }}</p>
-        @if (address.reference) {
-          <p class="muted">Referencia: {{ address.reference }}</p>
-        }
-        <p class="fine-print">Ubigeo: {{ address.ubigeo }}</p>
-      </section>
-    } @empty {
-      @if (!loading() && !error()) {
-        <p class="muted">Todavía no hay direcciones registradas.</p>
-      }
-    }
-    <p class="fine-print actions">
-      Para añadir o corregir una dirección, comunícate con el equipo de atención antes de coordinar
-      el reparto.
-    </p>
+    <app-address-book [addresses]="addresses()" (changed)="addresses.set($event)" />
   </aside>
 </div>
 

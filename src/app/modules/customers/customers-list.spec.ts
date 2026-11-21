@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { RuntimeConfig } from '../../core/runtime-config';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
@@ -9,7 +11,12 @@ const empty: CustomerListPage = { customers: [], total: 0, limit: 25, offset: 0 
 function setup(list = vi.fn(() => of(empty))) {
   const api = { list, get: vi.fn(), findByLocker: vi.fn(() => of(null)) };
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: CustomersApi, useValue: api }],
+    providers: [
+      provideHttpClient(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
+      provideRouter([]),
+      { provide: CustomersApi, useValue: api },
+    ],
   });
   const fixture = TestBed.createComponent(CustomersPage);
   fixture.detectChanges();

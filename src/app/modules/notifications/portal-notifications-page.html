@@ -25,7 +25,7 @@
   <p class="alert error" role="alert">{{ error() }}</p>
 }
 <app-loading-indicator [active]="loading()" label="Cargando tus avisos…" />
-<div class="split-view">
+<div>
   <section class="surface">
     <ul class="notice-list" aria-label="Avisos recibidos">
       @for (notice of filtered(); track notice.id) {
@@ -34,7 +34,7 @@
             class="notice-button"
             [class.selected]="selected()?.id === notice.id"
             [attr.aria-pressed]="selected()?.id === notice.id"
-            (click)="selected.set(notice)"
+            (click)="openNotice(notice)"
           >
             <strong>{{ notice.subject }}</strong><time [attr.datetime]="notice.created_at">{{
               date(notice.created_at)
@@ -56,16 +56,21 @@
       </div>
     }
   </section>
-  @if (selected(); as notice) {
-    <aside class="inspector">
-      <h2>{{ notice.subject }}</h2>
-      <p class="fine-print">{{ date(notice.created_at) }}</p>
-      <p class="notice-body">{{ notice.body }}</p>
-      @if (target(); as link) {
-        <a class="button primary" [routerLink]="link.path" [queryParams]="link.params">{{
-          link.label
-        }}</a>
-      }
-    </aside>
-  }
 </div>
+<dialog #previewDialog aria-labelledby="notice-preview-title">
+  @if (selected(); as notice) {
+    <div class="dialog-header">
+      <h2 id="notice-preview-title">{{ notice.subject }}</h2>
+      <button class="icon-button" aria-label="Cerrar aviso" (click)="previewDialog.close()">
+        <app-icon name="close" />
+      </button>
+    </div>
+    <p class="fine-print">{{ date(notice.created_at) }}</p>
+    <p class="notice-body">{{ notice.body }}</p>
+    @if (target(); as link) {
+      <a class="button primary" [routerLink]="link.path" [queryParams]="link.params">{{
+        link.label
+      }}</a>
+    }
+  }
+</dialog>

@@ -276,3 +276,11 @@ dialog .actions {
   color: var(--text);
   vertical-align: middle;
 }
+
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}

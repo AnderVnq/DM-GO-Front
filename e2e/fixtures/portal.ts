@@ -32,6 +32,8 @@ export async function mockPortal(
       return route.fulfill({ status: 401, json: {} });
     const path = new URL(request.url()).pathname;
     requests.push(path);
+    if (path.endsWith('/addresses') && request.method() === 'GET')
+      return route.fulfill({ json: { addresses: customer.addresses ?? [] } });
     if (path.endsWith('/me'))
       return route.fulfill(
         onboarded

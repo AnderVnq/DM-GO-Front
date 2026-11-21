@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { RuntimeConfig } from '../../core/runtime-config';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
@@ -21,7 +23,12 @@ function setup() {
     updateContact: vi.fn(() => of(customer)),
   };
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: CustomersApi, useValue: api }],
+    providers: [
+      provideHttpClient(),
+      { provide: RuntimeConfig, useValue: { value: { apiBaseUrl: '/api/v1' } } },
+      provideRouter([]),
+      { provide: CustomersApi, useValue: api },
+    ],
   });
   const fixture = TestBed.createComponent(CustomersPage);
   fixture.detectChanges();
