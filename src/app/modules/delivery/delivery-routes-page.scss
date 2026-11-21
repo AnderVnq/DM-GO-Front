@@ -128,3 +128,31 @@
     margin-top: 1.6rem;
   }
 }
+
+.period-options {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.period-options legend {
+  margin-bottom: 0.5rem;
+}
+.period-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+.period-options input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+.range-hint {
+  flex-basis: 100%;
+  margin: 0;
+}

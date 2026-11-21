@@ -6,6 +6,14 @@ export function validRouteDate(value: string): boolean {
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
+export function validRouteRange(from: string, to: string): boolean {
+  return (
+    !!(from || to) &&
+    (!from || validRouteDate(from)) &&
+    (!to || validRouteDate(to)) &&
+    (!from || !to || from <= to)
+  );
+}
 export function routeDayLabel(value: string): string {
   return validRouteDate(value) ? value.split('-').reverse().join('/') : '—';
 }

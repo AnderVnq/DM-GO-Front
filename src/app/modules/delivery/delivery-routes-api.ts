@@ -15,9 +15,10 @@ export class DeliveryRoutesApi {
   private get base() {
     return this.config.value.apiBaseUrl;
   }
-  list(date: string) {
+  list(query: string | { from?: string; to?: string }) {
+    const params = typeof query === 'string' ? { date: query } : query;
     return this.http
-      .get<{ routes: DeliveryRoute[] }>(`${this.base}/routes`, { params: { date } })
+      .get<{ routes: DeliveryRoute[] }>(`${this.base}/routes`, { params })
       .pipe(map((r) => r.routes));
   }
   get(id: string) {

@@ -341,3 +341,40 @@ test('explica el listado vacío de paquetes aptos sin ofrecer candidatos rechaza
   ).toBeVisible();
   await expect(page.getByRole('button', { name: /^Seleccionar / })).toHaveCount(0);
 });
+
+test('consulta períodos cerrados y abiertos sin mezclar los parámetros y los recupera al recargar', async ({
+  page,
+}) => {
+  await mockPanel(page, 'supervisor');
+  const queries: Record<string, string>[] = [];
+  await page.route('**/api/v1/routes?**', (r) => {
+    queries.push(Object.fromEntries(new URL(r.request().url()).searchParams));
+    return r.fulfill({ json: { routes: [] } });
+  });
+  await login(page);
+  await navigate(page, 'Rutas de reparto', 'delivery-routes');
+  await page.getByRole('radio', { name: 'Rango de fechas', exact: true }).check();
+  await page.getByLabel('Desde (opcional)', { exact: true }).fill('2026-11-01');
+  await page.getByLabel('Hasta (opcional)', { exact: true }).fill('2026-11-30');
+  await page.getByRole('button', { name: 'Buscar rutas', exact: true }).click();
+  await expect.poll(() => queries.at(-1)).toEqual({ from: '2026-11-01', to: '2026-11-30' });
+  await page.reload();
+  const signIn = page.getByRole('button', { name: 'Iniciar sesión', exact: true });
+  await expect(
+    signIn.or(page.getByRole('radio', { name: 'Rango de fechas', exact: true })).first(),
+  ).toBeVisible();
+  if (await signIn.isVisible()) await signIn.click();
+  await expect(page.getByRole('radio', { name: 'Rango de fechas', exact: true })).toBeChecked();
+  await expect(page.getByLabel('Desde (opcional)', { exact: true })).toHaveValue('2026-11-01');
+  await page.getByLabel('Hasta (opcional)', { exact: true }).fill('');
+  await page.getByRole('button', { name: 'Buscar rutas', exact: true }).click();
+  await expect.poll(() => queries.at(-1)).toEqual({ from: '2026-11-01' });
+  await page.getByLabel('Hasta (opcional)', { exact: true }).fill('2026-11-21');
+  await page.getByLabel('Desde (opcional)', { exact: true }).fill('');
+  await page.getByRole('button', { name: 'Buscar rutas', exact: true }).click();
+  await expect.poll(() => queries.at(-1)).toEqual({ to: '2026-11-21' });
+  await page.getByRole('radio', { name: 'Un día', exact: true }).check();
+  await page.getByLabel('Fecha de reparto', { exact: true }).fill('2026-11-21');
+  await page.getByRole('button', { name: 'Buscar rutas', exact: true }).click();
+  await expect.poll(() => queries.at(-1)).toEqual({ date: '2026-11-21' });
+});

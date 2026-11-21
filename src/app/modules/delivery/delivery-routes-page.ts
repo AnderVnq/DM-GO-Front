@@ -38,6 +38,7 @@ import {
   canStartRoute,
   canCompleteRoute,
   validRouteDate,
+  validRouteRange,
   todayInLima,
   routeDayLabel,
   routeReference,
@@ -116,7 +117,12 @@ export class DeliveryRoutesPage {
   readonly failureStop = signal<RouteStop | null>(null);
   readonly failureNotice = signal('');
   readonly failureIds = signal<string[]>([]);
-  readonly listForm = this.fb.nonNullable.group({ date: [todayInLima()] });
+  readonly listForm = this.fb.nonNullable.group({
+    period: ['day'],
+    date: [todayInLima()],
+    from: [''],
+    to: [''],
+  });
   readonly lookup = this.fb.nonNullable.group({ reference: [''] });
   readonly createForm = this.fb.nonNullable.group({
     date: [todayInLima()],
@@ -141,8 +147,12 @@ export class DeliveryRoutesPage {
   private actionRouteId = '';
   private failureRouteId = '';
   constructor() {
-    const date = this.activated.snapshot.queryParamMap.get('date');
-    if (date && validRouteDate(date)) this.listForm.controls.date.setValue(date);
+    const params = this.activated.snapshot.queryParamMap;
+    const date = params.get('date'),
+      from = params.get('from') ?? '',
+      to = params.get('to') ?? '';
+    if (validRouteRange(from, to)) this.listForm.patchValue({ period: 'range', from, to });
+    else if (date && validRouteDate(date)) this.listForm.controls.date.setValue(date);
     this.loadRoutes();
     this.loadDrivers();
     this.loadWarehouses();
@@ -165,7 +175,10 @@ export class DeliveryRoutesPage {
     }
   }
   get validDate() {
-    return validRouteDate(this.listForm.controls.date.value);
+    const value = this.listForm.getRawValue();
+    return value.period === 'day'
+      ? validRouteDate(value.date)
+      : validRouteRange(value.from, value.to);
   }
   get canOperate() {
     return (
@@ -278,11 +291,15 @@ export class DeliveryRoutesPage {
   }
   loadRoutes() {
     if (!this.auth.manager() || this.busy() || !this.validDate) return;
-    const date = this.listForm.controls.date.value;
+    const value = this.listForm.getRawValue();
+    const query =
+      value.period === 'day'
+        ? value.date
+        : { ...(value.from ? { from: value.from } : {}), ...(value.to ? { to: value.to } : {}) };
     this.listRequest?.unsubscribe();
     this.loading.set(true);
     this.listError.set('');
-    this.listRequest = this.api.list(date).subscribe({
+    this.listRequest = this.api.list(query).subscribe({
       next: (routes) => {
         this.routes.set(routes);
         this.loading.set(false);
@@ -293,7 +310,10 @@ export class DeliveryRoutesPage {
       },
     });
     void this.router.navigate([], {
-      queryParams: { date },
+      queryParams:
+        value.period === 'day'
+          ? { date: value.date, from: null, to: null }
+          : { date: null, from: value.from || null, to: value.to || null },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });

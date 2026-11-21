@@ -23,19 +23,81 @@
       (picked)="pickRoute($event.id)"
     />
   </div>
-  <form class="date-search" [formGroup]="listForm" (ngSubmit)="loadRoutes()">
-    <div class="field">
-      <label for="routes-date">Fecha de reparto</label
-      ><input
-        id="routes-date"
-        type="date"
-        formControlName="date"
-        required
-        [readOnly]="busy()"
-      /><span class="field-hint">Día operativo en Perú.</span>
-    </div>
-    <button class="button" [disabled]="busy() || loading() || !validDate">Buscar rutas</button>
-  </form>
+  <search aria-label="Filtrar rutas por fecha">
+    <form
+      class="date-search"
+      [formGroup]="listForm"
+      (ngSubmit)="loadRoutes()"
+      aria-label="Período de reparto"
+    >
+      <fieldset class="period-options" [disabled]="busy() || loading()">
+        <legend>Período</legend>
+        <label
+          ><input type="radio" name="period" formControlName="period" value="day" />Un día</label
+        >
+        <label
+          ><input type="radio" name="period" formControlName="period" value="range" />Rango de
+          fechas</label
+        >
+      </fieldset>
+      @if (listForm.controls.period.value === 'day') {
+        <div class="field">
+          <label for="routes-date">Fecha de reparto</label>
+          <input
+            id="routes-date"
+            type="date"
+            name="date"
+            formControlName="date"
+            required
+            [readOnly]="busy()"
+          />
+          <span class="field-hint">Día operativo en Perú.</span>
+        </div>
+      } @else {
+        <div class="field">
+          <label for="routes-from">Desde (opcional)</label>
+          <input
+            id="routes-from"
+            type="date"
+            name="from"
+            formControlName="from"
+            [max]="listForm.controls.to.value || null"
+            [readOnly]="busy()"
+            aria-describedby="routes-range-hint"
+          />
+        </div>
+        <div class="field">
+          <label for="routes-to">Hasta (opcional)</label>
+          <input
+            id="routes-to"
+            type="date"
+            name="to"
+            formControlName="to"
+            [min]="listForm.controls.from.value || null"
+            [readOnly]="busy()"
+            aria-describedby="routes-range-hint"
+          />
+        </div>
+      }
+      <button type="submit" class="button" [disabled]="busy() || loading() || !validDate">
+        Buscar rutas
+      </button>
+      @if (listForm.controls.period.value === 'range') {
+        <p id="routes-range-hint" class="field-hint range-hint">
+          Incluye ambos días. Completa al menos una fecha para consultar un rango abierto.
+        </p>
+        @if (
+          listForm.controls.from.value &&
+          listForm.controls.to.value &&
+          listForm.controls.from.value > listForm.controls.to.value
+        ) {
+          <p class="alert error range-hint" role="alert">
+            La fecha final debe ser igual o posterior a la inicial.
+          </p>
+        }
+      }
+    </form>
+  </search>
   @if (listError()) {
     <p class="alert error" role="alert">{{ listError() }}</p>
   }
@@ -82,7 +144,7 @@
     </table>
   </div>
   @if (!loading() && !listError() && !routes().length) {
-    <p class="empty-state">No hay rutas para la fecha consultada.</p>
+    <p class="empty-state">No hay rutas para el período consultado.</p>
   }
 </section>
 
@@ -376,7 +438,7 @@
   @if (modalError()) {
     <p class="alert error" role="alert">{{ modalError() }}</p>
   }
-  @if (error()) {
+  @if (action() && error()) {
     <p class="alert error" role="alert">{{ error() }}</p>
   }
   @if (stale()) {
@@ -418,7 +480,7 @@
   @if (modalError()) {
     <p class="alert error" role="alert">{{ modalError() }}</p>
   }
-  @if (error()) {
+  @if (failing() && error()) {
     <p class="alert error" role="alert">{{ error() }}</p>
   }
   @if (failureNotice()) {
