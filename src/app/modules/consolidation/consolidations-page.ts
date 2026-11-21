@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import { Icon } from '../../shared/icon';
@@ -28,7 +29,7 @@ import type { Bulk, Consolidation } from './consolidation.model';
 
 @Component({
   selector: 'app-consolidations-page',
-  imports: [LoadingIndicator, RecordBrowser, Icon, FormsModule, RouterLink, Status],
+  imports: [RecordDialog, LoadingIndicator, RecordBrowser, Icon, FormsModule, RouterLink, Status],
   templateUrl: './consolidations-page.html',
 })
 export class ConsolidationsPage {
@@ -76,7 +77,6 @@ export class ConsolidationsPage {
     if (this.busy() || this.loading()) return;
     this.newConsolidation();
     this.creating.set(false);
-    this.listRevision.update((v) => v + 1);
   }
   readonly availableBulkFilters = computed<Record<string, string>>(() => ({
     status: 'closed',

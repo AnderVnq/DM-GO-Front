@@ -41,9 +41,13 @@ test('carga, pagina, filtra y abre la ficha completa desde el listado', async ({
       (request) => request.path === '/customers/customer-test' && request.method === 'GET',
     ),
   ).toBe(true);
-  await page.getByRole('button', { name: 'Volver al listado', exact: true }).click();
+  await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Ficha del cliente', exact: true }),
+  ).not.toBeVisible();
   await expect(listing.getByRole('status')).toHaveText('26–26 de 26 clientes');
   await page.getByLabel('Buscar clientes', { exact: true }).fill('Ana');
+
   await page.getByRole('button', { name: 'Buscar', exact: true }).click();
   await expect(listing.getByRole('status')).toHaveText('1–1 de 1 clientes');
   expect(queries.at(-1)?.get('q')).toBe('Ana');

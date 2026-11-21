@@ -29,7 +29,7 @@
     </button>
   </form>
 </details>
-@if (error()) {
+@if (!(!!customer() || loading()) && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
   @if (!customer()) {
     <button class="button page-back" (click)="backToList()" [disabled]="saving()">
@@ -37,200 +37,204 @@
     </button>
   }
 }
-@if (success()) {
+@if (!(!!customer() || loading()) && success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
 <app-loading-indicator [active]="loading()" label="Buscando cliente…" />
-@if (!customer() && !loading()) {
-  <form
-    class="customer-strip search-bar customer-list-filters"
-    [formGroup]="listFilters"
-    (ngSubmit)="applyListFilters()"
+
+<form
+  class="customer-strip search-bar customer-list-filters"
+  [formGroup]="listFilters"
+  (ngSubmit)="applyListFilters()"
+>
+  <label class="field"
+    >Buscar clientes<input
+      formControlName="q"
+      appDebouncedInput
+      [focusSearch]="true"
+      (debouncedSearch)="applyListFilters()"
+      maxlength="100"
+      placeholder="Nombre, casillero, documento o correo"
+  /></label>
+  <label class="field narrow"
+    >Ordenar por<select formControlName="sort" (change)="applyListFilters()">
+      <option value="newest">Más recientes</option>
+      <option value="oldest">Más antiguos</option>
+      <option value="name">Nombre A–Z</option>
+    </select></label
   >
-    <label class="field"
-      >Buscar clientes<input
-        formControlName="q"
-        appDebouncedInput
-        [focusSearch]="true"
-        (debouncedSearch)="applyListFilters()"
-        maxlength="100"
-        placeholder="Nombre, casillero, documento o correo"
-    /></label>
-    <label class="field narrow"
-      >Ordenar por<select formControlName="sort" (change)="applyListFilters()">
-        <option value="newest">Más recientes</option>
-        <option value="oldest">Más antiguos</option>
-        <option value="name">Nombre A–Z</option>
-      </select></label
-    >
-    <label class="field narrow"
-      >Por página<select formControlName="limit" (change)="applyListFilters()">
-        <option [ngValue]="25">25 clientes</option>
-        <option [ngValue]="50">50 clientes</option>
-        <option [ngValue]="100">100 clientes</option>
-      </select></label
-    >
-    <button class="button primary" [disabled]="listFilters.invalid || saving()">
-      <app-icon name="search" />Buscar
-    </button>
-  </form>
-  <section class="surface" aria-label="Listado de clientes" [attr.aria-busy]="listLoading()">
-    <app-loading-indicator [active]="listLoading()" label="Cargando clientes…" />
-    @if (listError()) {
-      <div class="surface-body">
-        <p class="alert error" role="alert">{{ listError() }}</p>
-        <button class="button" (click)="reloadList()">Reintentar listado</button>
-      </div>
-    }
-    @if (listPage(); as page) {
-      @if (page.customers.length) {
-        <div class="table-scroll" tabindex="0" aria-label="Tabla de clientes">
-          <table class="data-table">
-            <caption class="sr-only">
-              Clientes disponibles para tu usuario
-            </caption>
-            <thead>
+  <label class="field narrow"
+    >Por página<select formControlName="limit" (change)="applyListFilters()">
+      <option [ngValue]="25">25 clientes</option>
+      <option [ngValue]="50">50 clientes</option>
+      <option [ngValue]="100">100 clientes</option>
+    </select></label
+  >
+  <button class="button primary" [disabled]="listFilters.invalid || saving()">
+    <app-icon name="search" />Buscar
+  </button>
+</form>
+<section class="surface" aria-label="Listado de clientes" [attr.aria-busy]="listLoading()">
+  <app-loading-indicator [active]="listLoading()" label="Cargando clientes…" />
+  @if (listError()) {
+    <div class="surface-body">
+      <p class="alert error" role="alert">{{ listError() }}</p>
+      <button class="button" (click)="reloadList()">Reintentar listado</button>
+    </div>
+  }
+  @if (listPage(); as page) {
+    @if (page.customers.length) {
+      <div class="table-scroll" tabindex="0" aria-label="Tabla de clientes">
+        <table class="data-table">
+          <caption class="sr-only">
+            Clientes disponibles para tu usuario
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Cliente</th>
+              <th scope="col">Casillero</th>
+              <th scope="col">Contacto</th>
+              <th scope="col">Vendedor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of page.customers; track item.id) {
               <tr>
-                <th scope="col">Cliente</th>
-                <th scope="col">Casillero</th>
-                <th scope="col">Contacto</th>
-                <th scope="col">Vendedor</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of page.customers; track item.id) {
-                <tr>
-                  <td>
-                    <button
-                      class="row-button"
-                      (click)="openCustomer(item.id)"
-                      [disabled]="saving() || loading()"
-                      [attr.aria-label]="'Ver ficha de ' + item.name"
+                <td>
+                  <button
+                    class="row-button"
+                    (click)="openCustomer(item.id)"
+                    [disabled]="saving()"
+                    [attr.aria-label]="'Ver ficha de ' + item.name"
+                  >
+                    {{ item.name
+                    }}<small
+                      >{{ item.document.type.toUpperCase() }} {{ item.document.number }}</small
                     >
-                      {{ item.name
-                      }}<small
-                        >{{ item.document.type.toUpperCase() }} {{ item.document.number }}</small
-                      >
-                    </button>
-                  </td>
-                  <td>{{ item.locker_code }}</td>
-                  <td>
-                    {{ item.email }}<small>{{ item.phone || 'Sin teléfono' }}</small>
-                  </td>
-                  <td>{{ item.seller?.name || 'Sin asignar' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else {
-        <div class="empty-state">
-          <app-icon name="customers" />
-          <h2>Sin clientes para mostrar</h2>
-          <p>Prueba otra búsqueda. Solo aparecen los clientes disponibles para tu usuario.</p>
-        </div>
-      }
-      <div class="table-footer customer-pagination">
-        <span role="status"
-          >{{ page.total ? page.offset + 1 : 0 }}–{{ page.offset + page.customers.length }} de
-          {{ page.total }} clientes</span
-        >
-        <div class="actions">
-          <button
-            class="button compact"
-            (click)="changePage(-1)"
-            [disabled]="page.offset === 0 || listLoading()"
-          >
-            Anterior</button
-          ><button
-            class="button compact"
-            (click)="changePage(1)"
-            [disabled]="page.offset + page.limit >= page.total || listLoading()"
-          >
-            Siguiente
-          </button>
-        </div>
+                  </button>
+                </td>
+                <td>{{ item.locker_code }}</td>
+                <td>
+                  {{ item.email }}<small>{{ item.phone || 'Sin teléfono' }}</small>
+                </td>
+                <td>{{ item.seller?.name || 'Sin asignar' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <app-icon name="customers" />
+        <h2>Sin clientes para mostrar</h2>
+        <p>Prueba otra búsqueda. Solo aparecen los clientes disponibles para tu usuario.</p>
       </div>
     }
-  </section>
-}
-@if (customer(); as item) {
-  <div class="actions">
-    <button class="button page-back" (click)="backToList()" [disabled]="saving()">
-      <app-icon name="back" />Volver al listado
-    </button>
-  </div>
-  <div class="split-view">
-    <section class="surface surface-body">
-      <h2>{{ item.name }}</h2>
-      <p class="muted">Casillero {{ item.locker_code }}</p>
-      <dl class="detail-grid">
-        <div>
-          <dt class="muted">Documento</dt>
-          <dd>{{ item.document.type.toUpperCase() }} {{ item.document.number }}</dd>
-        </div>
-        <div>
-          <dt class="muted">Verificación</dt>
-          <dd>
-            {{ item.document.verified ? 'Documento verificado' : 'Pendiente de verificación' }}
-          </dd>
-        </div>
-      </dl>
-      <div class="page-header">
-        <h3>Datos de contacto</h3>
+    <div class="table-footer customer-pagination">
+      <span role="status"
+        >{{ page.total ? page.offset + 1 : 0 }}–{{ page.offset + page.customers.length }} de
+        {{ page.total }} clientes</span
+      >
+      <div class="actions">
         <button
-          type="button"
           class="button compact"
-          (click)="editContact()"
-          [disabled]="saving() || loading()"
+          (click)="changePage(-1)"
+          [disabled]="page.offset === 0 || listLoading()"
         >
-          <app-icon name="edit" />Editar contacto
+          Anterior</button
+        ><button
+          class="button compact"
+          (click)="changePage(1)"
+          [disabled]="page.offset + page.limit >= page.total || listLoading()"
+        >
+          Siguiente
         </button>
       </div>
-      <dl class="detail-grid">
-        <div>
-          <dt class="muted">Correo electrónico</dt>
-          <dd>{{ item.email }}</dd>
+    </div>
+  }
+</section>
+
+<app-record-dialog
+  [open]="!!customer() || loading()"
+  title="Ficha del cliente"
+  [locked]="saving() || loading()"
+  (dismissed)="backToList()"
+  [error]="error()"
+  [notice]="success()"
+>
+  @if (customer(); as item) {
+    <div class="split-view">
+      <section class="surface surface-body">
+        <h2>{{ item.name }}</h2>
+        <p class="muted">Casillero {{ item.locker_code }}</p>
+        <dl class="detail-grid">
+          <div>
+            <dt class="muted">Documento</dt>
+            <dd>{{ item.document.type.toUpperCase() }} {{ item.document.number }}</dd>
+          </div>
+          <div>
+            <dt class="muted">Verificación</dt>
+            <dd>
+              {{ item.document.verified ? 'Documento verificado' : 'Pendiente de verificación' }}
+            </dd>
+          </div>
+        </dl>
+        <div class="page-header">
+          <h3>Datos de contacto</h3>
+          <button
+            type="button"
+            class="button compact"
+            (click)="editContact()"
+            [disabled]="saving() || loading()"
+          >
+            <app-icon name="edit" />Editar contacto
+          </button>
         </div>
-        <div>
-          <dt class="muted">Teléfono</dt>
-          <dd>{{ item.phone }}</dd>
+        <dl class="detail-grid">
+          <div>
+            <dt class="muted">Correo electrónico</dt>
+            <dd>{{ item.email }}</dd>
+          </div>
+          <div>
+            <dt class="muted">Teléfono</dt>
+            <dd>{{ item.phone }}</dd>
+          </div>
+        </dl>
+        <div class="actions">
+          <a
+            class="button primary"
+            routerLink="/internal/packages"
+            [queryParams]="{ customer_id: item.id }"
+            ><app-icon name="packages" />Ver paquetes</a
+          ><a
+            class="button"
+            routerLink="/internal/dispatch-notes"
+            [queryParams]="{ customer_id: item.id }"
+            >Ver notas de salida</a
+          >
         </div>
-      </dl>
-      <div class="actions">
-        <a
-          class="button primary"
-          routerLink="/internal/packages"
-          [queryParams]="{ customer_id: item.id }"
-          ><app-icon name="packages" />Ver paquetes</a
-        ><a
-          class="button"
-          routerLink="/internal/dispatch-notes"
-          [queryParams]="{ customer_id: item.id }"
-          >Ver notas de salida</a
-        >
-      </div>
-    </section>
-    <aside class="inspector">
-      <app-address-book
-        title="Direcciones del cliente"
-        [customerId]="item.id"
-        [addresses]="item.addresses"
-        (changed)="updateAddresses($event)"
-      />
-      @for (locker of item.locker_addresses; track locker.warehouse_code) {
-        <div class="detail-section">
-          <h3>Casillero en {{ locker.warehouse_code }}</h3>
-          <p>
-            {{ locker.recipient }}<br />{{ locker.line1 }}<br />{{ locker.line2 }}<br />{{
-              locker.city
-            }}, {{ locker.state }} {{ locker.postal_code }}<br />{{ locker.country }}
-          </p>
-        </div>
-      }
-    </aside>
-  </div>
-}
+      </section>
+      <aside class="inspector">
+        <app-address-book
+          title="Direcciones del cliente"
+          [customerId]="item.id"
+          [addresses]="item.addresses"
+          (changed)="updateAddresses($event)"
+        />
+        @for (locker of item.locker_addresses; track locker.warehouse_code) {
+          <div class="detail-section">
+            <h3>Casillero en {{ locker.warehouse_code }}</h3>
+            <p>
+              {{ locker.recipient }}<br />{{ locker.line1 }}<br />{{ locker.line2 }}<br />{{
+                locker.city
+              }}, {{ locker.state }} {{ locker.postal_code }}<br />{{ locker.country }}
+            </p>
+          </div>
+        }
+      </aside>
+    </div>
+  }
+</app-record-dialog>
 <dialog #createDialog aria-labelledby="customer-create-title">
   <div class="dialog-header">
     <div>

@@ -7,251 +7,256 @@
     <app-icon name="plus" />Nueva MAWB
   </button>
 </div>
-@if (!mawb()) {
-  <app-record-browser
-    resource="mawbs"
-    title="Vuelos y guías aéreas"
-    [columns]="[
-      { key: 'number', label: 'MAWB' },
-      { key: 'flight_number', label: 'Vuelo' },
-      { key: 'status', label: 'Estado' },
-      { key: 'departure_at', label: 'Salida prevista', date: true },
-    ]"
-    [statuses]="[
-      { value: 'open', label: 'Abierta' },
-      { value: 'closed', label: 'Despachada' },
-    ]"
-    [refresh]="listRevision()"
-    [disabled]="busy() || loading()"
-    hint="Buscar por MAWB o vuelo"
-    (selected)="selectRecord($event)"
-  />
-} @else {
-  <button class="button page-back" (click)="backToList()" [disabled]="busy() || loading()">
-    <app-icon name="back" />Volver al listado
-  </button>
-}
 
-@if (error() && !confirming()) {
+<app-record-browser
+  resource="mawbs"
+  title="Vuelos y guías aéreas"
+  [columns]="[
+    { key: 'number', label: 'MAWB' },
+    { key: 'flight_number', label: 'Vuelo' },
+    { key: 'status', label: 'Estado' },
+    { key: 'departure_at', label: 'Salida prevista', date: true },
+  ]"
+  [statuses]="[
+    { value: 'open', label: 'Abierta' },
+    { value: 'closed', label: 'Despachada' },
+  ]"
+  [refresh]="listRevision()"
+  [disabled]="busy()"
+  hint="Buscar por MAWB o vuelo"
+  (selected)="selectRecord($event)"
+/>
+
+@if (!(!!mawb() || !!candidate() || loading()) && error() && !confirming()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (success()) {
+@if (!(!!mawb() || !!candidate() || loading()) && success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
 <app-loading-indicator
   [active]="loading() || busy()"
   [label]="busy() ? 'Procesando solicitud…' : 'Consultando MAWB…'"
 />
-@if (mawb() || candidate() || loading()) {
-  <div class="flight-layout">
-    <section class="surface surface-body">
-      @if (mawb(); as item) {
-        <div class="page-header">
-          <div>
-            <h2 #flightHeading tabindex="-1">{{ item.number }}</h2>
-            <p>{{ item.flight_number }} · {{ item.origin }} → {{ item.destination }}</p>
+<app-record-dialog
+  [open]="!!mawb() || !!candidate() || loading()"
+  title="Detalle de la guía aérea"
+  [locked]="busy() || loading()"
+  (dismissed)="backToList()"
+  [error]="confirming() ? '' : error()"
+  [notice]="success()"
+  [loading]="loading() || busy()"
+>
+  @if (mawb() || candidate() || loading()) {
+    <div class="flight-layout">
+      <section class="surface surface-body">
+        @if (mawb(); as item) {
+          <div class="page-header">
+            <div>
+              <h2 #flightHeading tabindex="-1">{{ item.number }}</h2>
+              <p>{{ item.flight_number }} · {{ item.origin }} → {{ item.destination }}</p>
+            </div>
+            <span class="status">{{ item.status === 'open' ? 'Abierta' : 'Despachada' }}</span>
           </div>
-          <span class="status">{{ item.status === 'open' ? 'Abierta' : 'Despachada' }}</span>
-        </div>
-        <dl class="detail-grid">
-          <div>
-            <dt>Salida prevista · hora de Perú</dt>
-            <dd>{{ date(item.departure_at) }}</dd>
-          </div>
-          <div>
-            <dt>Salida registrada</dt>
-            <dd>{{ date(item.dispatched_at) }}</dd>
-          </div>
-        </dl>
-        <div class="actions">
-          <button
-            class="icon-button action-icon"
-            (click)="open()"
-            [disabled]="busy() || loading()"
-            aria-label="Actualizar MAWB"
-            title="Actualizar MAWB"
-          >
-            <app-icon name="refresh" /></button
-          ><button
-            class="icon-button action-icon"
-            (click)="copyLink()"
-            aria-label="Copiar enlace"
-            title="Copiar enlace"
-          >
-            <app-icon name="copy" />
-          </button>
-        </div>
-        @if (item.status === 'closed') {
+          <dl class="detail-grid">
+            <div>
+              <dt>Salida prevista · hora de Perú</dt>
+              <dd>{{ date(item.departure_at) }}</dd>
+            </div>
+            <div>
+              <dt>Salida registrada</dt>
+              <dd>{{ date(item.dispatched_at) }}</dd>
+            </div>
+          </dl>
           <div class="actions">
-            <a
-              class="button primary"
-              routerLink="/internal/receptions"
-              [queryParams]="{ mawb_id: item.id }"
-              ><app-icon name="warehouse" />Recibir en Lima</a
+            <button
+              class="icon-button action-icon"
+              (click)="open()"
+              [disabled]="busy() || loading()"
+              aria-label="Actualizar MAWB"
+              title="Actualizar MAWB"
             >
+              <app-icon name="refresh" /></button
+            ><button
+              class="icon-button action-icon"
+              (click)="copyLink()"
+              aria-label="Copiar enlace"
+              title="Copiar enlace"
+            >
+              <app-icon name="copy" />
+            </button>
           </div>
-        }
-        <h3 class="detail-section">Consolidados asociados</h3>
-        <ul class="line-list">
-          @for (id of item.consolidation_ids ?? []; track id) {
-            <li>
-              <button
-                class="text-button"
-                (click)="inspect(id)"
-                [disabled]="busy() || manifestLoading()"
+          @if (item.status === 'closed') {
+            <div class="actions">
+              <a
+                class="button primary"
+                routerLink="/internal/receptions"
+                [queryParams]="{ mawb_id: item.id }"
+                ><app-icon name="warehouse" />Recibir en Lima</a
               >
-                Revisar consolidado
-                {{ candidate()?.id === id ? candidate()?.code : id.slice(0, 8) }}</button
-              ><a
-                class="button compact"
-                routerLink="/internal/consolidations"
-                [queryParams]="{ consolidation_id: id }"
-                >Abrir consolidado</a
-              >
-            </li>
-          } @empty {
-            <li>No hay consolidados asociados. Revisa un manifiesto para añadir el primero.</li>
+            </div>
           }
-        </ul>
-        @if (item.status === 'open') {
-          <button
-            class="button primary actions"
-            (click)="prepareDispatch()"
-            [disabled]="!canDispatch"
-          >
-            <app-icon name="plane" />Registrar salida
-          </button>
-        }
-      } @else if (!loading()) {
-        <div class="empty-state">
-          <app-icon name="plane" />
-          <h2>Prepara el próximo vuelo</h2>
-          <p>Selecciona una MAWB del listado o crea una guía aérea para el próximo vuelo.</p>
-        </div>
-      }
-    </section>
-    <section class="surface surface-body" aria-labelledby="flight-manifest-title">
-      <h2 id="flight-manifest-title">Revisar consolidado</h2>
-      <p class="muted">Comprueba las guías y los paquetes antes de asociarlos a una MAWB.</p>
-      @if (mawb()?.status === 'open') {
-        <app-record-browser
-          resource="consolidations"
-          title="Consolidados disponibles"
-          [embedded]="true"
-          [columns]="[
-            { key: 'code', label: 'Consolidado' },
-            { key: 'warehouse_code', label: 'Almacén' },
-            { key: 'bulk_count', label: 'Bultos' },
-          ]"
-          [filters]="{ status: 'closed', free: 'true' }"
-          [refresh]="listRevision()"
-          [disabled]="busy() || manifestLoading()"
-          hint="Buscar por código"
-          action="Revisar"
-          (selected)="inspect($event)"
-          empty="No hay consolidados cerrados sin vuelo asignado. Cierra un consolidado para continuar."
-        />
-      }
-
-      <app-loading-indicator
-        [active]="manifestLoading()"
-        label="Consultando consolidado y manifiesto…"
-      />
-      @if (manifestError()) {
-        <p class="alert error" role="alert">{{ manifestError() }}</p>
-      }
-      @if (candidate(); as candidate) {
-        <div class="detail-section">
-          <h3>{{ candidate.code }}</h3>
-          <p>
-            {{ candidate.warehouse_code }} ·
-            {{ candidate.status === 'closed' ? 'Cerrado' : 'Abierto' }}
-          </p>
-        </div>
-        @if (candidate.status !== 'closed') {
-          <p class="alert">Cierra el consolidado antes de asociarlo a una MAWB.</p>
-        }
-      }
-      @if (manifest(); as manifest) {
-        <dl class="detail-grid">
-          <div>
-            <dt>Guías HAWB</dt>
-            <dd>{{ manifest.totals.hawbs }}</dd>
-          </div>
-          <div>
-            <dt>Paquetes</dt>
-            <dd>{{ manifest.totals.packages }}</dd>
-          </div>
-          <div>
-            <dt>Peso real</dt>
-            <dd>{{ manifest.totals.weight_kg }} kg</dd>
-          </div>
-          <div>
-            <dt>Peso facturable</dt>
-            <dd>{{ manifest.totals.billable_kg }} kg · {{ manifest.totals.billable_lb }} lb</dd>
-          </div>
-          <div>
-            <dt>Valor declarado</dt>
-            <dd>{{ money(manifest.totals.declared_value_cents) }}</dd>
-          </div>
-          <div>
-            <dt>MAWB asignada</dt>
-            <dd>{{ manifest.mawb || 'Sin asignar' }}</dd>
-          </div>
-        </dl>
-        <div class="actions">
-          <button class="button" (click)="downloadCsv()" [disabled]="busy() || manifestLoading()">
-            <app-icon name="download" />Descargar manifiesto CSV
-          </button>
-          @if (mawb(); as target) {
-            <button class="button primary" (click)="attach()" [disabled]="!canAttach">
-              Asociar a {{ target.number }}
+          <h3 class="detail-section">Consolidados asociados</h3>
+          <ul class="line-list">
+            @for (id of item.consolidation_ids ?? []; track id) {
+              <li>
+                <button
+                  class="text-button"
+                  (click)="inspect(id)"
+                  [disabled]="busy() || manifestLoading()"
+                >
+                  Revisar consolidado
+                  {{ candidate()?.id === id ? candidate()?.code : id.slice(0, 8) }}</button
+                ><a
+                  class="button compact"
+                  routerLink="/internal/consolidations"
+                  [queryParams]="{ consolidation_id: id }"
+                  >Abrir consolidado</a
+                >
+              </li>
+            } @empty {
+              <li>No hay consolidados asociados. Revisa un manifiesto para añadir el primero.</li>
+            }
+          </ul>
+          @if (item.status === 'open') {
+            <button
+              class="button primary actions"
+              (click)="prepareDispatch()"
+              [disabled]="!canDispatch"
+            >
+              <app-icon name="plane" />Registrar salida
             </button>
           }
-        </div>
-        @if (manifest.mawb) {
-          <p class="fine-print">El consolidado ya está asociado a una MAWB.</p>
+        } @else if (!loading()) {
+          <div class="empty-state">
+            <app-icon name="plane" />
+            <h2>Prepara el próximo vuelo</h2>
+            <p>Selecciona una MAWB del listado o crea una guía aérea para el próximo vuelo.</p>
+          </div>
         }
-        <div class="table-scroll" tabindex="0" aria-label="Guías del manifiesto">
-          <table class="data-table">
-            <caption class="sr-only">
-              Manifiesto de
-              {{
-                manifest.consolidation
-              }}
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Guía y destinatario</th>
-                <th scope="col">Paquetes</th>
-                <th scope="col">Peso real</th>
-                <th scope="col">Peso facturable</th>
-                <th scope="col">Valor declarado</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of manifest.rows; track row.hawb) {
+      </section>
+      <section class="surface surface-body" aria-labelledby="flight-manifest-title">
+        <h2 id="flight-manifest-title">Revisar consolidado</h2>
+        <p class="muted">Comprueba las guías y los paquetes antes de asociarlos a una MAWB.</p>
+        @if (mawb()?.status === 'open') {
+          <app-record-browser
+            resource="consolidations"
+            title="Consolidados disponibles"
+            [embedded]="true"
+            [columns]="[
+              { key: 'code', label: 'Consolidado' },
+              { key: 'warehouse_code', label: 'Almacén' },
+              { key: 'bulk_count', label: 'Bultos' },
+            ]"
+            [filters]="{ status: 'closed', free: 'true' }"
+            [refresh]="listRevision()"
+            [disabled]="busy() || manifestLoading()"
+            hint="Buscar por código"
+            action="Revisar"
+            (selected)="inspect($event)"
+            empty="No hay consolidados cerrados sin vuelo asignado. Cierra un consolidado para continuar."
+          />
+        }
+
+        <app-loading-indicator
+          [active]="manifestLoading()"
+          label="Consultando consolidado y manifiesto…"
+        />
+        @if (manifestError()) {
+          <p class="alert error" role="alert">{{ manifestError() }}</p>
+        }
+        @if (candidate(); as candidate) {
+          <div class="detail-section">
+            <h3>{{ candidate.code }}</h3>
+            <p>
+              {{ candidate.warehouse_code }} ·
+              {{ candidate.status === 'closed' ? 'Cerrado' : 'Abierto' }}
+            </p>
+          </div>
+          @if (candidate.status !== 'closed') {
+            <p class="alert">Cierra el consolidado antes de asociarlo a una MAWB.</p>
+          }
+        }
+        @if (manifest(); as manifest) {
+          <dl class="detail-grid">
+            <div>
+              <dt>Guías HAWB</dt>
+              <dd>{{ manifest.totals.hawbs }}</dd>
+            </div>
+            <div>
+              <dt>Paquetes</dt>
+              <dd>{{ manifest.totals.packages }}</dd>
+            </div>
+            <div>
+              <dt>Peso real</dt>
+              <dd>{{ manifest.totals.weight_kg }} kg</dd>
+            </div>
+            <div>
+              <dt>Peso facturable</dt>
+              <dd>{{ manifest.totals.billable_kg }} kg · {{ manifest.totals.billable_lb }} lb</dd>
+            </div>
+            <div>
+              <dt>Valor declarado</dt>
+              <dd>{{ money(manifest.totals.declared_value_cents) }}</dd>
+            </div>
+            <div>
+              <dt>MAWB asignada</dt>
+              <dd>{{ manifest.mawb || 'Sin asignar' }}</dd>
+            </div>
+          </dl>
+          <div class="actions">
+            <button class="button" (click)="downloadCsv()" [disabled]="busy() || manifestLoading()">
+              <app-icon name="download" />Descargar manifiesto CSV
+            </button>
+            @if (mawb(); as target) {
+              <button class="button primary" (click)="attach()" [disabled]="!canAttach">
+                Asociar a {{ target.number }}
+              </button>
+            }
+          </div>
+          @if (manifest.mawb) {
+            <p class="fine-print">El consolidado ya está asociado a una MAWB.</p>
+          }
+          <div class="table-scroll" tabindex="0" aria-label="Guías del manifiesto">
+            <table class="data-table">
+              <caption class="sr-only">
+                Manifiesto de
+                {{
+                  manifest.consolidation
+                }}
+              </caption>
+              <thead>
                 <tr>
-                  <td>
-                    {{ row.hawb }}<small>{{ row.customer_name }}</small
-                    ><small
-                      >{{ row.customer_doc_type.toUpperCase() }}
-                      {{ row.customer_doc_number }}</small
-                    ><small>{{ (row.descriptions ?? []).join(' · ') }}</small>
-                  </td>
-                  <td>{{ row.packages }}</td>
-                  <td>{{ row.weight_kg }} kg</td>
-                  <td>{{ row.billable_kg }} kg</td>
-                  <td>{{ money(row.declared_value_cents) }}</td>
+                  <th scope="col">Guía y destinatario</th>
+                  <th scope="col">Paquetes</th>
+                  <th scope="col">Peso real</th>
+                  <th scope="col">Peso facturable</th>
+                  <th scope="col">Valor declarado</th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </section>
-  </div>
-}
+              </thead>
+              <tbody>
+                @for (row of manifest.rows; track row.hawb) {
+                  <tr>
+                    <td>
+                      {{ row.hawb }}<small>{{ row.customer_name }}</small
+                      ><small
+                        >{{ row.customer_doc_type.toUpperCase() }}
+                        {{ row.customer_doc_number }}</small
+                      ><small>{{ (row.descriptions ?? []).join(' · ') }}</small>
+                    </td>
+                    <td>{{ row.packages }}</td>
+                    <td>{{ row.weight_kg }} kg</td>
+                    <td>{{ row.billable_kg }} kg</td>
+                    <td>{{ money(row.declared_value_cents) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  }
+</app-record-dialog>
 <dialog #createDialog aria-labelledby="mawb-create-title" (cancel)="cancelCreate($event)">
   <div class="dialog-header">
     <div>

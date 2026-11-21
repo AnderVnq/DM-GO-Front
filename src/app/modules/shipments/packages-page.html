@@ -48,7 +48,7 @@
     Pendientes de factura
   </button>
 </div>
-@if (error()) {
+@if (!(detailVisible() && !!selected()) && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
 <app-loading-indicator
@@ -56,7 +56,7 @@
   [label]="busy() ? 'Procesando solicitud…' : 'Cargando paquetes…'"
 />
 @if (customer() || pendingOnly()) {
-  <div class="split-view">
+  <div class="record-list-workspace">
     <section class="surface">
       <div class="surface-body">
         <label class="field"
@@ -161,139 +161,147 @@
         {{ pendingOnly() ? 'pendientes de factura' : 'del cliente seleccionado' }}
       </div>
     </section>
-    @if (selected(); as item) {
-      <aside class="inspector">
-        <h2>Detalle del paquete</h2>
-        <div class="detail-heading">
-          <span class="detail-icon"><app-icon name="packages" /></span>
-          <div>
-            <h3>{{ item.store }}</h3>
-            <p>{{ item.description }}</p>
-            <app-status [value]="item.status" />
-            @if (item.invoice_pending) {
-              <p role="status">Falta factura · en espera</p>
-            }
-            @if (auth.manager() && item.status === 'RECEIVED_USA' && item.mode === 'courier') {
-              <div class="actions">
-                <a
-                  class="button compact"
-                  routerLink="/internal/bulks"
-                  [queryParams]="{ customer_id: item.customer_id, package_id: item.id }"
-                  >Preparar bulto</a
-                >
-              </div>
-            }
+    <app-record-dialog
+      [open]="detailVisible() && !!selected()"
+      title="Detalle del envío"
+      [locked]="busy()"
+      (dismissed)="closeDetail()"
+      [error]="error()"
+    >
+      @if (selected(); as item) {
+        <aside class="inspector">
+          <h2>Detalle del paquete</h2>
+          <div class="detail-heading">
+            <span class="detail-icon"><app-icon name="packages" /></span>
+            <div>
+              <h3>{{ item.store }}</h3>
+              <p>{{ item.description }}</p>
+              <app-status [value]="item.status" />
+              @if (item.invoice_pending) {
+                <p role="status">Falta factura · en espera</p>
+              }
+              @if (auth.manager() && item.status === 'RECEIVED_USA' && item.mode === 'courier') {
+                <div class="actions">
+                  <a
+                    class="button compact"
+                    routerLink="/internal/bulks"
+                    [queryParams]="{ customer_id: item.customer_id, package_id: item.id }"
+                    >Preparar bulto</a
+                  >
+                </div>
+              }
+            </div>
           </div>
-        </div>
-        <dl class="detail-grid">
-          <div>
-            <dt>Tracking</dt>
-            <dd>{{ item.carrier_tracking }}</dd>
-          </div>
-          <div>
-            <dt>Modalidad</dt>
-            <dd>{{ item.mode === 'traveler' ? 'Viajero' : 'Courier' }}</dd>
-          </div>
-          <div>
-            <dt>Valor declarado</dt>
-            <dd class="numeric">{{ money(item.declared_value_cents) }}</dd>
-          </div>
-          <div>
-            <dt>Peso recibido</dt>
-            <dd>{{ item.receipt ? measuredWeight(item.receipt) : 'Pendiente de recepción' }}</dd>
-          </div>
-          <div>
-            <dt>Precio por unidad</dt>
-            <dd>{{ money(item.unit_value_cents) }}</dd>
-          </div>
-          <div>
-            <dt>Cantidad</dt>
-            <dd>{{ item.quantity }}</dd>
-          </div>
-          <div>
-            <dt>Casillero</dt>
-            <dd>{{ item.locker_code }}</dd>
-          </div>
-          <div>
-            <dt>Observación</dt>
-            <dd>{{ item.observation || 'Sin observación' }}</dd>
-          </div>
-        </dl>
-        @if (detailError()) {
-          <p class="alert error" role="alert">{{ detailError() }}</p>
-        }
-        <div class="actions">
-          @if (item.invoice_document_id) {
-            <button
-              class="icon-button action-icon"
-              (click)="viewInvoice()"
-              [disabled]="busy()"
-              aria-label="Ver factura adjunta"
-              title="Ver factura adjunta"
-            >
-              <app-icon name="eye" />
-            </button>
-            <button
-              class="icon-button action-icon"
-              (click)="download()"
-              [disabled]="busy()"
-              aria-label="Descargar factura"
-              title="Descargar factura"
-            >
-              <app-icon name="download" />
-            </button>
+          <dl class="detail-grid">
+            <div>
+              <dt>Tracking</dt>
+              <dd>{{ item.carrier_tracking }}</dd>
+            </div>
+            <div>
+              <dt>Modalidad</dt>
+              <dd>{{ item.mode === 'traveler' ? 'Viajero' : 'Courier' }}</dd>
+            </div>
+            <div>
+              <dt>Valor declarado</dt>
+              <dd class="numeric">{{ money(item.declared_value_cents) }}</dd>
+            </div>
+            <div>
+              <dt>Peso recibido</dt>
+              <dd>{{ item.receipt ? measuredWeight(item.receipt) : 'Pendiente de recepción' }}</dd>
+            </div>
+            <div>
+              <dt>Precio por unidad</dt>
+              <dd>{{ money(item.unit_value_cents) }}</dd>
+            </div>
+            <div>
+              <dt>Cantidad</dt>
+              <dd>{{ item.quantity }}</dd>
+            </div>
+            <div>
+              <dt>Casillero</dt>
+              <dd>{{ item.locker_code }}</dd>
+            </div>
+            <div>
+              <dt>Observación</dt>
+              <dd>{{ item.observation || 'Sin observación' }}</dd>
+            </div>
+          </dl>
+          @if (detailError()) {
+            <p class="alert error" role="alert">{{ detailError() }}</p>
           }
-          <button
-            class="button compact"
-            (click)="invoiceInput.click()"
-            [disabled]="busy() || !invoiceEditable(item.status)"
-          >
-            {{
-              busy() ? 'Procesando…' : item.has_invoice ? 'Cambiar factura' : 'Adjuntar factura'
-            }}</button><input
-            #invoiceInput
-            class="sr-only"
-            type="file"
-            [disabled]="busy() || !invoiceEditable(item.status)"
-            tabindex="-1"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-            (change)="attach($event)"
-          />
-        </div>
-        @if (!invoiceEditable(item.status)) {
-          <p class="fine-print actions">La factura solo se puede cambiar antes de consolidar.</p>
-        }
-        <section class="detail-section">
-          <h3>Seguimiento del paquete</h3>
-          <app-loading-indicator [active]="trackingLoading()" label="Cargando seguimiento…" />
-          @if (trackingError()) {
-            <p class="alert error" role="alert">{{ trackingError() }}</p>
+          <div class="actions">
+            @if (item.invoice_document_id) {
+              <button
+                class="icon-button action-icon"
+                (click)="viewInvoice()"
+                [disabled]="busy()"
+                aria-label="Ver factura adjunta"
+                title="Ver factura adjunta"
+              >
+                <app-icon name="eye" />
+              </button>
+              <button
+                class="icon-button action-icon"
+                (click)="download()"
+                [disabled]="busy()"
+                aria-label="Descargar factura"
+                title="Descargar factura"
+              >
+                <app-icon name="download" />
+              </button>
+            }
             <button
               class="button compact"
-              (click)="retryTracking()"
-              [disabled]="busy() || trackingLoading()"
+              (click)="invoiceInput.click()"
+              [disabled]="busy() || !invoiceEditable(item.status)"
             >
-              Reintentar seguimiento
-            </button>
+              {{
+                busy() ? 'Procesando…' : item.has_invoice ? 'Cambiar factura' : 'Adjuntar factura'
+              }}</button><input
+              #invoiceInput
+              class="sr-only"
+              type="file"
+              [disabled]="busy() || !invoiceEditable(item.status)"
+              tabindex="-1"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              (change)="attach($event)"
+            />
+          </div>
+          @if (!invoiceEditable(item.status)) {
+            <p class="fine-print actions">La factura solo se puede cambiar antes de consolidar.</p>
           }
-          <ol class="timeline">
-            @for (event of timeline()?.events; track $index) {
-              <li>
-                <strong>{{
-                  event.action === 'label.printed' ? 'Etiqueta impresa' : event.title
-                }}</strong><small>{{ date(event.at) }}</small>
-                @if (event.location) {
-                  <small>{{ event.location }}</small>
-                }
-              </li>
+          <section class="detail-section">
+            <h3>Seguimiento del paquete</h3>
+            <app-loading-indicator [active]="trackingLoading()" label="Cargando seguimiento…" />
+            @if (trackingError()) {
+              <p class="alert error" role="alert">{{ trackingError() }}</p>
+              <button
+                class="button compact"
+                (click)="retryTracking()"
+                [disabled]="busy() || trackingLoading()"
+              >
+                Reintentar seguimiento
+              </button>
             }
-          </ol>
-          @if (timeline() && !timeline()?.events?.length) {
-            <p class="muted">No hay movimientos registrados.</p>
-          }
-        </section>
-      </aside>
-    }
+            <ol class="timeline">
+              @for (event of timeline()?.events; track $index) {
+                <li>
+                  <strong>{{
+                    event.action === 'label.printed' ? 'Etiqueta impresa' : event.title
+                  }}</strong><small>{{ date(event.at) }}</small>
+                  @if (event.location) {
+                    <small>{{ event.location }}</small>
+                  }
+                </li>
+              }
+            </ol>
+            @if (timeline() && !timeline()?.events?.length) {
+              <p class="muted">No hay movimientos registrados.</p>
+            }
+          </section>
+        </aside>
+      }
+    </app-record-dialog>
   </div>
 } @else if (!loading() && !error()) {
   <section class="surface empty-state">

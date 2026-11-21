@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { CodeSearch } from '../../shared/code-search';
 import { DebouncedInput } from '../../shared/debounced-input';
 import { AddressBook } from '../../shared/address-book';
@@ -22,6 +23,7 @@ import { formatDate } from '../../shared/amount';
 @Component({
   selector: 'app-customers-page',
   imports: [
+    RecordDialog,
     CodeSearch,
     DebouncedInput,
     AddressBook,
@@ -132,12 +134,12 @@ export class CustomersPage {
     this.loading.set(false);
     this.error.set('');
     this.success.set('');
+    if (!this.listPage()) this.reloadList();
     void this.router.navigate([], {
       queryParams: { id: null },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
-    this.reloadList();
   }
   readonly search = this.fb.nonNullable.group({
     kind: ['locker'],

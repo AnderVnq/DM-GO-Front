@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { DebouncedInput } from '../../shared/debounced-input';
 import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
@@ -32,6 +33,7 @@ import { PdfPreviewService } from '../../shared/pdf-preview.service';
 @Component({
   selector: 'app-packages-page',
   imports: [
+    RecordDialog,
     DebouncedInput,
     CodeSearch,
     LoadingIndicator,
@@ -44,6 +46,21 @@ import { PdfPreviewService } from '../../shared/pdf-preview.service';
   templateUrl: './packages-page.html',
 })
 export class PackagesPage {
+  readonly detailVisible = signal(false);
+
+  closeDetail() {
+    if (this.busy()) return;
+    this.detailVisible.set(false);
+    this.trackingRequest?.unsubscribe();
+    this.trackingLoading.set(false);
+    this.selected.set(null);
+    void this.router.navigate([], {
+      queryParams: { package_id: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   readonly auth = inject(AuthService);
   private readonly api = inject(ShipmentsApi);
   private readonly customers = inject(CustomersApi);
@@ -125,7 +142,7 @@ export class PackagesPage {
         this.packages.set(items);
         this.loading.set(false);
         const item = items.find((entry) => entry.id === requested) ?? items[0];
-        if (item) this.select(item);
+        if (item) this.select(item, !!requested || this.detailVisible());
       },
       error: (error: unknown) => {
         this.error.set(requestMessage(error));
@@ -197,7 +214,7 @@ export class PackagesPage {
         this.loading.set(false);
         const requested = this.route.snapshot.queryParamMap.get('package_id');
         const item = data.packages.find((p) => p.id === requested) ?? data.packages[0];
-        if (item) this.select(item);
+        if (item) this.select(item, !!requested || this.detailVisible());
       },
       error: (error: unknown) => {
         this.error.set(requestMessage(error));
@@ -206,16 +223,18 @@ export class PackagesPage {
     });
   }
 
-  select(item: Package) {
+  select(item: Package, show = true) {
     if (this.busy()) return;
+    this.detailVisible.set(show);
     this.selected.set(item);
     this.detailError.set('');
-    void this.router.navigate([], {
-      queryParams: this.pendingOnly()
-        ? { view: 'invoice-pending', package_id: item.id }
-        : { customer_id: item.customer_id, package_id: item.id },
-      replaceUrl: true,
-    });
+    if (show)
+      void this.router.navigate([], {
+        queryParams: this.pendingOnly()
+          ? { view: 'invoice-pending', package_id: item.id }
+          : { customer_id: item.customer_id, package_id: item.id },
+        replaceUrl: true,
+      });
     this.loadTracking(item.id);
   }
 

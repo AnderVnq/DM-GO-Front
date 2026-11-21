@@ -7,10 +7,10 @@
     <app-icon name="plus" />Nueva ruta
   </button>
 </div>
-@if (notice()) {
+@if (!(!!selected() || detailLoading()) && notice()) {
   <p class="alert success" role="status">{{ notice() }}</p>
 }
-@if (error()) {
+@if (!(!!selected() || detailLoading()) && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
 <section class="surface routes-list" aria-labelledby="delivery-routes-title">
@@ -98,174 +98,184 @@
     <app-icon name="refresh" />
   </button>
 }
-@if (selected(); as route) {
-  <section class="surface surface-body route-detail" aria-labelledby="route-detail-title">
-    <div class="page-header">
-      <div>
-        <h2 #routeHeading id="route-detail-title" tabindex="-1">Ruta {{ route.code }}</h2>
-        <p>{{ statuses[route.status] }} · {{ day(route.date) }}</p>
-      </div>
-      <button
-        class="icon-button action-icon"
-        (click)="reload()"
-        [disabled]="busy() || detailLoading()"
-        aria-label="Actualizar detalle de ruta"
-        title="Actualizar detalle de ruta"
-      >
-        <app-icon name="refresh" />
-      </button>
-    </div>
-    @if (route.status === 'in_progress') {
-      <app-route-live [routeId]="route.id" [stops]="route.stops" />
-    } @else {
-      <app-route-map [stops]="route.stops" />
-    }
-    <dl class="detail-grid">
-      <div>
-        <dt>Repartidor</dt>
-        <dd>{{ route.driver_name || 'Sin nombre disponible' }}</dd>
-      </div>
-      <div>
-        <dt>Almacén de salida</dt>
-        <dd>{{ route.warehouse_code }}</dd>
-      </div>
-      <div>
-        <dt>Inicio · hora de Perú</dt>
-        <dd>{{ date(route.started_at ?? undefined) }}</dd>
-      </div>
-      <div>
-        <dt>Cierre · hora de Perú</dt>
-        <dd>{{ date(route.completed_at ?? undefined) }}</dd>
-      </div>
-    </dl>
-    @if (stale()) {
-      <p class="alert">
-        Actualiza el detalle antes de modificar o confirmar operaciones de esta ruta.
-      </p>
-    }
-    @if (route.status === 'planned') {
-      <section class="package-assignment" aria-labelledby="route-package-title">
-        <h3 id="route-package-title">Asignar paquete</h3>
-        <p class="muted">
-          Selecciona un paquete para revisar su destino antes de asignarlo. Debe tener la
-          liquidación pagada y cumplir las condiciones de entrega.
-        </p>
-        <app-record-browser
-          resource="packages"
-          title="Paquetes para reparto"
-          empty="No hay paquetes aptos para esta búsqueda. Deben tener liquidación pagada, entrega a domicilio o por agencia y estar disponibles para reparto."
-          [columns]="[
-            { key: 'carrier_tracking', label: 'Tracking' },
-            { key: 'locker_code', label: 'Casillero' },
-            { key: 'description', label: 'Contenido' },
-          ]"
-          [filters]="{ route_ready: 'true' }"
-          [disabled]="!canOperate || packageLoading()"
-          hint="Buscar paquete o cliente"
-          action="Seleccionar"
-          [embedded]="true"
-          (selected)="selectPackage($event)"
-        />
-
-        <app-loading-indicator [active]="packageLoading()" label="Consultando paquete…" />
-        @if (packageError()) {
-          <p class="alert error" role="alert">{{ packageError() }}</p>
-        }
-        @if (checkedPackage(); as pkg) {
-          <div class="checked-package">
-            <div>
-              <strong>{{ pkg.carrier_tracking }}</strong>
-              <p>{{ pkg.description }}</p>
-              <p class="muted">
-                Casillero {{ pkg.locker_code }} · <app-status [value]="pkg.status" />
-              </p>
-            </div>
-            <button class="button primary" (click)="addPackage()" [disabled]="!canAdd">
-              Asignar a {{ route.code }}
-            </button>
-          </div>
-          @if (!canAdd && canOperate && !packageLoading()) {
-            <p class="field-hint">Este paquete ya está asignado a una parada de la ruta.</p>
-          }
-        }
-      </section>
-    }
-    <div class="route-actions actions">
-      @if (route.status === 'planned') {
+<app-record-dialog
+  [open]="!!selected() || detailLoading()"
+  title="Detalle de la ruta"
+  [locked]="busy() || creating() || !!action() || failing()"
+  (dismissed)="closeDetail()"
+  [error]="action() || failing() || creating() ? '' : error()"
+  [notice]="notice()"
+  [loading]="detailLoading() || busy()"
+>
+  @if (selected(); as route) {
+    <section class="surface surface-body route-detail" aria-labelledby="route-detail-title">
+      <div class="page-header">
+        <div>
+          <h2 #routeHeading id="route-detail-title" tabindex="-1">Ruta {{ route.code }}</h2>
+          <p>{{ statuses[route.status] }} · {{ day(route.date) }}</p>
+        </div>
         <button
-          class="button primary"
-          (click)="prepareAction('start')"
-          [disabled]="!canOperate || !startAllowed(route)"
+          class="icon-button action-icon"
+          (click)="reload()"
+          [disabled]="busy() || detailLoading()"
+          aria-label="Actualizar detalle de ruta"
+          title="Actualizar detalle de ruta"
         >
-          <app-icon name="delivery" />Iniciar reparto
+          <app-icon name="refresh" />
         </button>
-      }
+      </div>
       @if (route.status === 'in_progress') {
-        <button
-          class="button primary"
-          (click)="prepareAction('complete')"
-          [disabled]="!canOperate || !completeAllowed(route)"
-        >
-          <app-icon name="check" />Finalizar ruta</button
-        ><span class="muted">{{ pendingCount(route) }} paquetes pendientes de resolver.</span>
+        <app-route-live [routeId]="route.id" [stops]="route.stops" />
+      } @else {
+        <app-route-map [stops]="route.stops" />
       }
-    </div>
-    @if (route.status === 'planned' && !route.stops.length) {
-      <p class="field-hint">Añade al menos un paquete para iniciar el reparto.</p>
-    }
-    <h3>Paradas · {{ route.stops.length }}</h3>
-    <p class="muted">
-      Las direcciones son las que el servidor fijó al asignar cada paquete. Los cambios posteriores
-      del cliente no alteran estas paradas.
-    </p>
-    <ol class="stops-list">
-      @for (stop of route.stops; track stop.id) {
-        <li>
-          <div class="stop-heading">
-            <div>
-              <h4>Parada {{ stop.seq }} · {{ stop.recipient_name }}</h4>
-              <p>
-                {{ stop.kind === 'agency' ? 'Entrega en agencia' : 'Domicilio' }} ·
-                {{ stopStatuses[stop.status] }}
-              </p>
-            </div>
-            @if (route.status === 'in_progress' && stop.status === 'pending') {
-              <button class="button" (click)="prepareFail(stop)" [disabled]="!canOperate">
-                Registrar no entregados
+      <dl class="detail-grid">
+        <div>
+          <dt>Repartidor</dt>
+          <dd>{{ route.driver_name || 'Sin nombre disponible' }}</dd>
+        </div>
+        <div>
+          <dt>Almacén de salida</dt>
+          <dd>{{ route.warehouse_code }}</dd>
+        </div>
+        <div>
+          <dt>Inicio · hora de Perú</dt>
+          <dd>{{ date(route.started_at ?? undefined) }}</dd>
+        </div>
+        <div>
+          <dt>Cierre · hora de Perú</dt>
+          <dd>{{ date(route.completed_at ?? undefined) }}</dd>
+        </div>
+      </dl>
+      @if (stale()) {
+        <p class="alert">
+          Actualiza el detalle antes de modificar o confirmar operaciones de esta ruta.
+        </p>
+      }
+      @if (route.status === 'planned') {
+        <section class="package-assignment" aria-labelledby="route-package-title">
+          <h3 id="route-package-title">Asignar paquete</h3>
+          <p class="muted">
+            Selecciona un paquete para revisar su destino antes de asignarlo. Debe tener la
+            liquidación pagada y cumplir las condiciones de entrega.
+          </p>
+          <app-record-browser
+            resource="packages"
+            title="Paquetes para reparto"
+            empty="No hay paquetes aptos para esta búsqueda. Deben tener liquidación pagada, entrega a domicilio o por agencia y estar disponibles para reparto."
+            [columns]="[
+              { key: 'carrier_tracking', label: 'Tracking' },
+              { key: 'locker_code', label: 'Casillero' },
+              { key: 'description', label: 'Contenido' },
+            ]"
+            [filters]="{ route_ready: 'true' }"
+            [disabled]="!canOperate || packageLoading()"
+            hint="Buscar paquete o cliente"
+            action="Seleccionar"
+            [embedded]="true"
+            (selected)="selectPackage($event)"
+          />
+
+          <app-loading-indicator [active]="packageLoading()" label="Consultando paquete…" />
+          @if (packageError()) {
+            <p class="alert error" role="alert">{{ packageError() }}</p>
+          }
+          @if (checkedPackage(); as pkg) {
+            <div class="checked-package">
+              <div>
+                <strong>{{ pkg.carrier_tracking }}</strong>
+                <p>{{ pkg.description }}</p>
+                <p class="muted">
+                  Casillero {{ pkg.locker_code }} · <app-status [value]="pkg.status" />
+                </p>
+              </div>
+              <button class="button primary" (click)="addPackage()" [disabled]="!canAdd">
+                Asignar a {{ route.code }}
               </button>
+            </div>
+            @if (!canAdd && canOperate && !packageLoading()) {
+              <p class="field-hint">Este paquete ya está asignado a una parada de la ruta.</p>
             }
-          </div>
-          <p>{{ stop.address }} · {{ stop.ubigeo }}</p>
-          @if (stop.reference) {
-            <p class="muted">Referencia: {{ stop.reference }}</p>
           }
-          @if (stop.recipient_phone) {
-            <p>Teléfono: {{ stop.recipient_phone }}</p>
-          }
-          <ul class="stop-packages">
-            @for (pkg of stop.packages; track pkg.package_id) {
-              <li>
-                <span class="package-reference">{{ pkg.package_id }}</span><span>{{
-                  results[pkg.result]
-                }}</span>
-                @if (pkg.fail_reason) {
-                  <p class="muted">Motivo: {{ pkg.fail_reason }}</p>
-                }
-                @if (pkg.resolved_at) {
-                  <p class="muted">{{ date(pkg.resolved_at) }}</p>
-                }
-              </li>
-            }
-          </ul>
-        </li>
+        </section>
       }
-    </ol>
-    <p class="field-hint">
-      Retoma la ruta desde el listado por fecha. La entrega con receptor y evidencia se registra
-      desde el flujo del repartidor.
-    </p>
-  </section>
-}
+      <div class="route-actions actions">
+        @if (route.status === 'planned') {
+          <button
+            class="button primary"
+            (click)="prepareAction('start')"
+            [disabled]="!canOperate || !startAllowed(route)"
+          >
+            <app-icon name="delivery" />Iniciar reparto
+          </button>
+        }
+        @if (route.status === 'in_progress') {
+          <button
+            class="button primary"
+            (click)="prepareAction('complete')"
+            [disabled]="!canOperate || !completeAllowed(route)"
+          >
+            <app-icon name="check" />Finalizar ruta</button
+          ><span class="muted">{{ pendingCount(route) }} paquetes pendientes de resolver.</span>
+        }
+      </div>
+      @if (route.status === 'planned' && !route.stops.length) {
+        <p class="field-hint">Añade al menos un paquete para iniciar el reparto.</p>
+      }
+      <h3>Paradas · {{ route.stops.length }}</h3>
+      <p class="muted">
+        Las direcciones son las que el servidor fijó al asignar cada paquete. Los cambios
+        posteriores del cliente no alteran estas paradas.
+      </p>
+      <ol class="stops-list">
+        @for (stop of route.stops; track stop.id) {
+          <li>
+            <div class="stop-heading">
+              <div>
+                <h4>Parada {{ stop.seq }} · {{ stop.recipient_name }}</h4>
+                <p>
+                  {{ stop.kind === 'agency' ? 'Entrega en agencia' : 'Domicilio' }} ·
+                  {{ stopStatuses[stop.status] }}
+                </p>
+              </div>
+              @if (route.status === 'in_progress' && stop.status === 'pending') {
+                <button class="button" (click)="prepareFail(stop)" [disabled]="!canOperate">
+                  Registrar no entregados
+                </button>
+              }
+            </div>
+            <p>{{ stop.address }} · {{ stop.ubigeo }}</p>
+            @if (stop.reference) {
+              <p class="muted">Referencia: {{ stop.reference }}</p>
+            }
+            @if (stop.recipient_phone) {
+              <p>Teléfono: {{ stop.recipient_phone }}</p>
+            }
+            <ul class="stop-packages">
+              @for (pkg of stop.packages; track pkg.package_id) {
+                <li>
+                  <span class="package-reference">{{ pkg.package_id }}</span><span>{{
+                    results[pkg.result]
+                  }}</span>
+                  @if (pkg.fail_reason) {
+                    <p class="muted">Motivo: {{ pkg.fail_reason }}</p>
+                  }
+                  @if (pkg.resolved_at) {
+                    <p class="muted">{{ date(pkg.resolved_at) }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          </li>
+        }
+      </ol>
+      <p class="field-hint">
+        Retoma la ruta desde el listado por fecha. La entrega con receptor y evidencia se registra
+        desde el flujo del repartidor.
+      </p>
+    </section>
+  }
+</app-record-dialog>
 <dialog #createDialog aria-labelledby="route-create-title" (cancel)="cancelCreate($event)">
   <div class="dialog-header">
     <h2 id="route-create-title">Nueva ruta de reparto</h2>

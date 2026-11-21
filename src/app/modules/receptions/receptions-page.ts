@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import {
@@ -36,7 +37,7 @@ import {
 
 @Component({
   selector: 'app-receptions-page',
-  imports: [LoadingIndicator, RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
+  imports: [RecordDialog, LoadingIndicator, RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './receptions-page.html',
   styleUrl: './receptions-page.scss',
 })
@@ -51,7 +52,6 @@ export class ReceptionsPage {
   backToList() {
     if (this.busy() || this.loading()) return;
     this.session.set(null);
-    this.listRevision.update((v) => v + 1);
     void this.router.navigate([], { queryParams: {}, replaceUrl: true });
   }
   selectRecord(id: string) {

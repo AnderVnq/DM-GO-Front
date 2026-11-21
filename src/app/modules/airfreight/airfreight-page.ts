@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { RecordBrowser } from '../../shared/record-browser';
 import {
@@ -24,7 +25,7 @@ import { flightReference, limaDeparture, normalizeMawb } from './airfreight-rule
 
 @Component({
   selector: 'app-airfreight-page',
-  imports: [LoadingIndicator, RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
+  imports: [RecordDialog, LoadingIndicator, RecordBrowser, ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './airfreight-page.html',
   styleUrl: './airfreight-page.scss',
 })
@@ -38,7 +39,7 @@ export class AirfreightPage {
   backToList() {
     if (this.busy() || this.loading()) return;
     this.mawb.set(null);
-    this.listRevision.update((v) => v + 1);
+    this.candidate.set(null);
     void this.router.navigate([], { queryParams: {}, replaceUrl: true });
   }
   selectRecord(id: string) {

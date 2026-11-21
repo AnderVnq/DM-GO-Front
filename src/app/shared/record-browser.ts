@@ -2,7 +2,16 @@ import { DebouncedInput } from './debounced-input';
 import { LoadingIndicator } from './loading-indicator';
 import { Icon } from './icon';
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { RuntimeConfig } from '../core/runtime-config';
@@ -45,7 +54,7 @@ export class RecordBrowser {
   readonly embedded = input(false);
   readonly disabled = input(false);
   readonly refresh = input(0);
-  readonly action = input('Abrir');
+  readonly action = input('Ver');
   readonly hint = input('Busca por código');
   readonly empty = input('No hay registros que coincidan. Prueba con otros filtros.');
   readonly selected = output<string>();
@@ -61,11 +70,13 @@ export class RecordBrowser {
   private appliedQuery = '';
   private appliedStatus = '';
   constructor() {
+    let previousScope = '';
     effect(() => {
-      this.resource();
-      this.filters();
+      const scope = JSON.stringify([this.resource(), this.filters()]);
       this.refresh();
-      this.load(0);
+      const offset = scope === previousScope ? untracked(this.offset) : 0;
+      previousScope = scope;
+      untracked(() => this.load(offset));
     });
     inject(DestroyRef).onDestroy(() => this.request?.unsubscribe());
   }

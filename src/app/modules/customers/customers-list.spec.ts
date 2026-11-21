@@ -59,7 +59,8 @@ it('regresa de una ficha conservando la consulta y página aplicadas', () => {
   page.customer.set({ id: 'c-1' } as Customer);
   page.backToList();
   expect(page.customer()).toBeNull();
-  expect(api.list).toHaveBeenLastCalledWith({ q: '', sort: 'newest', limit: 25, offset: 25 });
+  expect(api.list).toHaveBeenCalledTimes(1);
+  expect(page.listPage()?.offset).toBe(25);
 });
 it('corrige la página si el total disminuyó', () => {
   const list = vi

@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { DebouncedInput } from '../../shared/debounced-input';
 import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
@@ -39,11 +40,24 @@ import {
 } from './customs-rules';
 @Component({
   selector: 'app-customs-page',
-  imports: [DebouncedInput, CodeSearch, LoadingIndicator, ReactiveFormsModule, Icon],
+  imports: [RecordDialog, DebouncedInput, CodeSearch, LoadingIndicator, ReactiveFormsModule, Icon],
   templateUrl: './customs-page.html',
   styleUrl: './customs-page.scss',
 })
 export class CustomsPage {
+  closeDetail() {
+    if (this.busy() || this.attaching() || this.releasing() || this.importing()) return;
+    this.detailRequest?.unsubscribe();
+    this.detailLoading.set(false);
+    this.selected.set(null);
+    this.lastDetailId = '';
+    void this.router.navigate([], {
+      queryParams: { line_id: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   readonly auth = inject(AuthService);
   private readonly api = inject(CustomsApi);
   private readonly documents = inject(DocumentsApi);

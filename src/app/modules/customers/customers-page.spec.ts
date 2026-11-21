@@ -119,7 +119,8 @@ it('una búsqueda pendiente no reemplaza al cliente recién registrado', () => {
   const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   const fixture = TestBed.createComponent(CustomersPage);
   fixture.detectChanges();
-  fixture.nativeElement.querySelector('dialog').close = vi.fn();
+  fixture.nativeElement.querySelector('dialog[aria-labelledby="customer-create-title"]').close =
+    vi.fn();
   const page = fixture.componentInstance;
   page.search.setValue({ kind: 'locker', value: 'PE00042' });
   page.find();

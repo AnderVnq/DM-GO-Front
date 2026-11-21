@@ -13,10 +13,10 @@
     </button>
   }
 </div>
-@if (notice()) {
+@if (!!!selected && notice()) {
   <p class="alert success" role="status">{{ notice() }}</p>
 }
-@if (error()) {
+@if (!!!selected && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
 <section class="surface agencies-list" aria-labelledby="agencies-list-title">
@@ -115,74 +115,83 @@
     </p>
   }
 </section>
-@if (selected; as agency) {
-  <section class="surface surface-body agency-detail" aria-labelledby="agency-detail-title">
-    <div class="page-header">
-      <div>
-        <h2 #agencyHeading id="agency-detail-title" tabindex="-1">{{ agency.name }}</h2>
-        <p>{{ agency.code }} · {{ agency.active ? 'Activa' : 'Inactiva' }}</p>
+<app-record-dialog
+  [open]="!!selected"
+  title="Detalle de la agencia"
+  [locked]="busy()"
+  (dismissed)="closeDetail()"
+  [error]="error()"
+  [notice]="notice()"
+>
+  @if (selected; as agency) {
+    <section class="surface surface-body agency-detail" aria-labelledby="agency-detail-title">
+      <div class="page-header">
+        <div>
+          <h2 #agencyHeading id="agency-detail-title" tabindex="-1">{{ agency.name }}</h2>
+          <p>{{ agency.code }} · {{ agency.active ? 'Activa' : 'Inactiva' }}</p>
+        </div>
+        @if (auth.admin() && agency.active) {
+          <button
+            class="button primary"
+            (click)="startBranch()"
+            [disabled]="busy() || loading() || stale()"
+          >
+            <app-icon name="plus" />Nueva sucursal
+          </button>
+        }
       </div>
-      @if (auth.admin() && agency.active) {
-        <button
-          class="button primary"
-          (click)="startBranch()"
-          [disabled]="busy() || loading() || stale()"
-        >
-          <app-icon name="plus" />Nueva sucursal
-        </button>
+      <h3>Counter de entrega en Lima</h3>
+      <p>El repartidor lleva los paquetes a esta dirección antes del traslado a destino.</p>
+      <dl class="detail-grid">
+        <div>
+          <dt>Dirección del counter</dt>
+          <dd>{{ agency.dropoff_address }}</dd>
+        </div>
+        <div>
+          <dt>Ubigeo del counter</dt>
+          <dd>{{ agency.dropoff_ubigeo }}</dd>
+        </div>
+      </dl>
+      @if (!agency.active) {
+        <p class="alert">
+          Esta agencia está inactiva y no está disponible para nuevas preferencias de entrega.
+        </p>
       }
-    </div>
-    <h3>Counter de entrega en Lima</h3>
-    <p>El repartidor lleva los paquetes a esta dirección antes del traslado a destino.</p>
-    <dl class="detail-grid">
-      <div>
-        <dt>Dirección del counter</dt>
-        <dd>{{ agency.dropoff_address }}</dd>
-      </div>
-      <div>
-        <dt>Ubigeo del counter</dt>
-        <dd>{{ agency.dropoff_ubigeo }}</dd>
-      </div>
-    </dl>
-    @if (!agency.active) {
-      <p class="alert">
-        Esta agencia está inactiva y no está disponible para nuevas preferencias de entrega.
+      <h3>Sucursales de destino</h3>
+      <p class="muted">
+        Son los puntos donde el cliente recoge sus paquetes al elegir recojo en agencia.
       </p>
-    }
-    <h3>Sucursales de destino</h3>
-    <p class="muted">
-      Son los puntos donde el cliente recoge sus paquetes al elegir recojo en agencia.
-    </p>
-    @if (agency.branches.length) {
-      <div class="table-scroll" tabindex="0" aria-label="Sucursales de destino">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th scope="col">Sucursal</th>
-              <th scope="col">Ubigeo</th>
-              <th scope="col">Dirección</th>
-              <th scope="col">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (branch of agency.branches; track branch.id) {
+      @if (agency.branches.length) {
+        <div class="table-scroll" tabindex="0" aria-label="Sucursales de destino">
+          <table class="data-table">
+            <thead>
               <tr>
-                <td>{{ branch.name }}</td>
-                <td>{{ branch.ubigeo }}</td>
-                <td>{{ branch.address }}</td>
-                <td>{{ branch.active ? 'Activa' : 'Inactiva' }}</td>
+                <th scope="col">Sucursal</th>
+                <th scope="col">Ubigeo</th>
+                <th scope="col">Dirección</th>
+                <th scope="col">Estado</th>
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    } @else {
-      <p class="empty-branches">
-        Esta agencia todavía no tiene sucursales en el listado consultado.
-      </p>
-    }
-  </section>
-}
+            </thead>
+            <tbody>
+              @for (branch of agency.branches; track branch.id) {
+                <tr>
+                  <td>{{ branch.name }}</td>
+                  <td>{{ branch.ubigeo }}</td>
+                  <td>{{ branch.address }}</td>
+                  <td>{{ branch.active ? 'Activa' : 'Inactiva' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty-branches">
+          Esta agencia todavía no tiene sucursales en el listado consultado.
+        </p>
+      }
+    </section>
+  }
+</app-record-dialog>
 <dialog #createDialog aria-labelledby="agency-create-title" (cancel)="cancel($event)">
   <div class="dialog-header">
     <h2 id="agency-create-title">

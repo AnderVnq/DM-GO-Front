@@ -74,7 +74,7 @@
               @for (column of columns(); track column.key) {
                 <th scope="col">{{ column.label }}</th>
               }
-              <th scope="col">Acción</th>
+              <th scope="col">{{ action() === 'Seleccionar' ? 'Selección' : 'Detalle' }}</th>
             </tr>
           </thead>
           <tbody>
@@ -94,15 +94,7 @@
                     [attr.aria-label]="action() + ' ' + value(row, columns()[0])"
                     [attr.title]="action() + ' ' + value(row, columns()[0])"
                   >
-                    <app-icon
-                      [name]="
-                        action() === 'Seleccionar'
-                          ? 'check'
-                          : action() === 'Abrir'
-                            ? 'arrow'
-                            : 'eye'
-                      "
-                    />
+                    <app-icon [name]="action() === 'Seleccionar' ? 'check' : 'eye'" />
                     @if (action() === 'Seleccionar') {
                       {{ action() }}
                     }
@@ -121,7 +113,7 @@
       </div>
     }
     <div class="table-footer record-pagination">
-      <span role="status">{{ total() }} registros · Página {{ offset() / limit + 1 }}</span>
+      <span aria-live="polite">{{ total() }} registros · Página {{ offset() / limit + 1 }}</span>
       <div class="actions">
         <button
           class="button compact"

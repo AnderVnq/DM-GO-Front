@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { DebouncedInput } from '../../shared/debounced-input';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
@@ -22,7 +23,7 @@ import type { TransitAgency, AgencyBranch } from './agency.model';
 import { normalizeAgency, normalizeBranch, validAgency, validBranch } from './agency-rules';
 @Component({
   selector: 'app-agencies-page',
-  imports: [DebouncedInput, LoadingIndicator, ReactiveFormsModule, Icon],
+  imports: [RecordDialog, DebouncedInput, LoadingIndicator, ReactiveFormsModule, Icon],
   templateUrl: './agencies-page.html',
   styleUrl: './agencies-page.scss',
 })
@@ -97,7 +98,15 @@ export class AgenciesPage {
     const parent = this.items().find((a) => a.id === this.modalParent()?.id);
     return !!parent?.active && validBranch(this.branchForm.getRawValue());
   }
+  private selectionRevision = 0;
+  closeDetail() {
+    if (this.busy()) return;
+    this.selectionRevision++;
+    this.selectedId.set('');
+    this.updateUrl();
+  }
   load(targetId = this.selectedId()) {
+    const revision = this.selectionRevision;
     if (this.busy()) return;
     this.request?.unsubscribe();
     this.loading.set(true);
@@ -106,7 +115,11 @@ export class AgenciesPage {
     this.request = this.api.list(this.includeInactive()).subscribe({
       next: (items) => {
         this.items.set(items);
-        this.selectedId.set(items.some((a) => a.id === targetId) ? targetId : '');
+        this.selectedId.set(
+          revision === this.selectionRevision && items.some((a) => a.id === targetId)
+            ? targetId
+            : '',
+        );
         this.loading.set(false);
         this.stale.set(false);
         this.updateUrl();

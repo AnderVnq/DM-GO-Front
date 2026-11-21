@@ -199,7 +199,9 @@ async function closeBulk(page: Page) {
   await page.getByLabel('Ancho final (mm)', { exact: true }).fill('200');
   await page.getByLabel('Alto final (mm)', { exact: true }).fill('200');
   await page.getByRole('button', { name: 'Revisar cierre del bulto' }).click();
-  await expect(page.getByRole('dialog')).toContainText('SEAL-42');
+  await expect(
+    page.getByRole('dialog', { name: 'Confirmar cierre del bulto', exact: true }),
+  ).toContainText('SEAL-42');
   await page.getByRole('button', { name: 'Confirmar cierre del bulto', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Bulto cerrado', exact: true })).toBeVisible();
 }
@@ -231,7 +233,9 @@ test('flujo físico: bulto, retiro con motivo, precinto y guías del consolidado
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Descargar etiqueta PDF' }).click();
   expect((await download).suggestedFilename()).toBe('BLK-000042.pdf');
+  await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
   await page.getByRole('button', { name: 'Cambiar a modo oscuro' }).click();
+  await page.getByRole('button', { name: 'Ver BLK-000042', exact: true }).click();
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: info.outputPath('bulk-dark.png'),
@@ -254,7 +258,9 @@ test('flujo físico: bulto, retiro con motivo, precinto y guías del consolidado
   await page.getByRole('button', { name: 'Añadir bulto al consolidado' }).click();
   await expect(page.locator('.alert.success[role="status"]')).toContainText('Bulto añadido');
   await page.getByRole('button', { name: 'Revisar cierre y generar guías' }).click();
-  await expect(page.getByRole('dialog')).toContainText('Se emitirán las guías HAWB');
+  await expect(
+    page.getByRole('dialog', { name: 'Confirmar cierre del consolidado', exact: true }),
+  ).toContainText('Se emitirán las guías HAWB');
   await page.getByRole('button', { name: 'Cerrar y generar guías HAWB' }).click();
   await expect(page.getByRole('alert')).toContainText('Revisa el consignatario');
   await expect(page.getByRole('heading', { name: 'Guías HAWB emitidas' })).toHaveCount(0);
@@ -279,15 +285,14 @@ test('retoma bultos desde el listado y conserva enlaces directos', async ({ page
   await expect(page.getByRole('heading', { name: 'Bultos registrados' })).toBeVisible();
   await expect(page.getByLabel('Referencia o enlace del bulto')).toHaveCount(0);
   expect(
-    (await page.getByRole('button', { name: 'Abrir BLK-000042', exact: true }).boundingBox())!
-      .height,
+    (await page.getByRole('button', { name: 'Ver BLK-000042', exact: true }).boundingBox())!.height,
   ).toBeGreaterThanOrEqual(44);
   await page.screenshot({ path: info.outputPath('bulk-list.png'), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole('button', { name: 'Abrir BLK-000042', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver BLK-000042', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'BLK-000042', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Volver al listado', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Abrir BLK-000042', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Ver BLK-000042', exact: true })).toBeVisible();
 });
 
 test('ventas no accede a bultos ni consolidados', async ({ page }) => {
@@ -314,11 +319,16 @@ test('actualiza el consolidado sin desmontar la ficha ni desplazar su encabezado
   await logistics(page);
   await login(page);
   await navigate(page, 'Consolidados', 'consolidations');
-  await page.getByRole('button', { name: 'Abrir Y-42', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver Y-42', exact: true }).click();
   const heading = page.getByRole('heading', { name: 'Y-42', exact: true });
   await expect(heading).toBeVisible();
   const original = await heading.elementHandle();
+  await expect(page.getByRole('dialog', { name: 'Detalle del consolidado' })).toHaveCSS(
+    'opacity',
+    '1',
+  );
   const before = await heading.boundingBox();
+
   let release!: () => void;
   let started!: () => void;
   const pending = new Promise<void>((resolve) => {
@@ -337,6 +347,7 @@ test('actualiza el consolidado sin desmontar la ficha ni desplazar su encabezado
     await requested;
     await expect(page.getByRole('progressbar', { name: 'Cargando consolidado…' })).toBeVisible();
     expect(await original!.evaluate((node) => node.isConnected)).toBe(true);
+
     expect((await heading.boundingBox())!.y).toBe(before!.y);
     await page.screenshot({
       path: info.outputPath('refresh-loading.png'),

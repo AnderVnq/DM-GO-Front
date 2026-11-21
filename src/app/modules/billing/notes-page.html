@@ -23,17 +23,17 @@
     <app-icon name="refresh" />
   </button>
 </form>
-@if (error()) {
+@if (!(detailVisible() && !!selected()) && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (success()) {
+@if (!(detailVisible() && !!selected()) && success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
 <app-loading-indicator
   [active]="loading() || busy()"
   [label]="busy() ? 'Procesando solicitud…' : 'Cargando notas de salida…'"
 />
-<div class="split-view">
+<div class="record-list-workspace">
   <section class="surface">
     <div class="table-scroll">
       <table class="data-table">
@@ -93,232 +93,241 @@
     }
     <div class="table-footer">Hasta 50 notas recientes de la consulta actual.</div>
   </section>
-  @if (selected(); as note) {
-    <aside class="inspector">
-      <h2>{{ note.number }}</h2>
-      <app-status [value]="note.status" />
-      <dl class="detail-grid detail-section">
-        <div>
-          <dt>Total</dt>
-          <dd class="numeric">{{ money(note.total_cents) }}</dd>
-        </div>
-        <div>
-          <dt>Pagado</dt>
-          <dd class="numeric">{{ money(note.paid_cents) }}</dd>
-        </div>
-        <div>
-          <dt>Saldo pendiente</dt>
-          <dd class="numeric">
-            <strong>{{ money(note.balance_cents) }}</strong>
-          </dd>
-        </div>
-        <div>
-          <dt>Destino</dt>
-          <dd>{{ destinationMethods[note.method] || note.method }}</dd>
-        </div>
-        @if (['home', 'agency_home'].includes(note.method)) {
+  <app-record-dialog
+    [open]="detailVisible() && !!selected()"
+    title="Detalle de la nota de salida"
+    [locked]="busy()"
+    (dismissed)="closeDetail()"
+    [error]="error()"
+    [notice]="success()"
+  >
+    @if (selected(); as note) {
+      <aside class="inspector">
+        <h2>{{ note.number }}</h2>
+        <app-status [value]="note.status" />
+        <dl class="detail-grid detail-section">
           <div>
-            <dt>Dirección</dt>
-            <dd>
-              {{
-                destinationDetails()?.address ||
-                  (destinationReadError() ? 'No disponible' : 'Consultando dirección…')
-              }}
+            <dt>Total</dt>
+            <dd class="numeric">{{ money(note.total_cents) }}</dd>
+          </div>
+          <div>
+            <dt>Pagado</dt>
+            <dd class="numeric">{{ money(note.paid_cents) }}</dd>
+          </div>
+          <div>
+            <dt>Saldo pendiente</dt>
+            <dd class="numeric">
+              <strong>{{ money(note.balance_cents) }}</strong>
             </dd>
           </div>
-        }
-        @if (note.method.startsWith('agency')) {
           <div>
-            <dt>Agencia</dt>
-            <dd>
-              {{
-                destinationDetails()?.agency ||
-                  (destinationReadError() ? 'No disponible' : 'Consultando agencia…')
-              }}
-            </dd>
+            <dt>Destino</dt>
+            <dd>{{ destinationMethods[note.method] || note.method }}</dd>
           </div>
-        }
-        @if (note.method === 'agency_pickup') {
-          <div>
-            <dt>Sucursal</dt>
-            <dd>
-              {{
-                destinationDetails()?.branch ||
-                  (destinationReadError() ? 'No disponible' : 'Consultando sucursal…')
-              }}
-            </dd>
-          </div>
-        }
-        <div>
-          <dt>Liquidación</dt>
-          <dd>{{ note.liquidation_number || 'Sin liquidar' }}</dd>
-        </div>
-      </dl>
-      @if (destinationReadError()) {
-        <p class="alert error" role="alert">{{ destinationReadError() }}</p>
-      }
-      <div class="actions">
-        <button
-          class="icon-button action-icon"
-          (click)="viewPdf()"
-          [disabled]="busy()"
-          aria-label="Ver PDF"
-          title="Ver PDF"
-        >
-          <app-icon name="eye" />
-        </button>
-        <button class="button compact" (click)="download()" [disabled]="busy()">
-          <app-icon name="download" />Descargar PDF
-        </button>
-        @if (auth.manager() && note.status === 'draft') {
-          <button class="button primary compact" (click)="liquidate()" [disabled]="busy()">
-            Liquidar nota
-          </button>
-        }
-        @if (auth.manager() && note.status === 'pending_payment') {
-          <button class="button primary compact" (click)="preparePayment()" [disabled]="busy()">
-            Registrar pago
-          </button>
-        }
-      </div>
-      <section class="detail-section">
-        <h3>Guías incluidas</h3>
-        <ul class="line-list">
-          @for (guide of note.guides; track guide.package_id) {
-            <li>
-              <span
-                ><strong>{{ guide.guide_number }}</strong
-                ><br /><small>{{ guide.wr }} · {{ weight(guide.billable_grams) }}</small></span
-              >
-              @if (editable(note.status)) {
-                <button
-                  class="icon-button action-icon"
-                  (click)="removePackage(guide.package_id)"
-                  [disabled]="busy()"
-                  aria-label="Retirar"
-                  title="Retirar"
-                >
-                  <app-icon name="close" />
-                </button>
-              }
-            </li>
+          @if (['home', 'agency_home'].includes(note.method)) {
+            <div>
+              <dt>Dirección</dt>
+              <dd>
+                {{
+                  destinationDetails()?.address ||
+                    (destinationReadError() ? 'No disponible' : 'Consultando dirección…')
+                }}
+              </dd>
+            </div>
           }
-        </ul>
-        @if (editable(note.status)) {
-          <button class="button compact" (click)="preparePackages()" [disabled]="busy()">
-            Añadir paquetes
-          </button>
+          @if (note.method.startsWith('agency')) {
+            <div>
+              <dt>Agencia</dt>
+              <dd>
+                {{
+                  destinationDetails()?.agency ||
+                    (destinationReadError() ? 'No disponible' : 'Consultando agencia…')
+                }}
+              </dd>
+            </div>
+          }
+          @if (note.method === 'agency_pickup') {
+            <div>
+              <dt>Sucursal</dt>
+              <dd>
+                {{
+                  destinationDetails()?.branch ||
+                    (destinationReadError() ? 'No disponible' : 'Consultando sucursal…')
+                }}
+              </dd>
+            </div>
+          }
+          <div>
+            <dt>Liquidación</dt>
+            <dd>{{ note.liquidation_number || 'Sin liquidar' }}</dd>
+          </div>
+        </dl>
+        @if (destinationReadError()) {
+          <p class="alert error" role="alert">{{ destinationReadError() }}</p>
         }
-      </section>
-      <section class="detail-section">
-        <h3>Cargos</h3>
-        <ul class="line-list">
-          @for (line of note.lines; track line.id) {
-            <li>
-              <div>
-                {{ line.charge_name }}
-                <small>
-                  · Tarifa:
-                  {{ line.rate_cents === null ? 'Sin definir' : money(line.rate_cents) }}</small
+        <div class="actions">
+          <button
+            class="icon-button action-icon"
+            (click)="viewPdf()"
+            [disabled]="busy()"
+            aria-label="Ver PDF"
+            title="Ver PDF"
+          >
+            <app-icon name="eye" />
+          </button>
+          <button class="button compact" (click)="download()" [disabled]="busy()">
+            <app-icon name="download" />Descargar PDF
+          </button>
+          @if (auth.manager() && note.status === 'draft') {
+            <button class="button primary compact" (click)="liquidate()" [disabled]="busy()">
+              Liquidar nota
+            </button>
+          }
+          @if (auth.manager() && note.status === 'pending_payment') {
+            <button class="button primary compact" (click)="preparePayment()" [disabled]="busy()">
+              Registrar pago
+            </button>
+          }
+        </div>
+        <section class="detail-section">
+          <h3>Guías incluidas</h3>
+          <ul class="line-list">
+            @for (guide of note.guides; track guide.package_id) {
+              <li>
+                <span
+                  ><strong>{{ guide.guide_number }}</strong
+                  ><br /><small>{{ guide.wr }} · {{ weight(guide.billable_grams) }}</small></span
                 >
-                @if (!line.applies) {
-                  <small> · No aplica</small>
-                }
                 @if (editable(note.status)) {
-                  <div class="actions">
-                    <button
-                      class="text-button"
-                      (click)="toggleCharge(line.id, !line.applies)"
-                      [disabled]="busy()"
-                    >
-                      {{ line.applies ? 'Marcar no aplica' : 'Aplicar' }}</button><button
-                      class="text-button"
-                      (click)="prepareRate(line.id, line.rate_cents)"
-                      [disabled]="busy()"
-                    >
-                      <app-icon name="edit" />Editar tarifa
-                    </button>
-                    @if (line.manual) {
-                      <button
-                        class="icon-button action-icon"
-                        (click)="removeCharge(line.id)"
-                        [disabled]="busy()"
-                        aria-label="Retirar"
-                        title="Retirar"
-                      >
-                        <app-icon name="close" />
-                      </button>
-                    }
-                  </div>
+                  <button
+                    class="icon-button action-icon"
+                    (click)="removePackage(guide.package_id)"
+                    [disabled]="busy()"
+                    aria-label="Retirar"
+                    title="Retirar"
+                  >
+                    <app-icon name="close" />
+                  </button>
                 }
-              </div>
-              <strong class="numeric">{{ money(line.amount_cents) }}</strong>
-            </li>
+              </li>
+            }
+          </ul>
+          @if (editable(note.status)) {
+            <button class="button compact" (click)="preparePackages()" [disabled]="busy()">
+              Añadir paquetes
+            </button>
           }
-        </ul>
-        @if (editable(note.status)) {
-          <div class="actions">
-            <button class="button compact" (click)="openCharge()" [disabled]="busy()">
-              Añadir cargo</button
-            ><button class="button compact" (click)="prepareDestination()" [disabled]="busy()">
-              <app-icon name="edit" />Editar destino
+        </section>
+        <section class="detail-section">
+          <h3>Cargos</h3>
+          <ul class="line-list">
+            @for (line of note.lines; track line.id) {
+              <li>
+                <div>
+                  {{ line.charge_name }}
+                  <small>
+                    · Tarifa:
+                    {{ line.rate_cents === null ? 'Sin definir' : money(line.rate_cents) }}</small
+                  >
+                  @if (!line.applies) {
+                    <small> · No aplica</small>
+                  }
+                  @if (editable(note.status)) {
+                    <div class="actions">
+                      <button
+                        class="text-button"
+                        (click)="toggleCharge(line.id, !line.applies)"
+                        [disabled]="busy()"
+                      >
+                        {{ line.applies ? 'Marcar no aplica' : 'Aplicar' }}</button><button
+                        class="text-button"
+                        (click)="prepareRate(line.id, line.rate_cents)"
+                        [disabled]="busy()"
+                      >
+                        <app-icon name="edit" />Editar tarifa
+                      </button>
+                      @if (line.manual) {
+                        <button
+                          class="icon-button action-icon"
+                          (click)="removeCharge(line.id)"
+                          [disabled]="busy()"
+                          aria-label="Retirar"
+                          title="Retirar"
+                        >
+                          <app-icon name="close" />
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+                <strong class="numeric">{{ money(line.amount_cents) }}</strong>
+              </li>
+            }
+          </ul>
+          @if (editable(note.status)) {
+            <div class="actions">
+              <button class="button compact" (click)="openCharge()" [disabled]="busy()">
+                Añadir cargo</button
+              ><button class="button compact" (click)="prepareDestination()" [disabled]="busy()">
+                <app-icon name="edit" />Editar destino
+              </button>
+            </div>
+          }
+        </section>
+        <section class="detail-section">
+          <h3>Pagos</h3>
+          <ul class="line-list">
+            @for (payment of note.payments; track payment.id) {
+              <li>
+                <div>
+                  <strong class="payment-amount">{{ money(payment.amount_cents) }}</strong><small
+                    >{{ paymentMethods[payment.method] || payment.method }} ·
+                    {{ date(payment.paid_at) }}</small
+                  ><app-status [value]="payment.status" />
+                  @if (payment.reject_reason) {
+                    <p>{{ payment.reject_reason }}</p>
+                  }
+                  @if (
+                    payment.status === 'pending' &&
+                    auth.manager() &&
+                    note.status === 'pending_payment'
+                  ) {
+                    <div class="actions">
+                      <button
+                        class="button compact"
+                        (click)="review(payment, true)"
+                        [disabled]="busy()"
+                      >
+                        Aceptar</button
+                      ><button
+                        class="button compact"
+                        (click)="review(payment, false)"
+                        [disabled]="busy()"
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  }
+                </div>
+              </li>
+            } @empty {
+              <li>No hay pagos registrados.</li>
+            }
+          </ul>
+        </section>
+        @if (note.cancel_reason) {
+          <p>Motivo de anulación: {{ note.cancel_reason }}</p>
+        }
+        @if (auth.manager() && cancellable(note.status, note.paid_cents)) {
+          <div class="detail-section">
+            <button class="text-button" (click)="cancel()" [disabled]="busy()">
+              Anular nota de salida
             </button>
           </div>
         }
-      </section>
-      <section class="detail-section">
-        <h3>Pagos</h3>
-        <ul class="line-list">
-          @for (payment of note.payments; track payment.id) {
-            <li>
-              <div>
-                <strong class="payment-amount">{{ money(payment.amount_cents) }}</strong><small
-                  >{{ paymentMethods[payment.method] || payment.method }} ·
-                  {{ date(payment.paid_at) }}</small
-                ><app-status [value]="payment.status" />
-                @if (payment.reject_reason) {
-                  <p>{{ payment.reject_reason }}</p>
-                }
-                @if (
-                  payment.status === 'pending' &&
-                  auth.manager() &&
-                  note.status === 'pending_payment'
-                ) {
-                  <div class="actions">
-                    <button
-                      class="button compact"
-                      (click)="review(payment, true)"
-                      [disabled]="busy()"
-                    >
-                      Aceptar</button
-                    ><button
-                      class="button compact"
-                      (click)="review(payment, false)"
-                      [disabled]="busy()"
-                    >
-                      Rechazar
-                    </button>
-                  </div>
-                }
-              </div>
-            </li>
-          } @empty {
-            <li>No hay pagos registrados.</li>
-          }
-        </ul>
-      </section>
-      @if (note.cancel_reason) {
-        <p>Motivo de anulación: {{ note.cancel_reason }}</p>
-      }
-      @if (auth.manager() && cancellable(note.status, note.paid_cents)) {
-        <div class="detail-section">
-          <button class="text-button" (click)="cancel()" [disabled]="busy()">
-            Anular nota de salida
-          </button>
-        </div>
-      }
-    </aside>
-  }
+      </aside>
+    }
+  </app-record-dialog>
 </div>
 
 <dialog #createDialog aria-labelledby="billing-create-title">

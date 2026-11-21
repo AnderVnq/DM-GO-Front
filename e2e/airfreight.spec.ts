@@ -156,11 +156,20 @@ test('crea la guía aérea, revisa el manifiesto y confirma la salida con el res
   await confirm.getByRole('button', { name: 'Confirmar salida', exact: true }).click();
   await expect(confirm).not.toBeVisible();
   await expect(page.getByRole('status')).toHaveText('Salida registrada. 7 paquetes en tránsito.');
-  await expect(page.getByText('Despachada', { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Detalle de la guía aérea', exact: true })
+      .getByText('Despachada', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: '001-12345675', exact: true })).toBeFocused();
   await expect(page.getByRole('button', { name: 'Registrar salida', exact: true })).toHaveCount(0);
   if (info.project.name === 'desktop') {
+    await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Detalle de la guía aérea', exact: true }),
+    ).not.toBeVisible();
     await page.getByRole('button', { name: /Cambiar a modo oscuro/ }).click();
+    await page.getByRole('button', { name: 'Ver 001-12345675', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   }
   await page.screenshot({

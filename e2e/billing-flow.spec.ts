@@ -2,10 +2,11 @@ import { testPdf } from './fixtures/pdf';
 import { test, expect, type Page } from '@playwright/test';
 import { login, mockPanel, navigate } from './fixtures/panel';
 
-async function openNotes(page: Page) {
+async function openNotes(page: Page, detail = true) {
   await login(page);
   await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
   await navigate(page, 'Notas de salida', 'dispatch-notes');
+  if (detail) await page.locator('tbody .row-button').first().click();
 }
 
 const pendingNote = {
@@ -25,9 +26,9 @@ const pendingNote = {
 
 test('crea un borrador con las guías del cliente seleccionado', async ({ page }) => {
   const fixture = await mockPanel(page);
-  await openNotes(page);
+  await openNotes(page, false);
   await page.getByRole('button', { name: 'Nueva nota', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Nueva nota de salida', exact: true });
   await dialog.getByLabel('Casillero del cliente').fill('PE00042');
   await dialog.getByRole('button', { name: 'Buscar', exact: true }).click();
   await dialog.getByRole('checkbox', { name: /Audífonos de prueba/ }).check();
@@ -55,9 +56,9 @@ test('crea un borrador con las guías del cliente seleccionado', async ({ page }
 
 test('cambiar el casillero invalida el cliente y los paquetes elegidos', async ({ page }) => {
   const fixture = await mockPanel(page);
-  await openNotes(page);
+  await openNotes(page, false);
   await page.getByRole('button', { name: 'Nueva nota', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Nueva nota de salida', exact: true });
   await dialog.getByLabel('Casillero del cliente').fill('PE00042');
   await dialog.getByRole('button', { name: 'Buscar', exact: true }).click();
   await dialog.getByRole('checkbox', { name: /Audífonos de prueba/ }).check();
@@ -78,7 +79,10 @@ for (const accept of [true, false]) {
     const fixture = await mockPanel(page, 'supervisor', { note: pendingNote });
     await openNotes(page);
     await page.getByRole('button', { name: accept ? 'Aceptar' : 'Rechazar', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('dialog', {
+      name: accept ? 'Aceptar el pago pendiente' : 'Rechazar el pago pendiente',
+      exact: true,
+    });
     if (!accept) {
       await expect(dialog.getByRole('button', { name: 'Confirmar', exact: true })).toBeDisabled();
       await dialog.getByLabel('Motivo').fill('El importe del comprobante no coincide.');
@@ -101,15 +105,22 @@ test('un pago ya revisado conserva el error y actualiza su estado sin anunciar a
   page,
 }) => {
   const fixture = await mockPanel(page, 'supervisor', { note: pendingNote });
+  let reads = 0;
   await page.route('**/api/v1/dispatch-notes/note-test', (route) =>
     route.fulfill({
-      json: {
-        ...fixture.note,
-        status: 'paid',
-        paid_cents: 10000,
-        balance_cents: 0,
-        payments: fixture.note.payments.map((payment) => ({ ...payment, status: 'accepted' })),
-      },
+      json:
+        reads++ === 0
+          ? fixture.note
+          : {
+              ...fixture.note,
+              status: 'paid',
+              paid_cents: 10000,
+              balance_cents: 0,
+              payments: fixture.note.payments.map((payment) => ({
+                ...payment,
+                status: 'accepted',
+              })),
+            },
     }),
   );
   await page.route('**/api/v1/dispatch-notes/note-test/payments/*/review', (route) =>
@@ -117,7 +128,7 @@ test('un pago ya revisado conserva el error y actualiza su estado sin anunciar a
   );
   await openNotes(page);
   await page.getByRole('button', { name: 'Aceptar', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Aceptar el pago pendiente', exact: true });
   await dialog.getByRole('button', { name: 'Confirmar', exact: true }).click();
   await expect(dialog.getByRole('alert')).toHaveText('El pago ya fue revisado');
   await expect(page.getByRole('status')).toHaveCount(0);
@@ -132,7 +143,7 @@ test('sube el comprobante antes de registrar el pago y conserva su identificador
   const fixture = await mockPanel(page, 'supervisor', { note: { status: 'pending_payment' } });
   await openNotes(page);
   await page.getByRole('button', { name: 'Registrar pago', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Registrar pago', exact: true });
   await dialog.getByLabel('Importe en USD').fill('100.00');
   await dialog.getByLabel('Referencia', { exact: true }).fill('VOUCHER-42');
   await dialog.getByLabel('Evidencia del pago (opcional)').setInputFiles({
@@ -159,7 +170,7 @@ test('un comprobante inválido no se descarta silenciosamente al registrar el pa
   const fixture = await mockPanel(page, 'supervisor', { note: { status: 'pending_payment' } });
   await openNotes(page);
   await page.getByRole('button', { name: 'Registrar pago', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Registrar pago', exact: true });
   await dialog.getByLabel('Importe en USD').fill('100.00');
   await dialog.getByLabel('Evidencia del pago (opcional)').setInputFiles({
     name: 'voucher.txt',
@@ -180,7 +191,7 @@ test('un error al subir evidencia conserva el importe y no genera un pago', asyn
   );
   await openNotes(page);
   await page.getByRole('button', { name: 'Registrar pago', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Registrar pago', exact: true });
   await dialog.getByLabel('Importe en USD').fill('100.00');
   await dialog.getByLabel('Evidencia del pago (opcional)').setInputFiles({
     name: 'voucher.pdf',
@@ -205,9 +216,9 @@ test('una búsqueda anterior no repone el cliente después de cambiar el casille
     await lookup.promise;
     await route.fallback();
   });
-  await openNotes(page);
+  await openNotes(page, false);
   await page.getByRole('button', { name: 'Nueva nota', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Nueva nota de salida', exact: true });
   await dialog.getByLabel('Casillero del cliente').fill('PE00042');
   await dialog.getByRole('button', { name: 'Buscar', exact: true }).click();
   await received.promise;
@@ -225,13 +236,14 @@ test('al reabrir el pago se retira el archivo de una operación cancelada', asyn
   const fixture = await mockPanel(page, 'supervisor', { note: { status: 'pending_payment' } });
   await openNotes(page);
   await page.getByRole('button', { name: 'Registrar pago', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Registrar pago', exact: true });
   await dialog.getByLabel('Evidencia del pago (opcional)').setInputFiles({
     name: 'anterior.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from('%PDF-test'),
   });
   await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: 'Registrar pago', exact: true }).click();
   await expect(dialog.getByLabel('Evidencia del pago (opcional)')).toHaveValue('');
   await dialog.getByLabel('Importe en USD').fill('100.00');
@@ -250,7 +262,7 @@ test('anula una nota solo tras confirmar con motivo y la deja en solo lectura', 
   await openNotes(page);
   const trigger = page.getByRole('button', { name: 'Anular nota de salida', exact: true });
   await trigger.click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Anular nota de salida', exact: true });
   await expect(dialog.getByRole('button', { name: 'Confirmar', exact: true })).toBeDisabled();
   await dialog.getByLabel('Motivo').fill('   ');
   await expect(dialog.getByRole('button', { name: 'Confirmar', exact: true })).toBeDisabled();
@@ -305,10 +317,10 @@ test('una nota pagada permanece en solo lectura incluso para administración', a
 
 test('abre la nota dentro de la aplicación y conserva la selección al cerrar', async ({ page }) => {
   await mockPanel(page);
-  await openNotes(page);
+  await openNotes(page, false);
   const view = page.getByRole('button', { name: 'Ver PDF de NS-TEST-42', exact: true });
   await view.click();
-  const preview = page.getByRole('dialog');
+  const preview = page.locator('dialog.pdf-preview');
   await expect(preview).toBeVisible();
   await expect(preview).toContainText('NS-TEST-42');
   const download = preview.getByRole('button', { name: 'Descargar PDF', exact: true });
@@ -320,9 +332,7 @@ test('abre la nota dentro de la aplicación y conserva la selección al cerrar',
   await page.keyboard.press('Escape');
   await expect(preview).not.toBeVisible();
   await expect(view).toBeFocused();
-  await expect(
-    page.locator('.inspector').getByRole('heading', { name: 'NS-TEST-42' }),
-  ).toBeVisible();
+  await expect(page.locator('tbody .row-button').first()).toBeVisible();
 });
 
 test('solicita de nuevo el enlace firmado de la nota al repetir la descarga', async ({ page }) => {
@@ -367,32 +377,35 @@ test('un conflicto al cobrar actualiza el saldo y no vuelve a enviar un pago obs
   await page.route('**/api/v1/dispatch-notes/note-test', async (route) => {
     reads++;
     await route.fulfill({
-      json: {
-        id: 'note-test',
-        number: 'NS-TEST-42',
-        customer_id: fixture.customer.id,
-        status: 'paid',
-        method: 'pickup',
-        total_cents: 10000,
-        paid_cents: 10000,
-        balance_cents: 0,
-        currency: 'USD',
-        guides: [],
-        lines: [],
-        payments: [],
-        created_at: fixture.customer.created_at,
-      },
+      json:
+        reads === 1
+          ? fixture.note
+          : {
+              id: 'note-test',
+              number: 'NS-TEST-42',
+              customer_id: fixture.customer.id,
+              status: 'paid',
+              method: 'pickup',
+              total_cents: 10000,
+              paid_cents: 10000,
+              balance_cents: 0,
+              currency: 'USD',
+              guides: [],
+              lines: [],
+              payments: [],
+              created_at: fixture.customer.created_at,
+            },
     });
   });
   await openNotes(page);
   await page.getByRole('button', { name: 'Registrar pago', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Registrar pago', exact: true });
   await dialog.getByLabel('Importe en USD').fill('100');
   await dialog.getByRole('button', { name: 'Registrar pago', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('Otro operador registró un pago.');
   await expect(page.locator('.inspector app-status').first()).toHaveText('Pagado');
   await expect(dialog.getByLabel('Importe en USD')).toHaveValue('100');
-  expect(reads).toBe(1);
+  expect(reads).toBe(2);
   await expect(dialog.getByRole('button', { name: 'Registrar pago', exact: true })).toBeDisabled();
   await dialog.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit());
   expect(payments).toBe(1);

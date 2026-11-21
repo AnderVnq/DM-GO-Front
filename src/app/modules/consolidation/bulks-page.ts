@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import { RecordBrowser } from '../../shared/record-browser';
@@ -30,7 +31,7 @@ import type { Bulk, BulkClosure } from './consolidation.model';
 
 @Component({
   selector: 'app-bulks-page',
-  imports: [LoadingIndicator, Icon, RecordBrowser, FormsModule, RouterLink, Status],
+  imports: [RecordDialog, LoadingIndicator, Icon, RecordBrowser, FormsModule, RouterLink, Status],
   templateUrl: './bulks-page.html',
 })
 export class BulksPage {
@@ -85,7 +86,6 @@ export class BulksPage {
     if (this.busy() || this.loading()) return;
     this.newBulk();
     this.creating.set(false);
-    this.listRevision.update((v) => v + 1);
   }
   selectPackage(id: string) {
     if (this.busy() || this.looking()) return;

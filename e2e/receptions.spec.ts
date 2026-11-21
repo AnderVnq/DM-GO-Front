@@ -187,8 +187,14 @@ test('escanea, corrige con lápiz y cierra con el cuadre canónico', async ({ pa
   await expect(
     page.getByRole('link', { name: 'Continuar en Aduanas', exact: true }),
   ).toHaveAttribute('href', '/internal/customs');
-  if (info.project.name === 'desktop')
+  if (info.project.name === 'desktop') {
+    await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Detalle de la recepción', exact: true }),
+    ).not.toBeVisible();
     await page.getByRole('button', { name: /Cambiar a modo oscuro/ }).click();
+    await page.getByRole('button', { name: 'Ver 001-12345675', exact: true }).click();
+  }
   await page.screenshot({
     path: info.outputPath('reception.png'),
     fullPage: true,

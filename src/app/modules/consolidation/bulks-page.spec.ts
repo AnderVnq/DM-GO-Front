@@ -35,7 +35,7 @@ it('cierra con kg de texto y devuelve la validación del servidor al campo', asy
   };
   fixture.detectChanges();
   await fixture.whenStable();
-  fixture.nativeElement.querySelector('dialog').close = vi.fn();
+  fixture.nativeElement.querySelector('dialog[aria-labelledby="bulk-close-title"]').close = vi.fn();
   page.close();
   const request = http.expectOne('/api/v1/bulks/bulk/close');
   expect(request.request.body).toEqual({
@@ -62,5 +62,6 @@ it('cierra con kg de texto y devuelve la validación del servidor al campo', asy
   http
     .expectOne((r) => r.url === '/api/v1/packages')
     .flush({ packages: [], total: 0, limit: 10, offset: 0 });
+  http.match((r) => r.url === '/api/v1/bulks').forEach((r) => r.flush({ bulks: [], total: 0 }));
   http.verify();
 });

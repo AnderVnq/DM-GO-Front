@@ -128,9 +128,14 @@ test('importa reporte y muestra todos los grupos confirmados sin convertir moned
   await expect(page).toHaveURL(new RegExp(`line_id=${id}`));
   await expect(page.getByRole('definition').filter({ hasText: 'PEN' })).toHaveText(/PEN.*12.34/);
   if (info.project.name === 'desktop') {
+    await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Detalle de la guía de Aduanas', exact: true }),
+    ).not.toBeVisible();
     await page.getByRole('button', { name: /Cambiar a modo oscuro/ }).focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await detail(page);
   }
   await page.screenshot({
     path: info.outputPath('customs.png'),

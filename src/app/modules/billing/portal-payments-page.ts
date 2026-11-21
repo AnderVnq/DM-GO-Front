@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, inject, signal, viewChild, type ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,10 +18,24 @@ import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-payments-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, Status, Icon],
+  imports: [RecordDialog, LoadingIndicator, ReactiveFormsModule, Status, Icon],
   templateUrl: './portal-payments-page.html',
 })
 export class PortalPaymentsPage {
+  readonly detailVisible = signal(false);
+
+  closeDetail() {
+    if (this.busy()) return;
+    this.detailVisible.set(false);
+    this.detailRequest?.unsubscribe();
+    this.selected.set(null);
+    void this.router.navigate([], {
+      queryParams: { note_id: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   private readonly preview = inject(PdfPreviewService);
   private readonly api = inject(PortalBillingApi);
   private readonly docs = inject(DocumentsApi);
@@ -77,7 +92,11 @@ export class PortalPaymentsPage {
         this.loading.set(false);
         const id = this.selected()?.id ?? this.route.snapshot.queryParamMap.get('note_id');
         const item = items.find((note) => note.id === id) ?? items[0];
-        if (item) this.select(item);
+        if (item)
+          this.select(
+            item,
+            !!this.route.snapshot.queryParamMap.get('note_id') || this.detailVisible(),
+          );
         else this.selected.set(null);
       },
       error: (error: unknown) => {
@@ -86,14 +105,16 @@ export class PortalPaymentsPage {
       },
     });
   }
-  select(note: DispatchNote) {
+  select(note: DispatchNote, show = true) {
     if (this.busy()) return;
+    this.detailVisible.set(show);
     this.selected.set(note);
     this.error.set('');
     this.success.set('');
     this.detailRequest?.unsubscribe();
     this.detailLoading.set(true);
-    void this.router.navigate([], { queryParams: { note_id: note.id }, replaceUrl: true });
+    if (show)
+      void this.router.navigate([], { queryParams: { note_id: note.id }, replaceUrl: true });
     this.detailRequest = this.api.get(note.id).subscribe({
       next: (updated) => {
         this.apply(updated);

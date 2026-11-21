@@ -7,10 +7,10 @@
     <app-icon name="plus" />Importar reporte
   </button>
 </div>
-@if (notice()) {
+@if (!(!!selected() || detailLoading()) && notice()) {
   <p class="alert success" role="status">{{ notice() }}</p>
 }
-@if (error()) {
+@if (!(!!selected() || detailLoading()) && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
 <div class="customer-strip">
@@ -147,136 +147,150 @@
     <app-icon name="refresh" />
   </button>
 }
-@if (selected(); as line) {
-  <section class="surface surface-body customs-detail" aria-labelledby="customs-detail-title">
-    <div class="page-header">
-      <div>
-        <h2 id="customs-detail-title" #detailHeading tabindex="-1">Guía {{ line.guide }}</h2>
-        <p>{{ status[line.status] }} · {{ line.customs_manifest }}</p>
-      </div>
-      <button
-        class="icon-button action-icon"
-        (click)="reloadDetail()"
-        [disabled]="busy() || detailLoading()"
-        aria-label="Actualizar detalle"
-        title="Actualizar detalle"
-      >
-        <app-icon name="refresh" />
-      </button>
-    </div>
-    <dl class="detail-grid">
-      <div>
-        <dt>Declaración</dt>
-        <dd>{{ line.declaration }}</dd>
-      </div>
-      <div>
-        <dt>Canal</dt>
-        <dd>{{ line.channel === 'red' ? 'Rojo · requiere revisión' : 'Verde' }}</dd>
-      </div>
-      <div>
-        <dt>Tributo</dt>
-        <dd class="amount">{{ money(line.tax_cents, line.currency) }}</dd>
-      </div>
-      <div>
-        <dt>Liberación · hora de Perú</dt>
-        <dd>{{ date(line.released_at ?? undefined) }}</dd>
-      </div>
-    </dl>
-    @if (stale()) {
-      <p class="alert">Actualiza el detalle antes de adjuntar documentos o liberar la guía.</p>
-    }
-    <h3>Documentos de la guía</h3>
-    <ul class="document-list">
-      <li>
+<app-record-dialog
+  [open]="!!selected() || detailLoading()"
+  title="Detalle de la guía de Aduanas"
+  [locked]="busy() || attaching() || releasing() || importing()"
+  (dismissed)="closeDetail()"
+  [error]="error()"
+  [notice]="notice()"
+  [loading]="detailLoading() || busy()"
+>
+  @if (selected(); as line) {
+    <section class="surface surface-body customs-detail" aria-labelledby="customs-detail-title">
+      <div class="page-header">
         <div>
-          <strong>Liquidación de tributos</strong>
-          <p class="muted">
-            {{ line.assessment_document_id ? 'Documento disponible' : 'Sin documento adjunto' }}
-          </p>
+          <h2 id="customs-detail-title" #detailHeading tabindex="-1">Guía {{ line.guide }}</h2>
+          <p>{{ status[line.status] }} · {{ line.customs_manifest }}</p>
         </div>
-        <div class="actions">
-          @if (line.assessment_document_id) {
-            <button
-              class="icon-button"
-              (click)="viewDocument(line.assessment_document_id, 'Liquidación ' + line.guide)"
-              [disabled]="busy()"
-              aria-label="Ver liquidación de tributos"
-              title="Ver liquidación de tributos"
-            >
-              <app-icon name="eye" /></button
-            ><button
-              class="icon-button"
-              (click)="downloadDocument(line.assessment_document_id, 'Liquidación ' + line.guide)"
-              [disabled]="busy()"
-              aria-label="Descargar liquidación de tributos"
-              title="Descargar liquidación de tributos"
-            >
-              <app-icon name="download" />
-            </button>
-          }
-          @if (line.status !== 'released') {
-            <button class="button" (click)="startDocument('assessment')" [disabled]="!canAct">
-              <app-icon [name]="line.assessment_document_id ? 'edit' : 'attachment'" />{{
-                line.assessment_document_id ? 'Reemplazar liquidación' : 'Adjuntar liquidación'
-              }}
-            </button>
-          }
-        </div>
-      </li>
-      <li>
-        <div>
-          <strong>Constancia de pago del tributo</strong>
-          <p class="muted">
-            {{ line.proof_document_id ? 'Disponible para revisar' : 'Sin constancia adjunta' }}
-          </p>
-        </div>
-        <div class="actions">
-          @if (line.proof_document_id) {
-            <button
-              class="icon-button"
-              (click)="viewDocument(line.proof_document_id, 'Constancia ' + line.guide)"
-              [disabled]="busy()"
-              aria-label="Ver constancia de pago"
-              title="Ver constancia de pago"
-            >
-              <app-icon name="eye" /></button
-            ><button
-              class="icon-button"
-              (click)="downloadDocument(line.proof_document_id, 'Constancia ' + line.guide)"
-              [disabled]="busy()"
-              aria-label="Descargar constancia de pago"
-              title="Descargar constancia de pago"
-            >
-              <app-icon name="download" />
-            </button>
-          }
-          @if (line.status !== 'released') {
-            <button class="button" (click)="startDocument('payment_proof')" [disabled]="!canAct">
-              <app-icon [name]="line.proof_document_id ? 'edit' : 'attachment'" />{{
-                line.proof_document_id ? 'Reemplazar constancia' : 'Adjuntar constancia'
-              }}
-            </button>
-          }
-        </div>
-      </li>
-    </ul>
-    @if (line.status !== 'released') {
-      @if (line.tax_cents > 0 && !line.proof_document_id) {
-        <p class="alert">
-          Falta la constancia de pago del tributo. Adjunta el documento antes de liberar.
-        </p>
-      }
-      <div class="actions">
-        <button class="button primary" (click)="prepareRelease()" [disabled]="!canReleaseSelected">
-          <app-icon name="check" />Liberar guía
+        <button
+          class="icon-button action-icon"
+          (click)="reloadDetail()"
+          [disabled]="busy() || detailLoading()"
+          aria-label="Actualizar detalle"
+          title="Actualizar detalle"
+        >
+          <app-icon name="refresh" />
         </button>
       </div>
-    }
-    <p class="field-hint">
-      Puedes volver a consultar esta guía por su código en el buscador superior.
-    </p>
-  </section>
-}
+      <dl class="detail-grid">
+        <div>
+          <dt>Declaración</dt>
+          <dd>{{ line.declaration }}</dd>
+        </div>
+        <div>
+          <dt>Canal</dt>
+          <dd>{{ line.channel === 'red' ? 'Rojo · requiere revisión' : 'Verde' }}</dd>
+        </div>
+        <div>
+          <dt>Tributo</dt>
+          <dd class="amount">{{ money(line.tax_cents, line.currency) }}</dd>
+        </div>
+        <div>
+          <dt>Liberación · hora de Perú</dt>
+          <dd>{{ date(line.released_at ?? undefined) }}</dd>
+        </div>
+      </dl>
+      @if (stale()) {
+        <p class="alert">Actualiza el detalle antes de adjuntar documentos o liberar la guía.</p>
+      }
+      <h3>Documentos de la guía</h3>
+      <ul class="document-list">
+        <li>
+          <div>
+            <strong>Liquidación de tributos</strong>
+            <p class="muted">
+              {{ line.assessment_document_id ? 'Documento disponible' : 'Sin documento adjunto' }}
+            </p>
+          </div>
+          <div class="actions">
+            @if (line.assessment_document_id) {
+              <button
+                class="icon-button"
+                (click)="viewDocument(line.assessment_document_id, 'Liquidación ' + line.guide)"
+                [disabled]="busy()"
+                aria-label="Ver liquidación de tributos"
+                title="Ver liquidación de tributos"
+              >
+                <app-icon name="eye" /></button
+              ><button
+                class="icon-button"
+                (click)="downloadDocument(line.assessment_document_id, 'Liquidación ' + line.guide)"
+                [disabled]="busy()"
+                aria-label="Descargar liquidación de tributos"
+                title="Descargar liquidación de tributos"
+              >
+                <app-icon name="download" />
+              </button>
+            }
+            @if (line.status !== 'released') {
+              <button class="button" (click)="startDocument('assessment')" [disabled]="!canAct">
+                <app-icon [name]="line.assessment_document_id ? 'edit' : 'attachment'" />{{
+                  line.assessment_document_id ? 'Reemplazar liquidación' : 'Adjuntar liquidación'
+                }}
+              </button>
+            }
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Constancia de pago del tributo</strong>
+            <p class="muted">
+              {{ line.proof_document_id ? 'Disponible para revisar' : 'Sin constancia adjunta' }}
+            </p>
+          </div>
+          <div class="actions">
+            @if (line.proof_document_id) {
+              <button
+                class="icon-button"
+                (click)="viewDocument(line.proof_document_id, 'Constancia ' + line.guide)"
+                [disabled]="busy()"
+                aria-label="Ver constancia de pago"
+                title="Ver constancia de pago"
+              >
+                <app-icon name="eye" /></button
+              ><button
+                class="icon-button"
+                (click)="downloadDocument(line.proof_document_id, 'Constancia ' + line.guide)"
+                [disabled]="busy()"
+                aria-label="Descargar constancia de pago"
+                title="Descargar constancia de pago"
+              >
+                <app-icon name="download" />
+              </button>
+            }
+            @if (line.status !== 'released') {
+              <button class="button" (click)="startDocument('payment_proof')" [disabled]="!canAct">
+                <app-icon [name]="line.proof_document_id ? 'edit' : 'attachment'" />{{
+                  line.proof_document_id ? 'Reemplazar constancia' : 'Adjuntar constancia'
+                }}
+              </button>
+            }
+          </div>
+        </li>
+      </ul>
+      @if (line.status !== 'released') {
+        @if (line.tax_cents > 0 && !line.proof_document_id) {
+          <p class="alert">
+            Falta la constancia de pago del tributo. Adjunta el documento antes de liberar.
+          </p>
+        }
+        <div class="actions">
+          <button
+            class="button primary"
+            (click)="prepareRelease()"
+            [disabled]="!canReleaseSelected"
+          >
+            <app-icon name="check" />Liberar guía
+          </button>
+        </div>
+      }
+      <p class="field-hint">
+        Puedes volver a consultar esta guía por su código en el buscador superior.
+      </p>
+    </section>
+  }
+</app-record-dialog>
 <dialog #importDialog aria-labelledby="customs-import-title" (cancel)="cancelImport($event)">
   <div class="dialog-header">
     <h2 id="customs-import-title">Importar reporte de Aduanas</h2>

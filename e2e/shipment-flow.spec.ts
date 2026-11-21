@@ -14,6 +14,7 @@ async function openPackages(page: Page) {
   await page.getByLabel('Casillero o documento', { exact: true }).fill('PE00042');
   await page.getByRole('button', { name: 'Buscar cliente', exact: true }).click();
   await page.getByRole('link', { name: 'Ver paquetes', exact: true }).click();
+  await page.locator('tbody .row-button').first().click();
   await expect(
     page.getByRole('heading', { name: 'Detalle del paquete', exact: true }),
   ).toBeVisible();

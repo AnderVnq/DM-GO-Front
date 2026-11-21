@@ -188,7 +188,12 @@ test('el cliente prealerta y adjunta factura desde sus paquetes sin enviar custo
   await loginPortal(page);
   await navigatePortal(page, 'Mis paquetes');
   await expect(page.getByRole('heading', { name: 'Mis paquetes', exact: true })).toBeVisible();
+  await page.locator('tbody .row-button').first().click();
   await expect(page.getByText('Compra prealertada', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Detalle de mi paquete', exact: true }),
+  ).not.toBeVisible();
   await page.getByRole('button', { name: 'Nueva prealerta', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Nueva prealerta', exact: true });
   await dialog.getByLabel('Compañía de envío').fill('Otra tienda');
@@ -239,6 +244,7 @@ test('reporta un pago con evidencia sin aprobarlo y consulta sus comprobantes', 
   );
   await loginPortal(page);
   await navigatePortal(page, 'Mis pagos');
+  await page.locator('tbody .row-button').first().click();
   await page.getByRole('button', { name: 'Reportar pago', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Reportar pago', exact: true });
   await dialog.getByLabel('Importe en USD').fill('100.01');
@@ -273,6 +279,10 @@ test('reporta un pago con evidencia sin aprobarlo y consulta sus comprobantes', 
     path: `.impeccable/review/portal-modules/${testInfo.project.name}-payments.png`,
     fullPage: true,
   });
+  await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Detalle de mi nota de salida', exact: true }),
+  ).not.toBeVisible();
   await navigatePortal(page, 'Mis comprobantes');
   await expect(page.getByRole('heading', { name: 'B001-42', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Descargar XML', exact: true })).toBeDisabled();

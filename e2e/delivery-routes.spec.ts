@@ -242,9 +242,14 @@ test('crea, asigna, inicia, registra fallidos y finaliza con estado del servidor
   await expect(page.getByRole('button', { name: 'Finalizar ruta', exact: true })).toHaveCount(0);
   await expect(page).toHaveURL(new RegExp(`route_id=${rid}`));
   if (info.project.name === 'desktop') {
+    await page.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Detalle de la ruta', exact: true }),
+    ).not.toBeVisible();
     await page.getByRole('button', { name: /Cambiar a modo oscuro/ }).focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.getByRole('button', { name: 'Ver ruta RT-42', exact: true }).click();
   }
   await page.screenshot({
     path: info.outputPath('delivery-route.png'),

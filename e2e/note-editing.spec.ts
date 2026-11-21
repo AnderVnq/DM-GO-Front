@@ -5,6 +5,7 @@ async function openNotes(page: Page) {
   await login(page);
   await expect(page.getByRole('heading', { name: 'Resumen de la operación' })).toBeVisible();
   await navigate(page, 'Notas de salida', 'dispatch-notes');
+  await page.locator('tbody .row-button').first().click();
 }
 
 const addresses = [
@@ -38,7 +39,7 @@ test('conserva la dirección y descarta el destino sin enviar cambios', async ({
   });
   await openNotes(page);
   await page.getByRole('button', { name: 'Editar destino', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Editar destino', exact: true });
   await expect(dialog.getByRole('combobox', { name: 'Dirección', exact: true })).toHaveValue(
     'address-test',
   );
@@ -46,6 +47,7 @@ test('conserva la dirección y descarta el destino sin enviar cambios', async ({
   await dialog.getByRole('combobox', { name: 'Modalidad', exact: true }).selectOption('pickup');
   await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeEnabled();
   await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
   expect(fixture.requests.filter((r) => r.path.endsWith('/destination'))).toHaveLength(0);
   await page.getByRole('button', { name: 'Editar destino', exact: true }).click();
   await expect(dialog.getByRole('combobox', { name: 'Dirección', exact: true })).toHaveValue(
@@ -63,7 +65,7 @@ test('conserva agencia y sucursal y exige elegir otra sucursal al cambiar de age
   });
   await openNotes(page);
   await page.getByRole('button', { name: 'Editar destino', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Editar destino', exact: true });
   await expect(dialog.getByRole('combobox', { name: 'Agencia', exact: true })).toHaveValue(
     'agency-test',
   );
@@ -91,7 +93,7 @@ test('impide cantidades fraccionarias y registra un cargo con centavos enteros',
   const fixture = await mockPanel(page);
   await openNotes(page);
   await page.getByRole('button', { name: 'Añadir cargo', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Añadir cargo', exact: true });
   await dialog.getByRole('combobox', { name: 'Cargo', exact: true }).selectOption('HANDLING_TEST');
   await dialog.getByLabel('Cantidad', { exact: true }).fill('2.5');
   await expect(dialog.getByRole('button', { name: 'Añadir cargo', exact: true })).toBeDisabled();
@@ -133,7 +135,7 @@ test('actualiza la tarifa y muestra los importes devueltos por el servidor', asy
   });
   await openNotes(page);
   await page.getByRole('button', { name: 'Editar tarifa', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Editar tarifa del cargo', exact: true });
   await expect(dialog.getByLabel('Tarifa en USD', { exact: true })).toHaveValue('1.25');
   await expect(dialog.getByRole('button', { name: 'Guardar cambios', exact: true })).toBeDisabled();
   await dialog.getByLabel('Tarifa en USD', { exact: true }).fill(' 1,25 ');
@@ -155,7 +157,7 @@ test('añade y retira una guía del borrador sin alterar la selección del clien
   const fixture = await mockPanel(page);
   await openNotes(page);
   await page.getByRole('button', { name: 'Añadir paquetes', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Añadir paquetes a la nota', exact: true });
   await dialog.getByRole('button', { name: 'Añadir', exact: true }).click();
   await expect(dialog).toContainText('No hay más paquetes disponibles');
   await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click();

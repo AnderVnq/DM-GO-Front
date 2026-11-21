@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { CodeSearch } from '../../shared/code-search';
 import { RouteMap } from './route-map';
 import { RouteLive } from './route-live';
@@ -46,6 +47,7 @@ import {
 @Component({
   selector: 'app-delivery-routes-page',
   imports: [
+    RecordDialog,
     CodeSearch,
     RouteMap,
     RouteLive,
@@ -59,6 +61,20 @@ import {
   styleUrl: './delivery-routes-page.scss',
 })
 export class DeliveryRoutesPage {
+  closeDetail() {
+    if (this.busy() || this.creating() || this.action() || this.failing()) return;
+    this.detailRequest?.unsubscribe();
+    this.packageRequest?.unsubscribe();
+    this.detailLoading.set(false);
+    this.selected.set(null);
+    this.lastRouteId = '';
+    void this.router.navigate([], {
+      queryParams: { route_id: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   selectPackage(id: string) {
     if (!this.canOperate || this.packageLoading()) return;
     this.packageForm.controls.reference.setValue(id);

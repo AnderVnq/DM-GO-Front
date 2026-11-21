@@ -106,7 +106,15 @@ async function enter(page: Page) {
     page.getByRole('button', { name: 'Ver agencia Courier de prueba', exact: true }),
   ).toBeEnabled();
 }
+async function closeDetail(page: Page) {
+  const modal = page.getByRole('dialog', { name: 'Detalle de la agencia', exact: true });
+  if (await modal.isVisible()) {
+    await modal.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await expect(modal).not.toBeVisible();
+  }
+}
 async function select(page: Page) {
+  await closeDetail(page);
   await page.getByRole('button', { name: 'Ver agencia Courier de prueba', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Courier de prueba', exact: true })).toBeVisible();
 }
@@ -159,9 +167,11 @@ test('admin crea agencia y sucursal distinguiendo counter y destino', async ({ p
   await expect(page.getByRole('cell', { name: 'Destino Nuevo', exact: true })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`agency_id=${aid}`));
   if (info.project.name === 'desktop') {
+    await closeDetail(page);
     await page.getByRole('button', { name: /Cambiar a modo oscuro/ }).focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await select(page);
   }
   await page.screenshot({
     path: info.outputPath('agency-catalog.png'),
@@ -177,13 +187,16 @@ test('filtro completo consulta inactivas y sus sucursales sin perder ceros del u
   await enter(page);
   await select(page);
   await expect(page.getByRole('cell', { name: 'Sucursal antigua', exact: true })).toHaveCount(0);
+  await closeDetail(page);
   await page.getByLabel('Incluir inactivas', { exact: true }).check();
   await expect(
     page.getByRole('button', { name: 'Ver agencia Agencia inactiva', exact: true }),
   ).toBeVisible();
+  await select(page);
   await expect(page.getByRole('cell', { name: 'Sucursal antigua', exact: true })).toBeVisible();
   expect(queries).toContain('?all=true');
   await expect(page.getByRole('cell', { name: '010101', exact: true })).toBeVisible();
+  await closeDetail(page);
   await page.getByLabel('Buscar en el catálogo cargado', { exact: true }).fill('INACTIVA');
   await expect(
     page.getByRole('button', { name: 'Ver agencia Courier de prueba', exact: true }),

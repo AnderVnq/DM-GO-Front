@@ -1,3 +1,4 @@
+import { RecordDialog } from '../../shared/record-dialog';
 import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
@@ -36,10 +37,20 @@ import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 @Component({
   selector: 'app-notes-page',
-  imports: [CodeSearch, LoadingIndicator, ReactiveFormsModule, Icon, Status],
+  imports: [RecordDialog, CodeSearch, LoadingIndicator, ReactiveFormsModule, Icon, Status],
   templateUrl: './notes-page.html',
 })
 export class NotesPage {
+  readonly detailVisible = signal(false);
+
+  closeDetail() {
+    if (this.busy()) return;
+    this.detailVisible.set(false);
+    this.detailRequest?.unsubscribe();
+    this.destinationReadRequest?.unsubscribe();
+    this.selected.set(null);
+  }
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly preview = inject(PdfPreviewService);
   private readonly api = inject(BillingApi);
@@ -190,9 +201,10 @@ export class NotesPage {
       });
   }
 
-  select(note: DispatchNote) {
+  select(note: DispatchNote, show = true) {
     if (this.busy()) return;
     this.detailRequest?.unsubscribe();
+    this.detailVisible.set(show);
     this.selected.set(note);
     if (this.destinationReadError()) this.readDestination(this.destinationReadKey());
     this.error.set('');
@@ -718,6 +730,7 @@ export class NotesPage {
     this.listRequest?.unsubscribe();
     this.detailRequest?.unsubscribe();
     this.loading.set(false);
+    this.detailVisible.set(true);
     this.selected.set(note);
     this.notes.update((notes) =>
       notes.some((item) => item.id === note.id)

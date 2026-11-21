@@ -104,3 +104,24 @@ it('conserva las filas y el nodo de tabla durante una recarga y ante un error', 
   );
   http.verify();
 });
+
+it('conserva la búsqueda, página y nodo de fila al actualizar una ficha en un modal', () => {
+  const { page, fixture, http } = setup();
+  const rows = [{ id: 'b', code: 'BLK-20' }];
+  http.expectOne((r) => r.url === '/api/v1/bulks').flush({ bulks: rows, total: 21 });
+  page.query = 'precinto';
+  page.search();
+  http.expectOne((r) => r.params.get('q') === 'precinto').flush({ bulks: rows, total: 21 });
+  page.load(10);
+  http.expectOne((r) => r.params.get('offset') === '10').flush({ bulks: rows, total: 21 });
+  fixture.detectChanges();
+  const button = fixture.nativeElement.querySelector('tbody button');
+  fixture.componentRef.setInput('refresh', 1);
+  fixture.detectChanges();
+  const refresh = http.expectOne((r) => r.params.get('offset') === '10');
+  expect(refresh.request.params.get('q')).toBe('precinto');
+  refresh.flush({ bulks: rows, total: 21 });
+  fixture.detectChanges();
+  expect(fixture.nativeElement.querySelector('tbody button')).toBe(button);
+  http.verify();
+});

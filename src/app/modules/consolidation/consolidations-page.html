@@ -10,263 +10,276 @@
     </button>
   </div>
 </div>
-@if (!consolidation() && !creating() && !loading()) {
-  <app-record-browser
-    resource="consolidations"
-    title="Consolidados registrados"
-    [columns]="[
-      { key: 'code', label: 'Código' },
-      { key: 'warehouse_code', label: 'Almacén' },
-      { key: 'status', label: 'Estado' },
-      { key: 'bulk_count', label: 'Bultos' },
-      { key: 'created_at', label: 'Creación', date: true },
-    ]"
-    [statuses]="lotStatuses"
-    [refresh]="listRevision()"
-    [disabled]="busy() || loading()"
-    hint="Buscar por código"
-    (selected)="selectRecord($event)"
-    empty="Todavía no hay registros para estos filtros. Puedes crear uno desde el botón superior."
-  />
-} @else {
-  <button class="button page-back" (click)="backToList()" [disabled]="busy() || loading()">
-    <app-icon name="back" />Volver al listado
-  </button>
-}
-@if (error()) {
+
+<app-record-browser
+  resource="consolidations"
+  title="Consolidados registrados"
+  [columns]="[
+    { key: 'code', label: 'Código' },
+    { key: 'warehouse_code', label: 'Almacén' },
+    { key: 'status', label: 'Estado' },
+    { key: 'bulk_count', label: 'Bultos' },
+    { key: 'created_at', label: 'Creación', date: true },
+  ]"
+  [statuses]="lotStatuses"
+  [refresh]="listRevision()"
+  [disabled]="busy()"
+  hint="Buscar por código"
+  (selected)="selectRecord($event)"
+  empty="Todavía no hay registros para estos filtros. Puedes crear uno desde el botón superior."
+/>
+
+@if (!(!!consolidation() || creating() || loading()) && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (success()) {
+@if (!(!!consolidation() || creating() || loading()) && success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
 <app-loading-indicator
   [active]="loading() || busy()"
   [label]="busy() ? 'Procesando solicitud…' : 'Cargando consolidado…'"
 />
-@if (consolidation() || creating()) {
-  <div class="consolidation-workspace" [class.split-view]="consolidation()?.status === 'open'">
-    <section class="surface surface-body">
-      @if (consolidation(); as item) {
-        <div class="record-heading">
-          <div>
-            <h2 #detailHeading tabindex="-1">{{ item.code }}</h2>
-            <p>{{ item.warehouse_code }} · {{ date(item.created_at) }}</p>
-          </div>
-          <div class="record-heading-end">
-            <app-status [value]="item.status" />
-            <div class="record-tools">
-              <button
-                class="icon-button action-icon"
-                (click)="open()"
-                [disabled]="busy() || loading()"
-                aria-label="Actualizar consolidado"
-                title="Actualizar consolidado"
-              >
-                <app-icon name="refresh" /></button
-              ><button
-                class="icon-button action-icon"
-                (click)="copyLink()"
-                [disabled]="busy()"
-                aria-label="Copiar enlace"
-                title="Copiar enlace"
-              >
-                <app-icon name="copy" />
-              </button>
+<app-record-dialog
+  [open]="!!consolidation() || creating() || loading()"
+  title="Detalle del consolidado"
+  [locked]="busy() || loading()"
+  (dismissed)="backToList()"
+  [error]="error()"
+  [notice]="success()"
+  [loading]="loading() || busy()"
+>
+  @if (consolidation() || creating()) {
+    <div class="consolidation-workspace" [class.split-view]="consolidation()?.status === 'open'">
+      <section class="surface surface-body">
+        @if (consolidation(); as item) {
+          <div class="record-heading">
+            <div>
+              <h2 #detailHeading tabindex="-1">{{ item.code }}</h2>
+              <p>{{ item.warehouse_code }} · {{ date(item.created_at) }}</p>
+            </div>
+            <div class="record-heading-end">
+              <app-status [value]="item.status" />
+              <div class="record-tools">
+                <button
+                  class="icon-button action-icon"
+                  (click)="open()"
+                  [disabled]="busy() || loading()"
+                  aria-label="Actualizar consolidado"
+                  title="Actualizar consolidado"
+                >
+                  <app-icon name="refresh" /></button
+                ><button
+                  class="icon-button action-icon"
+                  (click)="copyLink()"
+                  [disabled]="busy()"
+                  aria-label="Copiar enlace"
+                  title="Copiar enlace"
+                >
+                  <app-icon name="copy" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="actions">
-          <a class="button" [routerLink]="['/internal/consolidations', item.id, 'guide-groups']">{{
-            item.status === 'open' ? 'Creación de AWB' : 'Ver agrupaciones AWB'
-          }}</a>
-        </div>
-        @if (item.status === 'closed') {
           <div class="actions">
             <a
               class="button"
-              routerLink="/internal/airfreight"
-              [queryParams]="{ consolidation_id: item.id }"
-              ><app-icon name="plane" />Revisar manifiesto y MAWB</a
+              [routerLink]="['/internal/consolidations', item.id, 'guide-groups']"
+              >{{ item.status === 'open' ? 'Creación de AWB' : 'Ver agrupaciones AWB' }}</a
             >
           </div>
-        }
-        <h3 class="detail-section">
-          Bultos incluidos <span class="section-count">{{ item.bulk_ids.length }}</span>
-        </h3>
-        <ul class="line-list">
-          @for (id of item.bulk_ids; track id) {
-            <li>
-              <a routerLink="/internal/bulks" [queryParams]="{ bulk_id: id }">{{
-                contents()[id]?.code || id
-              }}</a><span>{{
-                contents()[id] ? measuredWeight(contents()[id]) : 'Detalle no disponible'
-              }}</span>
-            </li>
-          } @empty {
-            <li class="record-empty">
-              <app-icon name="packages" />
-              <div>
-                <strong>Este consolidado todavía no tiene bultos.</strong>
-                <p>Selecciona un bulto disponible para preparar el envío.</p>
-              </div>
-            </li>
+          @if (item.status === 'closed') {
+            <div class="actions">
+              <a
+                class="button"
+                routerLink="/internal/airfreight"
+                [queryParams]="{ consolidation_id: item.id }"
+                ><app-icon name="plane" />Revisar manifiesto y MAWB</a
+              >
+            </div>
           }
-        </ul>
-        <app-loading-indicator [active]="detailLoading()" label="Cargando detalle de bultos…" />
-        @if (detailError()) {
-          <p class="alert error" role="alert">{{ detailError() }}</p>
-          <button
-            class="button compact"
-            (click)="loadContents()"
-            [disabled]="busy() || detailLoading()"
-          >
-            Reintentar detalles
-          </button>
-        }
-        @if (item.status === 'open') {
-          <div class="actions">
+          <h3 class="detail-section">
+            Bultos incluidos <span class="section-count">{{ item.bulk_ids.length }}</span>
+          </h3>
+          <ul class="line-list">
+            @for (id of item.bulk_ids; track id) {
+              <li>
+                <a routerLink="/internal/bulks" [queryParams]="{ bulk_id: id }">{{
+                  contents()[id]?.code || id
+                }}</a><span>{{
+                  contents()[id] ? measuredWeight(contents()[id]) : 'Detalle no disponible'
+                }}</span>
+              </li>
+            } @empty {
+              <li class="record-empty">
+                <app-icon name="packages" />
+                <div>
+                  <strong>Este consolidado todavía no tiene bultos.</strong>
+                  <p>Selecciona un bulto disponible para preparar el envío.</p>
+                </div>
+              </li>
+            }
+          </ul>
+          <app-loading-indicator [active]="detailLoading()" label="Cargando detalle de bultos…" />
+          @if (detailError()) {
+            <p class="alert error" role="alert">{{ detailError() }}</p>
             <button
-              class="button primary"
-              (click)="reviewClose()"
-              [disabled]="busy() || !item.bulk_ids.length"
+              class="button compact"
+              (click)="loadContents()"
+              [disabled]="busy() || detailLoading()"
             >
-              Revisar cierre y generar guías
+              Reintentar detalles
             </button>
-          </div>
-        } @else {
-          <section class="detail-section">
-            <h3>Guías HAWB emitidas</h3>
-            <p>Cierre: {{ date(item.closed_at) }}</p>
-            <ul class="line-list">
-              @for (guide of item.hawbs; track guide.id) {
-                <li>
-                  <strong>{{ guide.number }}</strong><span
-                    >{{ guide.package_ids.length }} paquete(s)</span
-                  >
-                  @for (packageId of guide.package_ids; track packageId; let i = $index) {
-                    <a
-                      class="text-button"
-                      routerLink="/internal/packages"
-                      [queryParams]="{ customer_id: guide.customer_id, package_id: packageId }"
-                      >Ver paquete {{ i + 1 }}</a
+          }
+          @if (item.status === 'open') {
+            <div class="actions">
+              <button
+                class="button primary"
+                (click)="reviewClose()"
+                [disabled]="busy() || !item.bulk_ids.length"
+              >
+                Revisar cierre y generar guías
+              </button>
+            </div>
+          } @else {
+            <section class="detail-section">
+              <h3>Guías HAWB emitidas</h3>
+              <p>Cierre: {{ date(item.closed_at) }}</p>
+              <ul class="line-list">
+                @for (guide of item.hawbs; track guide.id) {
+                  <li>
+                    <strong>{{ guide.number }}</strong><span
+                      >{{ guide.package_ids.length }} paquete(s)</span
                     >
-                  }
-                </li>
-              } @empty {
-                <li>
-                  La consulta no devolvió guías. Actualiza el consolidado para comprobar su detalle.
-                </li>
-              }
-            </ul>
-          </section>
-        }
-      } @else if (creating() && !loading()) {
-        <h2>Crear consolidado</h2>
-        <p>Selecciona el almacén de origen de los bultos que vas a despachar.</p>
-        <app-loading-indicator [active]="catalogLoading()" label="Cargando almacenes…" />
-        @if (catalogError()) {
-          <p class="alert error" role="alert">{{ catalogError() }}</p>
-          <button class="button" (click)="loadWarehouses()" [disabled]="busy() || catalogLoading()">
-            Reintentar almacenes
-          </button>
-        }
-        <form (ngSubmit)="create()">
-          <label class="field"
-            >Almacén de origen<select
-              name="warehouse"
-              [(ngModel)]="warehouseCode"
+                    @for (packageId of guide.package_ids; track packageId; let i = $index) {
+                      <a
+                        class="text-button"
+                        routerLink="/internal/packages"
+                        [queryParams]="{ customer_id: guide.customer_id, package_id: packageId }"
+                        >Ver paquete {{ i + 1 }}</a
+                      >
+                    }
+                  </li>
+                } @empty {
+                  <li>
+                    La consulta no devolvió guías. Actualiza el consolidado para comprobar su
+                    detalle.
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        } @else if (creating() && !loading()) {
+          <h2>Crear consolidado</h2>
+          <p>Selecciona el almacén de origen de los bultos que vas a despachar.</p>
+          <app-loading-indicator [active]="catalogLoading()" label="Cargando almacenes…" />
+          @if (catalogError()) {
+            <p class="alert error" role="alert">{{ catalogError() }}</p>
+            <button
+              class="button"
+              (click)="loadWarehouses()"
               [disabled]="busy() || catalogLoading()"
             >
-              <option value="">Selecciona un almacén activo en USA</option>
-              @for (warehouse of warehouses(); track warehouse.id) {
-                <option [value]="warehouse.code">
-                  {{ warehouse.code }} · {{ warehouse.name }}
-                </option>
-              }
-            </select></label
-          ><button
-            class="button primary actions"
-            type="submit"
-            [disabled]="!warehouseCode || busy() || loading() || catalogLoading()"
-          >
-            Crear consolidado
-          </button>
-        </form>
-        @if (!catalogLoading() && !catalogError() && !warehouses().length) {
-          <p class="muted actions">
-            No hay almacenes activos en USA. Administración debe registrar o activar una sede.
-          </p>
-        }
-      }
-    </section>
-    @if (consolidation()?.status === 'open') {
-      <aside class="inspector selection-panel">
-        <div class="panel-heading">
-          <h2>Añadir bultos</h2>
-          <p>Selecciona un bulto cerrado y sin consolidado del mismo almacén.</p>
-        </div>
-        <app-record-browser
-          resource="bulks"
-          title="Bultos disponibles"
-          [embedded]="true"
-          [columns]="[
-            { key: 'code', label: 'Bulto' },
-            { key: 'package_count', label: 'Paquetes' },
-            { key: 'seal', label: 'Precinto' },
-          ]"
-          [filters]="availableBulkFilters()"
-          [refresh]="listRevision()"
-          [disabled]="busy() || looking() || loading()"
-          action="Seleccionar"
-          hint="Buscar por código o precinto"
-          (selected)="selectBulk($event)"
-          empty="No hay bultos cerrados disponibles en este almacén. Prepara y cierra un bulto desde Bultos."
-        />
-        <app-loading-indicator [active]="looking()" label="Consultando bulto…" />
-        @if (previewError()) {
-          <p class="alert error" role="alert">{{ previewError() }}</p>
-        }
-        @if (preview(); as bulk) {
-          <section class="detail-section">
-            <h3>{{ bulk.code }}</h3>
-            <app-status [value]="bulk.status" />
-            <dl class="detail-grid">
-              <div>
-                <dt>Almacén</dt>
-                <dd>{{ bulk.warehouse_code }}</dd>
-              </div>
-              <div>
-                <dt>Paquetes</dt>
-                <dd>{{ bulk.package_ids.length }}</dd>
-              </div>
-              <div>
-                <dt>Precinto</dt>
-                <dd>{{ bulk.seal || 'Sin cerrar' }}</dd>
-              </div>
-              <div>
-                <dt>Peso</dt>
-                <dd>{{ measuredWeight(bulk) }}</dd>
-              </div>
-            </dl>
-            @if (unavailable) {
-              <p class="muted">{{ unavailable }}</p>
-            }
-            <button
-              class="button primary"
-              (click)="add()"
-              [disabled]="busy() || looking() || loading() || !!unavailable || !consolidation()"
-            >
-              Añadir bulto al consolidado
+              Reintentar almacenes
             </button>
-            @if (!consolidation()) {
-              <p class="fine-print actions">Crea o abre un consolidado para añadir este bulto.</p>
-            }
-          </section>
+          }
+          <form (ngSubmit)="create()">
+            <label class="field"
+              >Almacén de origen<select
+                name="warehouse"
+                [(ngModel)]="warehouseCode"
+                [disabled]="busy() || catalogLoading()"
+              >
+                <option value="">Selecciona un almacén activo en USA</option>
+                @for (warehouse of warehouses(); track warehouse.id) {
+                  <option [value]="warehouse.code">
+                    {{ warehouse.code }} · {{ warehouse.name }}
+                  </option>
+                }
+              </select></label
+            ><button
+              class="button primary actions"
+              type="submit"
+              [disabled]="!warehouseCode || busy() || loading() || catalogLoading()"
+            >
+              Crear consolidado
+            </button>
+          </form>
+          @if (!catalogLoading() && !catalogError() && !warehouses().length) {
+            <p class="muted actions">
+              No hay almacenes activos en USA. Administración debe registrar o activar una sede.
+            </p>
+          }
         }
-      </aside>
-    }
-  </div>
-}
+      </section>
+      @if (consolidation()?.status === 'open') {
+        <aside class="inspector selection-panel">
+          <div class="panel-heading">
+            <h2>Añadir bultos</h2>
+            <p>Selecciona un bulto cerrado y sin consolidado del mismo almacén.</p>
+          </div>
+          <app-record-browser
+            resource="bulks"
+            title="Bultos disponibles"
+            [embedded]="true"
+            [columns]="[
+              { key: 'code', label: 'Bulto' },
+              { key: 'package_count', label: 'Paquetes' },
+              { key: 'seal', label: 'Precinto' },
+            ]"
+            [filters]="availableBulkFilters()"
+            [refresh]="listRevision()"
+            [disabled]="busy() || looking() || loading()"
+            action="Seleccionar"
+            hint="Buscar por código o precinto"
+            (selected)="selectBulk($event)"
+            empty="No hay bultos cerrados disponibles en este almacén. Prepara y cierra un bulto desde Bultos."
+          />
+          <app-loading-indicator [active]="looking()" label="Consultando bulto…" />
+          @if (previewError()) {
+            <p class="alert error" role="alert">{{ previewError() }}</p>
+          }
+          @if (preview(); as bulk) {
+            <section class="detail-section">
+              <h3>{{ bulk.code }}</h3>
+              <app-status [value]="bulk.status" />
+              <dl class="detail-grid">
+                <div>
+                  <dt>Almacén</dt>
+                  <dd>{{ bulk.warehouse_code }}</dd>
+                </div>
+                <div>
+                  <dt>Paquetes</dt>
+                  <dd>{{ bulk.package_ids.length }}</dd>
+                </div>
+                <div>
+                  <dt>Precinto</dt>
+                  <dd>{{ bulk.seal || 'Sin cerrar' }}</dd>
+                </div>
+                <div>
+                  <dt>Peso</dt>
+                  <dd>{{ measuredWeight(bulk) }}</dd>
+                </div>
+              </dl>
+              @if (unavailable) {
+                <p class="muted">{{ unavailable }}</p>
+              }
+              <button
+                class="button primary"
+                (click)="add()"
+                [disabled]="busy() || looking() || loading() || !!unavailable || !consolidation()"
+              >
+                Añadir bulto al consolidado
+              </button>
+              @if (!consolidation()) {
+                <p class="fine-print actions">Crea o abre un consolidado para añadir este bulto.</p>
+              }
+            </section>
+          }
+        </aside>
+      }
+    </div>
+  }
+</app-record-dialog>
 <dialog
   #closeDialog
   aria-labelledby="consolidation-close-title"

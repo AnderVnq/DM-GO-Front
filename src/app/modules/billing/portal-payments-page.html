@@ -13,17 +13,17 @@
     <app-icon name="refresh" />
   </button>
 </div>
-@if (error()) {
+@if (!(detailVisible() && !!selected()) && error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-@if (success()) {
+@if (!(detailVisible() && !!selected()) && success()) {
   <p class="alert success" role="status">{{ success() }}</p>
 }
 <app-loading-indicator
   [active]="loading() || busy()"
   [label]="busy() ? 'Procesando solicitud…' : 'Cargando tus notas…'"
 />
-<div class="split-view">
+<div class="record-list-workspace">
   <section class="surface">
     <div class="table-scroll">
       <table class="data-table">
@@ -82,96 +82,108 @@
       </div>
     }
   </section>
-  @if (selected(); as note) {
-    <aside class="inspector">
-      <h2>{{ note.number }}</h2>
-      <app-status [value]="note.status" />
-      <dl class="detail-grid">
-        <div>
-          <dt>Total</dt>
-          <dd>{{ money(note.total_cents) }}</dd>
-        </div>
-        <div>
-          <dt>Pagado y confirmado</dt>
-          <dd>{{ money(note.paid_cents) }}</dd>
-        </div>
-        <div>
-          <dt>Saldo pendiente</dt>
-          <dd>
-            <strong>{{ money(note.balance_cents) }}</strong>
-          </dd>
-        </div>
-        <div>
-          <dt>Liquidación</dt>
-          <dd>{{ note.liquidation_number || 'En preparación' }}</dd>
-        </div>
-      </dl>
-      <app-loading-indicator [active]="detailLoading()" label="Actualizando el detalle…" />
-      <div class="actions">
-        <button
-          class="icon-button action-icon"
-          (click)="viewPdf()"
-          [disabled]="busy() || detailLoading()"
-          aria-label="Ver PDF"
-          title="Ver PDF"
-        >
-          <app-icon name="eye" />
-        </button>
-        <button class="button compact" (click)="download()" [disabled]="busy() || detailLoading()">
-          <app-icon name="download" />Descargar PDF
-        </button>
-        @if (note.status === 'pending_payment') {
+  <app-record-dialog
+    [open]="detailVisible() && !!selected()"
+    title="Detalle de mi nota de salida"
+    [locked]="busy()"
+    (dismissed)="closeDetail()"
+    [error]="error()"
+  >
+    @if (selected(); as note) {
+      <aside class="inspector">
+        <h2>{{ note.number }}</h2>
+        <app-status [value]="note.status" />
+        <dl class="detail-grid">
+          <div>
+            <dt>Total</dt>
+            <dd>{{ money(note.total_cents) }}</dd>
+          </div>
+          <div>
+            <dt>Pagado y confirmado</dt>
+            <dd>{{ money(note.paid_cents) }}</dd>
+          </div>
+          <div>
+            <dt>Saldo pendiente</dt>
+            <dd>
+              <strong>{{ money(note.balance_cents) }}</strong>
+            </dd>
+          </div>
+          <div>
+            <dt>Liquidación</dt>
+            <dd>{{ note.liquidation_number || 'En preparación' }}</dd>
+          </div>
+        </dl>
+        <app-loading-indicator [active]="detailLoading()" label="Actualizando el detalle…" />
+        <div class="actions">
           <button
-            class="button primary compact"
-            (click)="preparePayment()"
+            class="icon-button action-icon"
+            (click)="viewPdf()"
+            [disabled]="busy() || detailLoading()"
+            aria-label="Ver PDF"
+            title="Ver PDF"
+          >
+            <app-icon name="eye" />
+          </button>
+          <button
+            class="button compact"
+            (click)="download()"
             [disabled]="busy() || detailLoading()"
           >
-            Reportar pago
+            <app-icon name="download" />Descargar PDF
           </button>
-        }
-      </div>
-      <section class="detail-section">
-        <h3>Cargos de tu envío</h3>
-        <ul class="line-list">
-          @for (line of note.lines; track line.id) {
-            @if (line.applies) {
-              <li>
-                <span>{{ line.charge_name }}</span><strong>{{ money(line.amount_cents) }}</strong>
-              </li>
+          @if (note.status === 'pending_payment') {
+            <button
+              class="button primary compact"
+              (click)="preparePayment()"
+              [disabled]="busy() || detailLoading()"
+            >
+              Reportar pago
+            </button>
+          }
+        </div>
+        <section class="detail-section">
+          <h3>Cargos de tu envío</h3>
+          <ul class="line-list">
+            @for (line of note.lines; track line.id) {
+              @if (line.applies) {
+                <li>
+                  <span>{{ line.charge_name }}</span><strong>{{ money(line.amount_cents) }}</strong>
+                </li>
+              }
+            } @empty {
+              <li>El desglose aún no está disponible.</li>
             }
-          } @empty {
-            <li>El desglose aún no está disponible.</li>
-          }
-        </ul>
-      </section>
-      <section class="detail-section">
-        <h3>Pagos reportados</h3>
-        <ul class="line-list">
-          @for (payment of note.payments; track payment.id) {
-            <li>
-              <div>
-                <strong>{{ money(payment.amount_cents) }}</strong><small
-                  >{{ methods[payment.method] || payment.method }} ·
-                  {{ date(payment.paid_at) }}</small
-                ><app-status [value]="payment.status" />
-                @if (payment.reference) {
-                  <p class="fine-print">Referencia: {{ payment.reference }}</p>
-                }
-                @if (payment.reject_reason) {
-                  <p>{{ payment.reject_reason }}</p>
-                }
-              </div>
-            </li>
-          } @empty {
-            <li>No has reportado pagos para esta nota.</li>
-          }
-        </ul>
-        <p class="fine-print">
-          Los comprobantes enviados se revisan antes de confirmar el pago y actualizar el saldo.
-        </p>
-      </section>
-    </aside>
-  }
+          </ul>
+        </section>
+        <section class="detail-section">
+          <h3>Pagos reportados</h3>
+          <ul class="line-list">
+            @for (payment of note.payments; track payment.id) {
+              <li>
+                <div>
+                  <strong>{{ money(payment.amount_cents) }}</strong><small
+                    >{{ methods[payment.method] || payment.method }} ·
+                    {{ date(payment.paid_at) }}</small
+                  ><app-status [value]="payment.status" />
+                  @if (payment.reference) {
+                    <p class="fine-print">Referencia: {{ payment.reference }}</p>
+                  }
+                  @if (payment.reject_reason) {
+                    <p>{{ payment.reject_reason }}</p>
+                  }
+                </div>
+              </li>
+            } @empty {
+              <li>No has reportado pagos para esta nota.</li>
+            }
+          </ul>
+          <p class="fine-print">
+            Los comprobantes enviados se revisan antes de confirmar el pago y actualizar el saldo.
+          </p>
+        </section>
+      </aside>
+    }
+  </app-record-dialog>
 </div>
 <dialog #paymentDialog aria-labelledby="portal-payment-title">
   <div class="dialog-header">
