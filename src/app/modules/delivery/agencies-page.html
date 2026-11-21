@@ -47,6 +47,10 @@
       ><input
         id="agency-filter"
         formControlName="query"
+        appDebouncedInput
+        [focusSearch]="true"
+        (debouncedSearch)="applyFilter()"
+        (keydown.enter)="applyFilter()"
         placeholder="Código, nombre o dirección del counter"
       />
     </div>

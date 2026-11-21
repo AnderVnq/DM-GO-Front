@@ -1,5 +1,5 @@
 <a class="skip-link" href="#portal-content">Saltar al contenido</a>
-<div class="app-shell portal-shell">
+<div class="app-shell portal-shell" [class.navigation-collapsed]="collapsed()">
   <aside
     #sidebar
     id="portal-navigation"
@@ -30,6 +30,8 @@
           [routerLinkActiveOptions]="{ exact: link.path === '/portal' }"
           ariaCurrentWhenActive="page"
           (click)="closeNavigation()"
+          [attr.aria-label]="link.label"
+          [attr.title]="link.label"
           ><app-icon [name]="link.icon" /><span>{{ link.label }}</span></a
         >
       }
@@ -57,6 +59,17 @@
   <div class="workspace" [inert]="mobileOpen()">
     <header class="topbar">
       <div class="breadcrumb">
+        <button
+          class="icon-button desktop-nav-toggle"
+          type="button"
+          (click)="toggleCollapsed()"
+          aria-controls="portal-navigation"
+          [attr.aria-expanded]="!collapsed()"
+          [attr.aria-label]="collapsed() ? 'Expandir navegación' : 'Contraer navegación'"
+          [attr.title]="collapsed() ? 'Expandir navegación' : 'Contraer navegación'"
+        >
+          <app-icon name="menu" />
+        </button>
         <button
           #menuToggle
           class="icon-button mobile-toggle"

@@ -1,3 +1,4 @@
+import { DebouncedInput } from './debounced-input';
 import {
   Component,
   DestroyRef,
@@ -34,7 +35,7 @@ interface Draft {
 }
 @Component({
   selector: 'app-address-book',
-  imports: [FormsModule, Icon, AddressPointPicker],
+  imports: [DebouncedInput, FormsModule, Icon, AddressPointPicker],
   templateUrl: './address-book.html',
   styles: `
     :host {
@@ -174,7 +175,13 @@ export class AddressBook {
     this.error.set('');
   }
   search() {
-    if (this.busy() || this.searching() || !this.query.trim()) return;
+    if (this.busy()) return;
+    this.searchRequest?.unsubscribe();
+    if (this.query.trim().length < 2) {
+      this.searching.set(false);
+      this.searchError.set('Escribe al menos 2 caracteres del nombre o código del distrito.');
+      return;
+    }
     this.searching.set(true);
     this.searchError.set('');
     this.searchRequest = this.http

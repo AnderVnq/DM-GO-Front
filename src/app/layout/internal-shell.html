@@ -1,5 +1,5 @@
 <a class="skip-link" href="#main-content">Saltar al contenido</a>
-<div class="app-shell">
+<div class="app-shell" [class.navigation-collapsed]="collapsed()">
   <aside
     #sidebar
     id="internal-navigation"
@@ -24,6 +24,8 @@
           routerLinkActive="active"
           ariaCurrentWhenActive="page"
           (click)="closeNavigation()"
+          [attr.aria-label]="item.label"
+          [attr.title]="item.label"
           ><app-icon [name]="item.icon" /><span>{{ item.label }}</span></a
         >
       }
@@ -46,6 +48,17 @@
   <div class="workspace">
     <header class="topbar">
       <div class="breadcrumb">
+        <button
+          class="icon-button desktop-nav-toggle"
+          type="button"
+          (click)="toggleCollapsed()"
+          aria-controls="internal-navigation"
+          [attr.aria-expanded]="!collapsed()"
+          [attr.aria-label]="collapsed() ? 'Expandir navegación' : 'Contraer navegación'"
+          [attr.title]="collapsed() ? 'Expandir navegación' : 'Contraer navegación'"
+        >
+          <app-icon name="menu" />
+        </button>
         <button
           class="icon-button mobile-toggle"
           #menuToggle

@@ -1,3 +1,4 @@
+import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { requestFieldError } from '../../core/api-problem';
 import { normalizeWeightKg, weightKgHint, formatMeasuredWeight } from '../../shared/weight';
@@ -18,7 +19,7 @@ import { warehouseError } from './warehouse-error';
 
 @Component({
   selector: 'app-receiving-page',
-  imports: [LoadingIndicator, FormsModule, RouterLink, Status],
+  imports: [CodeSearch, LoadingIndicator, FormsModule, RouterLink, Status],
   templateUrl: './receiving-page.html',
 })
 export class ReceivingPage {

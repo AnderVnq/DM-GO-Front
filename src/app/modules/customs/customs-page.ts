@@ -1,3 +1,5 @@
+import { DebouncedInput } from '../../shared/debounced-input';
+import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   afterNextRender,
@@ -37,7 +39,7 @@ import {
 } from './customs-rules';
 @Component({
   selector: 'app-customs-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, Icon],
+  imports: [DebouncedInput, CodeSearch, LoadingIndicator, ReactiveFormsModule, Icon],
   templateUrl: './customs-page.html',
   styleUrl: './customs-page.scss',
 })
@@ -109,8 +111,12 @@ export class CustomsPage {
   get lastDetailAvailable() {
     return !!this.lastDetailId && !this.selected();
   }
+  readonly appliedFilter = signal('');
+  applyFilter() {
+    this.appliedFilter.set(this.filters.controls.query.value.trim().toLocaleLowerCase('es'));
+  }
   get visibleLines() {
-    const q = this.filters.controls.query.value.trim().toLocaleLowerCase('es');
+    const q = this.appliedFilter();
     return this.lines().filter((l) =>
       [l.guide, l.declaration, l.customs_manifest].some((v) =>
         v.toLocaleLowerCase('es').includes(q),
@@ -170,7 +176,7 @@ export class CustomsPage {
     if (this.busy() || this.importing() || this.attaching() || this.releasing()) return;
     const id = customsReference(this.lookup.controls.reference.value, location.origin);
     if (!id) {
-      this.error.set('Introduce una referencia UUID o un enlace de Aduanas de esta aplicación.');
+      this.error.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.selectId(id);
@@ -179,7 +185,8 @@ export class CustomsPage {
     if (this.busy() || this.attaching() || this.releasing() || this.importing()) return;
     this.selectId(line.id);
   }
-  private selectId(id: string) {
+  selectId(id: string) {
+    if (this.busy() || this.attaching() || this.releasing() || this.importing()) return;
     this.selected.set(null);
     this.notice.set('');
     this.read(id);

@@ -1,3 +1,5 @@
+import { DebouncedInput } from '../../shared/debounced-input';
+import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { formatMeasuredWeight } from '../../shared/weight';
 import {
@@ -29,7 +31,16 @@ import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 @Component({
   selector: 'app-packages-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, PrealertForm, Icon, Status, RouterLink],
+  imports: [
+    DebouncedInput,
+    CodeSearch,
+    LoadingIndicator,
+    ReactiveFormsModule,
+    PrealertForm,
+    Icon,
+    Status,
+    RouterLink,
+  ],
   templateUrl: './packages-page.html',
 })
 export class PackagesPage {
@@ -123,6 +134,11 @@ export class PackagesPage {
     });
   }
 
+  pickCustomer(code: string) {
+    this.search.controls.kind.setValue('locker');
+    this.search.controls.value.setValue(code);
+    this.find();
+  }
   find() {
     if (this.search.invalid || this.busy()) return;
     this.pendingOnly.set(false);

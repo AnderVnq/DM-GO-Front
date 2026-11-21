@@ -18,7 +18,8 @@
     >Buscar aviso<input
       placeholder="Asunto o contenido"
       [value]="filter()"
-      (input)="filter.set($any($event.target).value)"
+      appDebouncedInput
+      (debouncedSearch)="filter.set($any($event.target).value)"
   /></label>
 </div>
 @if (error()) {

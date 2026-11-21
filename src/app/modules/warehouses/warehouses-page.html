@@ -30,7 +30,8 @@
   <label class="field"
     >Buscar almacén<input
       [value]="filter()"
-      (input)="filter.set($any($event.target).value)"
+      appDebouncedInput
+      (debouncedSearch)="filter.set($any($event.target).value)"
       placeholder="Código, nombre o ciudad" /></label
   ><label class="checkbox-row"
     ><input

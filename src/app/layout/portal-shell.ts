@@ -30,6 +30,21 @@ export class PortalShell {
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
   readonly mobileOpen = signal(false);
+  readonly collapsed = signal(this.readCollapsed());
+  private readCollapsed() {
+    try {
+      return localStorage.getItem('dm48.navigation.collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  }
+  toggleCollapsed() {
+    this.collapsed.update((value) => !value);
+    try {
+      localStorage.setItem('dm48.navigation.collapsed', String(this.collapsed()));
+    } catch {}
+  }
+
   private readonly sidebar = viewChild.required<ElementRef<HTMLElement>>('sidebar');
   private readonly menuToggle = viewChild.required<ElementRef<HTMLButtonElement>>('menuToggle');
   readonly links: { path: string; label: string; icon: IconName }[] = [

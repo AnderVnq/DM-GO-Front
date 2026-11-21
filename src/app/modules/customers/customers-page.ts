@@ -1,3 +1,5 @@
+import { CodeSearch } from '../../shared/code-search';
+import { DebouncedInput } from '../../shared/debounced-input';
 import { AddressBook } from '../../shared/address-book';
 import type { AddressRecord } from '../../shared/address.model';
 import { LoadingIndicator } from '../../shared/loading-indicator';
@@ -19,7 +21,15 @@ import { formatDate } from '../../shared/amount';
 
 @Component({
   selector: 'app-customers-page',
-  imports: [AddressBook, LoadingIndicator, ReactiveFormsModule, RouterLink, Icon],
+  imports: [
+    CodeSearch,
+    DebouncedInput,
+    AddressBook,
+    LoadingIndicator,
+    ReactiveFormsModule,
+    RouterLink,
+    Icon,
+  ],
   templateUrl: './customers-page.html',
   styleUrl: './customers-page.scss',
 })
@@ -27,6 +37,10 @@ export class CustomersPage {
   private readonly api = inject(CustomersApi);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  pickCustomer(code: string) {
+    this.search.patchValue({ kind: 'locker', value: code });
+    this.find();
+  }
   readonly customer = signal<Customer | null>(null);
   updateAddresses(addresses: AddressRecord[]) {
     this.customer.update((item) => (item ? { ...item, addresses } : null));

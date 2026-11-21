@@ -1,3 +1,4 @@
+import { DebouncedInput } from '../../shared/debounced-input';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -14,7 +15,7 @@ import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-invoices-page',
-  imports: [LoadingIndicator, Status, Icon],
+  imports: [DebouncedInput, LoadingIndicator, Status, Icon],
   templateUrl: './portal-invoices-page.html',
 })
 export class PortalInvoicesPage {

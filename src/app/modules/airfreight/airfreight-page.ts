@@ -196,7 +196,7 @@ export class AirfreightPage {
     if (!this.auth.manager() || this.busy()) return;
     const id = flightReference(this.reference.value, 'mawb', location.origin);
     if (!id) {
-      this.error.set('Introduce una referencia UUID o un enlace de MAWB válido.');
+      this.error.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.detailRequest?.unsubscribe();
@@ -256,7 +256,7 @@ export class AirfreightPage {
     const reference =
       id ?? flightReference(this.consolidationReference.value, 'consolidation', location.origin);
     if (!reference) {
-      this.manifestError.set('Introduce una referencia UUID o un enlace de consolidado válido.');
+      this.manifestError.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.manifestRequest?.unsubscribe();

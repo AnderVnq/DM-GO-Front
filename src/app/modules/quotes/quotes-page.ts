@@ -1,3 +1,4 @@
+import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { normalizeWeightKg, weightKgHint } from '../../shared/weight';
 import {
@@ -46,7 +47,7 @@ const concepts: Record<string, string> = {
 
 @Component({
   selector: 'app-quotes-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, Icon, Status],
+  imports: [CodeSearch, LoadingIndicator, ReactiveFormsModule, Icon, Status],
   templateUrl: './quotes-page.html',
   styleUrl: './quotes-page.scss',
 })

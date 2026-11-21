@@ -1,3 +1,4 @@
+import { CodeSearch } from '../../shared/code-search';
 import { RouteMap } from './route-map';
 import { RouteLive } from './route-live';
 import { LoadingIndicator } from '../../shared/loading-indicator';
@@ -45,6 +46,7 @@ import {
 @Component({
   selector: 'app-delivery-routes-page',
   imports: [
+    CodeSearch,
     RouteMap,
     RouteLive,
     LoadingIndicator,
@@ -280,11 +282,15 @@ export class DeliveryRoutesPage {
       replaceUrl: true,
     });
   }
+  pickRoute(id: string) {
+    if (this.busy() || this.creating() || this.action() || this.failing()) return;
+    this.selectId(id);
+  }
   openReference() {
     if (this.busy() || this.creating() || this.action() || this.failing()) return;
     const id = routeReference(this.lookup.controls.reference.value, location.origin);
     if (!id) {
-      this.error.set('Introduce una referencia UUID o un enlace de rutas de esta aplicación.');
+      this.error.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.selectId(id);
@@ -413,7 +419,7 @@ export class DeliveryRoutesPage {
     if (!this.canOperate || this.selected()?.status !== 'planned') return;
     const id = this.packageForm.controls.reference.value.trim();
     if (!validPackageId(id)) {
-      this.packageError.set('Introduce la referencia UUID del paquete.');
+      this.packageError.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.packageRequest?.unsubscribe();

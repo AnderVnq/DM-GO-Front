@@ -221,7 +221,7 @@ export class ReceptionsPage {
       location.origin,
     );
     if (!id) {
-      this.createError.set('Introduce una referencia UUID o un enlace de MAWB válido.');
+      this.createError.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.mawbRequest?.unsubscribe();
@@ -277,7 +277,7 @@ export class ReceptionsPage {
       location.origin,
     );
     if (!id) {
-      this.error.set('Introduce una referencia UUID o un enlace de recepción válido.');
+      this.error.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.detailRequest?.unsubscribe();

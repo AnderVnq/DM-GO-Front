@@ -223,11 +223,12 @@
           </p>
           <div class="customer-lookup">
             <label class="field"
-              >Casillero de cliente (opcional)<input
+              >Casillero de cliente (opcional)<app-code-search
                 [formControl]="locker"
+                label="Casillero de cliente (opcional)"
+                (picked)="findCustomer()"
                 placeholder="PE00042"
-                (input)="customer.set(null)"
-                (keydown.enter)="$event.preventDefault(); findCustomer()" /></label
+                (input)="customer.set(null)" /></label
             ><button
               type="button"
               class="button"

@@ -1,3 +1,4 @@
+import { DebouncedInput } from '../../shared/debounced-input';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { formatMeasuredWeight } from '../../shared/weight';
 import {
@@ -24,7 +25,7 @@ import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-portal-packages-page',
-  imports: [LoadingIndicator, PrealertForm, Status, Icon, RouterLink],
+  imports: [DebouncedInput, LoadingIndicator, PrealertForm, Status, Icon, RouterLink],
   templateUrl: './portal-packages-page.html',
 })
 export class PortalPackagesPage {

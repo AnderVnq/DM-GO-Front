@@ -1,3 +1,4 @@
+import { DebouncedInput } from '../../shared/debounced-input';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import {
@@ -19,7 +20,7 @@ import { notificationTarget, type PortalNotification } from './notification.mode
 
 @Component({
   selector: 'app-portal-notifications-page',
-  imports: [LoadingIndicator, Icon, RouterLink],
+  imports: [DebouncedInput, LoadingIndicator, Icon, RouterLink],
   templateUrl: './portal-notifications-page.html',
   styleUrl: './portal-notifications-page.scss',
 })

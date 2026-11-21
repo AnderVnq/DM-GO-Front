@@ -15,6 +15,14 @@
 }
 <section class="surface routes-list" aria-labelledby="delivery-routes-title">
   <div class="section-heading"><h2 id="delivery-routes-title">Rutas por fecha</h2></div>
+  <div class="surface-body">
+    <app-code-search
+      resource="routes"
+      label="Buscar ruta por código o repartidor"
+      placeholder="Código de ruta o repartidor"
+      (picked)="pickRoute($event.id)"
+    />
+  </div>
   <form class="date-search" [formGroup]="listForm" (ngSubmit)="loadRoutes()">
     <div class="field">
       <label for="routes-date">Fecha de reparto</label

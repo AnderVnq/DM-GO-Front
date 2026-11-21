@@ -71,7 +71,9 @@
         <fieldset class="form-grid" [disabled]="busy() || loading()">
           <legend class="sr-only">Buscar propietario</legend>
           <label class="field full"
-            >Casillero del cliente<input
+            >Casillero del cliente<app-code-search
+              label="Casillero del cliente"
+              (picked)="lookup()"
               name="locker"
               [ngModel]="locker"
               (ngModelChange)="changeLocker($event)"

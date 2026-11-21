@@ -90,6 +90,11 @@
             >Buscar distrito<input
               name="district-search"
               [(ngModel)]="query"
+              maxlength="60"
+              appDebouncedInput
+              [focusSearch]="true"
+              (debouncedSearch)="search()"
+              (keydown.enter)="$event.preventDefault(); search()"
               placeholder="Nombre o código de distrito" /></label
           ><button
             class="button"

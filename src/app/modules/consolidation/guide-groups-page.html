@@ -38,7 +38,8 @@
       <label class="field"
         >Buscar por tracking o casillero<input
           [value]="filter()"
-          (input)="filter.set($any($event.target).value)"
+          appDebouncedInput
+          (debouncedSearch)="filter.set($any($event.target).value)"
           placeholder="Tracking o PE00003"
       /></label>
       <p class="fine-print">

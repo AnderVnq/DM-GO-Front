@@ -11,6 +11,9 @@
         <label [for]="uid + '-search'">{{ hint() }}</label>
         <input
           [id]="uid + '-search'"
+          appDebouncedInput
+          [focusSearch]="true"
+          (debouncedSearch)="search()"
           [(ngModel)]="query"
           [ngModelOptions]="{ standalone: true }"
           (keydown.enter)="search($event)"

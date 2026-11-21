@@ -1,3 +1,4 @@
+import { DebouncedInput } from '../../shared/debounced-input';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   afterNextRender,
@@ -21,7 +22,7 @@ import type { TransitAgency, AgencyBranch } from './agency.model';
 import { normalizeAgency, normalizeBranch, validAgency, validBranch } from './agency-rules';
 @Component({
   selector: 'app-agencies-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, Icon],
+  imports: [DebouncedInput, LoadingIndicator, ReactiveFormsModule, Icon],
   templateUrl: './agencies-page.html',
   styleUrl: './agencies-page.scss',
 })
@@ -67,8 +68,12 @@ export class AgenciesPage {
   get selected() {
     return this.items().find((a) => a.id === this.selectedId()) ?? null;
   }
+  readonly appliedFilter = signal('');
+  applyFilter() {
+    this.appliedFilter.set(this.filter.controls.query.value.trim().toLocaleLowerCase('es'));
+  }
   get filtered() {
-    const q = this.filter.controls.query.value.trim().toLocaleLowerCase('es');
+    const q = this.appliedFilter();
     return this.items().filter((a) =>
       `${a.code} ${a.name} ${a.dropoff_ubigeo} ${a.dropoff_address}`
         .toLocaleLowerCase('es')

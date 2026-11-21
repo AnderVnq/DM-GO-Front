@@ -1,3 +1,4 @@
+import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import { formatMeasuredWeight } from '../../shared/weight';
@@ -14,7 +15,7 @@ import { formatDate } from '../../shared/amount';
 
 @Component({
   selector: 'app-unidentified-page',
-  imports: [LoadingIndicator, Icon, FormsModule, RouterLink],
+  imports: [CodeSearch, LoadingIndicator, Icon, FormsModule, RouterLink],
   templateUrl: './unidentified-page.html',
 })
 export class UnidentifiedPage {

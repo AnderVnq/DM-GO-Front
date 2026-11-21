@@ -1,3 +1,4 @@
+import { DebouncedInput } from '../../shared/debounced-input';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import { Icon } from '../../shared/icon';
 import { DOCUMENT } from '@angular/common';
@@ -20,7 +21,7 @@ import { requestCode, requestMessage } from '../../core/api-problem';
 
 @Component({
   selector: 'app-guide-groups-page',
-  imports: [LoadingIndicator, Icon, RouterLink, GuidePackageCard],
+  imports: [DebouncedInput, LoadingIndicator, Icon, RouterLink, GuidePackageCard],
   templateUrl: './guide-groups-page.html',
   styleUrl: './guide-groups-page.scss',
 })

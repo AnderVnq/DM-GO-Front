@@ -28,7 +28,11 @@
   >
   <label class="field"
     ><span class="sr-only">Casillero o documento del cliente</span
-    ><input formControlName="value" placeholder="Buscar por casillero o documento" required
+    ><app-code-search
+      formControlName="value"
+      label="Casillero o documento del cliente"
+      placeholder="Nombre, casillero o documento"
+      (picked)="pickCustomer($event.code)"
   /></label>
   <button class="button" [disabled]="search.invalid || busy()" aria-label="Buscar cliente">
     <app-icon name="search" />
@@ -60,7 +64,8 @@
             class="search-input"
             placeholder="Compañía, contenido o tracking"
             [value]="filter()"
-            (input)="filter.set($any($event.target).value)"
+            appDebouncedInput
+            (debouncedSearch)="filter.set($any($event.target).value)"
         /></label>
       </div>
       <div class="table-scroll">

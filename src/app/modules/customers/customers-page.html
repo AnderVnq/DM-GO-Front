@@ -18,11 +18,11 @@
       </select></label
     >
     <label class="field"
-      >Casillero o documento<input
+      >Casillero o documento<app-code-search
         formControlName="value"
-        placeholder="Ej. PE00042"
-        autocomplete="off"
-        required
+        label="Casillero o documento"
+        placeholder="Nombre, casillero o documento"
+        (picked)="pickCustomer($event.code)"
     /></label>
     <button class="button" [disabled]="search.invalid || saving()">
       <app-icon name="search" />Buscar cliente
@@ -50,6 +50,9 @@
     <label class="field"
       >Buscar clientes<input
         formControlName="q"
+        appDebouncedInput
+        [focusSearch]="true"
+        (debouncedSearch)="applyListFilters()"
         maxlength="100"
         placeholder="Nombre, casillero, documento o correo"
     /></label>

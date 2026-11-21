@@ -1,3 +1,4 @@
+import { DebouncedInput } from '../../shared/debounced-input';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   ChangeDetectorRef,
@@ -20,7 +21,7 @@ import { warehouseError } from './warehouse-error';
 
 @Component({
   selector: 'app-warehouses-page',
-  imports: [LoadingIndicator, FormsModule, RouterLink, Icon],
+  imports: [DebouncedInput, LoadingIndicator, FormsModule, RouterLink, Icon],
   templateUrl: './warehouses-page.html',
 })
 export class WarehousesPage {

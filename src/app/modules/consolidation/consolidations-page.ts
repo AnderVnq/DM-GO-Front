@@ -180,7 +180,7 @@ export class ConsolidationsPage {
     if (this.busy() || this.loading()) return;
     const id = lotReference(this.reference, 'consolidations', this.document.location.origin);
     if (!id) {
-      this.error.set('Pega la referencia UUID del consolidado o su enlace del panel.');
+      this.error.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.loading.set(true);
@@ -256,7 +256,7 @@ export class ConsolidationsPage {
     if (this.busy() || this.looking()) return;
     const id = lotReference(this.bulkReference, 'bulks', this.document.location.origin);
     if (!id) {
-      this.previewError.set('Pega la referencia UUID del bulto o su enlace del panel.');
+      this.previewError.set('Selecciona el registro en el buscador por código.');
       return;
     }
     this.preview.set(null);

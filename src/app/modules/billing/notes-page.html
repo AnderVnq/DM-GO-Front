@@ -336,7 +336,11 @@
   <form [formGroup]="creation" (ngSubmit)="create()">
     <div class="search-bar">
       <label class="field"
-        >Casillero del cliente<input formControlName="locker" placeholder="PE00042" /></label
+        >Casillero del cliente<app-code-search
+          formControlName="locker"
+          label="Casillero del cliente"
+          placeholder="Nombre, casillero o documento"
+          (picked)="findCustomer()" /></label
       ><button type="button" class="button" (click)="findCustomer()" [disabled]="busy()">
         Buscar
       </button>

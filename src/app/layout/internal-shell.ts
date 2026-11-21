@@ -25,6 +25,21 @@ export class InternalShell {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly mobileOpen = signal(false);
+  readonly collapsed = signal(this.readCollapsed());
+  private readCollapsed() {
+    try {
+      return localStorage.getItem('dm48.navigation.collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  }
+  toggleCollapsed() {
+    this.collapsed.update((value) => !value);
+    try {
+      localStorage.setItem('dm48.navigation.collapsed', String(this.collapsed()));
+    } catch {}
+  }
+
   private readonly injector = inject(Injector);
   private readonly menuToggle = viewChild.required<ElementRef<HTMLButtonElement>>('menuToggle');
   private readonly sidebar = viewChild.required<ElementRef<HTMLElement>>('sidebar');

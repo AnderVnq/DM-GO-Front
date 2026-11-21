@@ -15,7 +15,8 @@
   <label class="field"
     >Filtrar mis paquetes<input
       [value]="filter()"
-      (input)="filter.set($any($event.target).value)"
+      appDebouncedInput
+      (debouncedSearch)="filter.set($any($event.target).value)"
       placeholder="Compañía, contenido o tracking" /></label
   ><button
     class="icon-button action-icon"

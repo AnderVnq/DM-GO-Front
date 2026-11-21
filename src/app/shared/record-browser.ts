@@ -1,3 +1,4 @@
+import { DebouncedInput } from './debounced-input';
 import { LoadingIndicator } from './loading-indicator';
 import { Icon } from './icon';
 import { HttpClient } from '@angular/common/http';
@@ -28,7 +29,7 @@ let nextBrowserId = 0;
 /** Tabla remota reutilizable. Los filtros y columnas pertenecen a la pantalla consumidora. */
 @Component({
   selector: 'app-record-browser',
-  imports: [FormsModule, Icon, LoadingIndicator],
+  imports: [DebouncedInput, FormsModule, Icon, LoadingIndicator],
   templateUrl: './record-browser.html',
   styleUrl: './record-browser.scss',
 })

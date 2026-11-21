@@ -13,20 +13,14 @@
 @if (error()) {
   <p class="alert error" role="alert">{{ error() }}</p>
 }
-<form class="customer-strip search-bar" [formGroup]="lookup" (ngSubmit)="openReference()">
-  <div class="field">
-    <label for="customs-reference">Referencia o enlace de una guía de Aduanas</label
-    ><input
-      id="customs-reference"
-      formControlName="reference"
-      [readOnly]="busy()"
-      placeholder="Referencia UUID o enlace guardado"
-    />
-  </div>
-  <button class="button" [disabled]="busy() || !lookup.controls.reference.value.trim()">
-    Consultar guía
-  </button>
-</form>
+<div class="customer-strip">
+  <app-code-search
+    resource="customs/lines"
+    label="Buscar guía por código, declaración o manifiesto"
+    placeholder="Código de guía, declaración o manifiesto"
+    (picked)="selectId($event.id)"
+  />
+</div>
 @if (result(); as reportResult) {
   <section class="surface surface-body import-result" aria-labelledby="import-result-title">
     <h2 id="import-result-title" #resultHeading tabindex="-1">Resultado del reporte</h2>
@@ -61,7 +55,7 @@
     <div>
       <h2 id="customs-pending-title">Pendientes de Aduanas</h2>
       <p class="muted">
-        Hasta 200 guías pendientes devueltas por la API. Las liberadas se consultan con su enlace.
+        Guías pendientes de revisión. Usa el buscador superior para consultar también las liberadas.
       </p>
     </div>
     <button
@@ -79,6 +73,10 @@
     ><input
       id="customs-filter"
       formControlName="query"
+      appDebouncedInput
+      [focusSearch]="true"
+      (debouncedSearch)="applyFilter()"
+      (keydown.enter)="applyFilter()"
       placeholder="Guía, declaración o manifiesto"
     />
   </div>
@@ -275,7 +273,7 @@
       </div>
     }
     <p class="field-hint">
-      Conserva el enlace de esta página para volver a consultar la guía después de liberarla.
+      Puedes volver a consultar esta guía por su código en el buscador superior.
     </p>
   </section>
 }

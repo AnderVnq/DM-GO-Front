@@ -170,3 +170,67 @@
     justify-content: space-between;
   }
 }
+
+// La navegación usa ciruela profunda en ambos temas para separar el marco del contenido.
+.sidebar {
+  --text: #f6f0fa;
+  --muted: #c7c2cc;
+  --accent: #f4b942;
+  --surface: #30233d;
+  --surface-hover: #3b2a49;
+  --accent-surface: #44331e;
+  --line-subtle: #50435e;
+  color: var(--text);
+  background: #251930;
+}
+:root[data-theme='dark'] .sidebar {
+  background: #160e20;
+}
+.desktop-nav-toggle {
+  flex: none;
+}
+.surface:has(app-code-search) {
+  overflow: visible;
+}
+app-code-search {
+  flex: 1;
+}
+@media (min-width: 701px) {
+  .app-shell.navigation-collapsed {
+    grid-template-columns: 5rem minmax(0, 1fr);
+  }
+  .navigation-collapsed .sidebar {
+    padding-inline: 0.5rem;
+  }
+  .navigation-collapsed .sidebar .wordmark {
+    font-size: 1rem;
+    padding-inline: 0.15rem;
+    margin-inline: auto;
+    letter-spacing: -0.03em;
+  }
+  .navigation-collapsed .sidebar-subtitle,
+  .navigation-collapsed .sidebar-group,
+  .navigation-collapsed .sidebar nav a span,
+  .navigation-collapsed .sidebar-profile > div,
+  .navigation-collapsed .sidebar-profile > .avatar {
+    display: none;
+  }
+  .navigation-collapsed .sidebar nav {
+    margin-top: 1.5rem;
+  }
+  .navigation-collapsed .sidebar nav a {
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+  .navigation-collapsed .sidebar-profile {
+    justify-content: center;
+  }
+  .navigation-collapsed .portal-sidebar .sidebar-profile > .icon-button {
+    margin-left: 0;
+  }
+}
+@media (max-width: 700px) {
+  .desktop-nav-toggle {
+    display: none;
+  }
+}

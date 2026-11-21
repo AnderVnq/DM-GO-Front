@@ -1,3 +1,4 @@
+import { CodeSearch } from '../../shared/code-search';
 import { LoadingIndicator } from '../../shared/loading-indicator';
 import {
   Component,
@@ -35,7 +36,7 @@ import { PdfPreviewService } from '../../shared/pdf-preview.service';
 
 @Component({
   selector: 'app-notes-page',
-  imports: [LoadingIndicator, ReactiveFormsModule, Icon, Status],
+  imports: [CodeSearch, LoadingIndicator, ReactiveFormsModule, Icon, Status],
   templateUrl: './notes-page.html',
 })
 export class NotesPage {

@@ -55,11 +55,11 @@
             autocomplete="off"
         /></label>
         <label class="field"
-          >Casillero de la etiqueta (opcional)<input
+          >Casillero de la etiqueta (opcional)<app-code-search
             name="locker_code"
             [(ngModel)]="input.locker_code"
-            placeholder="PE00042"
-            autocomplete="off"
+            placeholder="Nombre o código de casillero"
+            label="Casillero de la etiqueta (opcional)"
           /><span class="field-hint">Ingresa el código del casillero, sin «Suite».</span></label
         >
         <label class="field full"
